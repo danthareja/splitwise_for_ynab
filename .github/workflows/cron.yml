@@ -1,0 +1,14 @@
+name: cron
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 * * * *"
+jobs:
+  cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: YNAB to Splitwise
+        run: |
+          curl --request POST \
+          --url 'https://splitwise-for-ynab.vercel.app/api/ynab_to_splitwise' \
+          --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}'
