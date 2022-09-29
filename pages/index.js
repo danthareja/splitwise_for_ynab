@@ -1,48 +1,85 @@
+import { useRef, useEffect } from "react";
 import axios from "axios";
 import {
-  VStack,
   FormControl,
   FormLabel,
   FormHelperText,
   FormErrorMessage,
+  Input,
   Button,
+  VStack,
 } from "@chakra-ui/react";
 import { useMutation } from "@tanstack/react-query";
 
 export default function Home() {
+  const inputRef = useRef();
+
   const mutation = useMutation(async () => {
-    const res = await axios.post("/api/ynab_to_splitwise");
+    const res = await axios.post(
+      "/api/ynab_to_splitwise",
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${inputRef.current.value}`,
+        },
+      }
+    );
     return res.data.data;
   });
 
+  useEffect(() => {
+    if (mutation.isError) {
+      inputRef.current.focus();
+    }
+  }, [mutation.isError]);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [inputRef]);
+
   return (
-    <FormControl as={VStack} isInvalid={mutation.isError}>
-      <FormLabel m={0}>Tired of entering Splitwise expenses?</FormLabel>
-      <Button
-        colorScheme="blue"
-        isLoading={mutation.isLoading}
-        onClick={() => mutation.mutate()}
-        size="lg"
-      >
-        Sync YNAB and Splitwise
-      </Button>
-      {mutation.isError ? (
-        <FormErrorMessage>{mutation.error.message}</FormErrorMessage>
-      ) : mutation.isSuccess ? (
-        <FormHelperText
-          color={
-            mutation.data.transactions.length > 0 ? "green.500" : "orange.500"
-          }
-        >
-          {mutation.data.transactions.length > 0
-            ? `Added ${mutation.data.transactions.length} new YNAB expense(s) to Splitwise`
-            : "No new transactions, try again later."}
-        </FormHelperText>
-      ) : mutation.isLoading ? (
-        <FormHelperText>...</FormHelperText>
-      ) : (
-        <FormHelperText>Click the button to do the thing</FormHelperText>
-      )}
-    </FormControl>
+    <form
+      noValidate
+      onSubmit={(e) => {
+        e.preventDefault();
+        mutation.mutate();
+      }}
+    >
+      <VStack as={FormControl} isInvalid={mutation.isError} spacing={4}>
+        <FormLabel mb={0}>Add expenses to Splitwise</FormLabel>
+        <Input
+          ref={inputRef}
+          type="password"
+          autoComplete="new-password"
+          placeholder="Enter password"
+          isDisabled={mutation.isLoading}
+          w="200px"
+        />
+        <Button type="submit" colorScheme="blue" isLoading={mutation.isLoading}>
+          Sync from YNAB
+        </Button>
+        {mutation.isError ? (
+          <FormErrorMessage>
+            {mutation.error.response.data.error}
+          </FormErrorMessage>
+        ) : mutation.isSuccess ? (
+          <FormHelperText
+            color={
+              mutation.data.transactions.length > 0 ? "green.500" : "orange.500"
+            }
+          >
+            {mutation.data.transactions.length > 0
+              ? `Added ${mutation.data.transactions.length} new YNAB expense(s) to Splitwise`
+              : "No new transactions, try again later."}
+          </FormHelperText>
+        ) : mutation.isLoading ? (
+          <FormHelperText>&nbsp;</FormHelperText>
+        ) : (
+          <FormHelperText>&nbsp;</FormHelperText>
+        )}
+      </VStack>
+    </form>
   );
 }
