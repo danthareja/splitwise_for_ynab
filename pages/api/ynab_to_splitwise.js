@@ -9,12 +9,11 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { authorization } = req.headers;
-  if (authorization !== `Bearer ${process.env.API_SECRET_KEY}`) {
-    res.status(401).json({ data: null, error: "Unauthorized" });
-    return;
-  } else {
-  }
+  // const { authorization } = req.headers;
+  // if (authorization !== `Bearer ${process.env.API_SECRET_KEY}`) {
+  //   res.status(401).json({ data: null, error: "Unauthorized" });
+  //   return;
+  // }
 
   try {
     const transactions = await processLatestTransactions();

@@ -12,8 +12,14 @@
     "**/*": "prettier --write --ignore-unknown"
   },
   "dependencies": {
+    "@chakra-ui/react": "^2.3.4",
+    "@emotion/react": "^11.10.4",
+    "@emotion/styled": "^11.10.4",
+    "@tanstack/react-query": "^4.7.2",
     "@upstash/redis": "^1.13.1",
     "axios": "^0.27.2",
+    "cors": "^2.8.5",
+    "framer-motion": "^7.5.0",
     "next": "12.3.1",
     "react": "18.2.0",
     "react-dom": "18.2.0"
