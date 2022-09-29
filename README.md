@@ -1,4 +1,33 @@
+# Splitwise for YNAB
+
+> Categorize shared expenses with your partner between YNAB and Splitwise
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+
+## Background
+
+My partner and I use separate YNAB budgets but we use Splitwise as the source of truth for shared expenses.
+
+If I pay $200 from my debit card at Save On Foods, here's the current manual process to categorize that expense:
+
+1. Categorize $200 transaction from my 'Checking' account as an 'outflow' under the 'Groceries' budget
+2. Add a Splitwise expense for $200 'split evenly' in our 'Shared Partner Expenses' group. Splitwise shows I am owed $100
+3. Add a new $100 _'inflow'_ transaction into my 'Splitwise' account, also categoried under the 'Groceries' budget
+
+After this, my 'Splitwise' account shows a positive balance of $100 (same as what I'm owed in the Splitwise app), and my 'Groceries' category shows I've spent $100.
+
+## Concept
+
+This project automates steps (2) and (3) above. Here's how:
+
+First, mark a transaction as shared in YNAB:
+
+1. Flag the transaction with a color (configurable in env vars)
+
+Periodically, this app will search for flagged transactions. For each flagged transaction, it will:
+
+1. Add a 'split equally' expense into a Splitwise group
+1. Add the corresponding transaction into the 'Splitwise' account in YNAB
 
 ## Getting Started
 
