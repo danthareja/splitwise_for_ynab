@@ -1,15 +1,11 @@
 import axios from "axios";
 
-import { getServerKnowledge } from "@/services/db";
-
 const ynab = axios.create({
   baseURL: "https://api.youneedabudget.com/v1",
   headers: { Authorization: `Bearer ${process.env.YNAB_API_KEY}` },
 });
 
-export async function getFlaggedTransactions() {
-  const serverKnowledge = await getServerKnowledge();
-
+export async function getFlaggedTransactions(serverKnowledge) {
   const { data } = await getTransactions({
     last_knowledge_of_server: serverKnowledge,
   });

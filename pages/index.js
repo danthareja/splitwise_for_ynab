@@ -15,16 +15,35 @@ export default function Home() {
   const inputRef = useRef();
 
   const mutation = useMutation(async () => {
-    const res = await axios.post(
-      "/api/ynab_to_splitwise",
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${inputRef.current.value}`,
-        },
-      }
-    );
-    return res.data.data;
+    const [transactions, expenses] = await Promise.all([
+      axios
+        .post(
+          "/api/ynab_to_splitwise",
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${inputRef.current.value}`,
+            },
+          }
+        )
+        .then((res) => res.data.data.transactions),
+      axios
+        .post(
+          "/api/splitwise_to_ynab",
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${inputRef.current.value}`,
+            },
+          }
+        )
+        .then((res) => res.data.data.expenses),
+    ]);
+
+    return {
+      transactions,
+      expenses,
+    };
   });
 
   useEffect(() => {
@@ -48,7 +67,7 @@ export default function Home() {
       }}
     >
       <VStack as={FormControl} isInvalid={mutation.isError} spacing={4}>
-        <FormLabel mb={0}>Add expenses to Splitwise</FormLabel>
+        <FormLabel mb={0}>Sync YNAB/Splitwise</FormLabel>
         <Input
           ref={inputRef}
           type="password"
@@ -58,7 +77,7 @@ export default function Home() {
           w="200px"
         />
         <Button type="submit" colorScheme="blue" isLoading={mutation.isLoading}>
-          Sync from YNAB
+          Sync
         </Button>
         {mutation.isError ? (
           <FormErrorMessage>
@@ -67,12 +86,16 @@ export default function Home() {
         ) : mutation.isSuccess ? (
           <FormHelperText
             color={
-              mutation.data.transactions.length > 0 ? "green.500" : "orange.500"
+              mutation.data.transactions.length > 0 ||
+              mutation.data.expenses.length > 0
+                ? "green.500"
+                : "orange.500"
             }
           >
-            {mutation.data.transactions.length > 0
-              ? `Added ${mutation.data.transactions.length} new YNAB expense(s) to Splitwise`
-              : "No new transactions, try again later."}
+            {mutation.data.transactions.length > 0 ||
+            mutation.data.expenses.length > 0
+              ? `Synced ${mutation.data.transactions.length} YNAB transaction(s) and ${mutation.data.expenses.length} Splitwise expense(s)`
+              : "Nothing new, try again later."}
           </FormHelperText>
         ) : mutation.isLoading ? (
           <FormHelperText>&nbsp;</FormHelperText>
