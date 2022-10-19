@@ -6,7 +6,7 @@ import {
   getUnprocessedExpenses,
   markExpenseProcessed,
 } from "@/services/splitwise";
-import { createSplitwiseTransaction } from "@/services/ynab";
+import { createTransaction } from "@/services/ynab";
 import { splitwiseExpenseToYnabTransaction } from "./glue";
 
 export async function processLatestExpenses() {
@@ -14,16 +14,15 @@ export async function processLatestExpenses() {
   const expenses = await getUnprocessedExpenses(lastProcessedDate);
 
   for (let expense of expenses) {
-    await createSplitwiseTransaction(
+    await createTransaction(
       splitwiseExpenseToYnabTransaction(expense, {
         isOutflow: true,
         payee: `Splitwise from ${expense.created_by.first_name}`,
       })
     );
-    await markExpenseProcessed(expense.id);
+    await markExpenseProcessed(expense);
   }
 
   await setSplitwiseLastProcessed();
-
   return expenses;
 }

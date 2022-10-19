@@ -5,35 +5,21 @@ const ynab = axios.create({
   headers: { Authorization: `Bearer ${process.env.YNAB_API_KEY}` },
 });
 
-export async function getFlaggedTransactions(serverKnowledge) {
+export async function getUnprocessedTransactions(serverKnowledge) {
   const { data } = await getTransactions({
     last_knowledge_of_server: serverKnowledge,
   });
 
-  const flaggedTransactions = data.transactions.filter((transaction) => {
-    return (
-      transaction.flag_color === process.env.YNAB_FLAG_COLOR &&
-      transaction.account_id !== process.env.YNAB_SPLITWISE_ACCOUNT_ID
-    );
-  });
-
   return {
-    transactions: flaggedTransactions,
+    transactions: data.transactions.filter(isTransactionUnprocessed),
     serverKnowledge: data.server_knowledge,
   };
 }
 
-export async function unflagTransaction(transaction) {
+export async function markTransactionProcessed(transaction) {
   return updateTransaction(transaction.id, {
     ...transaction,
     flag_color: null,
-  });
-}
-
-export async function createSplitwiseTransaction(data) {
-  return createTransaction({
-    account_id: process.env.YNAB_SPLITWISE_ACCOUNT_ID,
-    ...data,
   });
 }
 
@@ -41,7 +27,10 @@ export async function createTransaction(data) {
   const res = await ynab.post(
     `/budgets/${process.env.YNAB_BUDGET_ID}/transactions`,
     {
-      transaction: data,
+      transaction: {
+        account_id: process.env.YNAB_SPLITWISE_ACCOUNT_ID,
+        ...data,
+      },
     }
   );
 
@@ -68,4 +57,11 @@ export async function getTransactions(params) {
   );
 
   return res.data;
+}
+
+function isTransactionUnprocessed(transaction) {
+  return (
+    transaction.flag_color === process.env.YNAB_FLAG_COLOR &&
+    transaction.account_id !== process.env.YNAB_SPLITWISE_ACCOUNT_ID
+  );
 }

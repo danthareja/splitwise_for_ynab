@@ -30,9 +30,9 @@ export async function getUnprocessedExpenses(lastProcessedDate) {
   return pFilter(res.data.expenses, isExpenseUnprocessed);
 }
 
-export async function markExpenseProcessed(expense_id) {
+export async function markExpenseProcessed(expense) {
   const res = await splitwise.post("/create_comment", {
-    expense_id,
+    expense_id: expense.id,
     content: KNOWN_COMMENT,
   });
 

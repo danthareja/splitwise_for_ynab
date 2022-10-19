@@ -1,9 +1,9 @@
 import { getServerKnowledge, setServerKnowledge } from "@/services/db";
 import { createExpense, markExpenseProcessed } from "@/services/splitwise";
 import {
-  getFlaggedTransactions,
-  createSplitwiseTransaction,
-  unflagTransaction,
+  getUnprocessedTransactions,
+  markTransactionProcessed,
+  createTransaction,
 } from "@/services/ynab";
 import {
   ynabTransactionToSplitwiseExpense,
@@ -12,8 +12,7 @@ import {
 
 export async function processLatestTransactions() {
   const lastServerKnowledge = await getServerKnowledge();
-
-  const { serverKnowledge, transactions } = await getFlaggedTransactions(
+  const { serverKnowledge, transactions } = await getUnprocessedTransactions(
     lastServerKnowledge
   );
 
@@ -21,14 +20,9 @@ export async function processLatestTransactions() {
     const expense = await createExpense(
       ynabTransactionToSplitwiseExpense(transaction)
     );
-
-    await markExpenseProcessed(expense.id);
-
-    await createSplitwiseTransaction(
-      splitwiseExpenseToYnabTransaction(expense)
-    );
-
-    await unflagTransaction(transaction);
+    await markExpenseProcessed(expense);
+    await createTransaction(splitwiseExpenseToYnabTransaction(expense));
+    await markTransactionProcessed(transaction);
   }
 
   await setServerKnowledge(serverKnowledge);
