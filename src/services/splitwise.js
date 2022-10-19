@@ -39,13 +39,16 @@ export async function markExpenseProcessed(expense) {
   return res.data.comment;
 }
 
+export function isPartnerExpense(expense) {
+  return (
+    expense.repayments[0].from === parseInt(process.env.SPLITWISE_MY_USER_ID)
+  );
+}
+
 async function isExpenseUnprocessed(expense) {
   const isDeleted = !!expense.deleted_at;
-  const isMyDebt =
-    expense.repayments[0].from === parseInt(process.env.SPLITWISE_MY_USER_ID);
 
-  // Synchronous checks can exit early
-  if (!isMyDebt || isDeleted) {
+  if (isDeleted) {
     return false;
   }
 

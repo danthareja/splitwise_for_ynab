@@ -1,14 +1,10 @@
 import { getServerKnowledge, setServerKnowledge } from "@/services/db";
-import { createExpense, markExpenseProcessed } from "@/services/splitwise";
+import { createExpense } from "@/services/splitwise";
 import {
   getUnprocessedTransactions,
   markTransactionProcessed,
-  createTransaction,
 } from "@/services/ynab";
-import {
-  ynabTransactionToSplitwiseExpense,
-  splitwiseExpenseToYnabTransaction,
-} from "./glue";
+import { ynabTransactionToSplitwiseExpense } from "./glue";
 
 export async function processLatestTransactions() {
   const lastServerKnowledge = await getServerKnowledge();
@@ -17,11 +13,7 @@ export async function processLatestTransactions() {
   );
 
   for (let transaction of transactions) {
-    const expense = await createExpense(
-      ynabTransactionToSplitwiseExpense(transaction)
-    );
-    await markExpenseProcessed(expense);
-    await createTransaction(splitwiseExpenseToYnabTransaction(expense));
+    await createExpense(ynabTransactionToSplitwiseExpense(transaction));
     await markTransactionProcessed(transaction);
   }
 

@@ -15,30 +15,29 @@ export default function Home() {
   const inputRef = useRef();
 
   const mutation = useMutation(async () => {
-    const [transactions, expenses] = await Promise.all([
-      axios
-        .post(
-          "/api/ynab_to_splitwise",
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${inputRef.current.value}`,
-            },
-          }
-        )
-        .then((res) => res.data.data.transactions),
-      axios
-        .post(
-          "/api/splitwise_to_ynab",
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${inputRef.current.value}`,
-            },
-          }
-        )
-        .then((res) => res.data.data.expenses),
-    ]);
+    const transactions = await axios
+      .post(
+        "/api/ynab_to_splitwise",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${inputRef.current.value}`,
+          },
+        }
+      )
+      .then((res) => res.data.data.transactions);
+
+    const expenses = await axios
+      .post(
+        "/api/splitwise_to_ynab",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${inputRef.current.value}`,
+          },
+        }
+      )
+      .then((res) => res.data.data.expenses);
 
     return {
       transactions,

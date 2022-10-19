@@ -14,12 +14,7 @@ export async function processLatestExpenses() {
   const expenses = await getUnprocessedExpenses(lastProcessedDate);
 
   for (let expense of expenses) {
-    await createTransaction(
-      splitwiseExpenseToYnabTransaction(expense, {
-        isOutflow: true,
-        payee: `Splitwise from ${expense.created_by.first_name}`,
-      })
-    );
+    await createTransaction(splitwiseExpenseToYnabTransaction(expense));
     await markExpenseProcessed(expense);
   }
 
