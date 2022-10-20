@@ -1,27 +1,26 @@
-import { useRef, useEffect } from "react";
 import axios from "axios";
 import {
   FormControl,
-  FormLabel,
   FormHelperText,
   FormErrorMessage,
-  Input,
   Button,
   VStack,
 } from "@chakra-ui/react";
 import { useMutation } from "@tanstack/react-query";
 
-export default function Home() {
-  const inputRef = useRef();
+import FingerprintJS from "@fingerprintjs/fingerprintjs";
 
+export default function Home() {
   const mutation = useMutation(async () => {
+    const { visitorId } = await FingerprintJS.load().then((fp) => fp.get());
+
     const transactions = await axios
       .post(
         "/api/ynab_to_splitwise",
         {},
         {
           headers: {
-            Authorization: `Bearer ${inputRef.current.value}`,
+            Authorization: `Bearer ${visitorId}`,
           },
         }
       )
@@ -33,7 +32,7 @@ export default function Home() {
         {},
         {
           headers: {
-            Authorization: `Bearer ${inputRef.current.value}`,
+            Authorization: `Bearer ${visitorId}`,
           },
         }
       )
@@ -45,18 +44,6 @@ export default function Home() {
     };
   });
 
-  useEffect(() => {
-    if (mutation.isError) {
-      inputRef.current.focus();
-    }
-  }, [mutation.isError]);
-
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [inputRef]);
-
   return (
     <form
       noValidate
@@ -66,17 +53,13 @@ export default function Home() {
       }}
     >
       <VStack as={FormControl} isInvalid={mutation.isError} spacing={4}>
-        <FormLabel mb={0}>Sync YNAB/Splitwise</FormLabel>
-        <Input
-          ref={inputRef}
-          type="password"
-          autoComplete="new-password"
-          placeholder="Enter password"
-          isDisabled={mutation.isLoading}
-          w="200px"
-        />
-        <Button type="submit" colorScheme="blue" isLoading={mutation.isLoading}>
-          Sync
+        <Button
+          size="lg"
+          type="submit"
+          colorScheme="blue"
+          isLoading={mutation.isLoading}
+        >
+          Sync YNAB/Splitwise
         </Button>
         {mutation.isError ? (
           <FormErrorMessage>

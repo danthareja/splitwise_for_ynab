@@ -1,23 +1,9 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 
 import { processLatestTransactions } from "@/lib/ynab_to_splitwise";
+import { withAuthorization } from "@/middleware/authorize";
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
-    res
-      .status(405)
-      .json({ data: null, error: "Idk what to do unless you POST" });
-    return;
-  }
-
-  const { authorization } = req.headers;
-
-  if (authorization !== `Bearer ${process.env.API_SECRET_KEY}`) {
-    res.status(401).json({ data: null, error: "Incorrect password" });
-    return;
-  }
-
+export default withAuthorization(async function handler(req, res) {
   try {
     const transactions = await processLatestTransactions();
     res.status(200).json({ data: { transactions } });
@@ -25,4 +11,4 @@ export default async function handler(req, res) {
     console.error(e.message);
     res.status(500).json({ data: e?.response?.data, error: e.message });
   }
-}
+});
