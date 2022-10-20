@@ -1,14 +1,11 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 
 import { processLatestTransactions } from "@/lib/ynab_to_splitwise";
-import { withAuthorization } from "@/middleware/authorize";
+import withMiddleware, { authorize, checkMethod } from "@/middleware";
 
-export default withAuthorization(async function handler(req, res) {
-  try {
-    const transactions = await processLatestTransactions();
-    res.status(200).json({ data: { transactions } });
-  } catch (e) {
-    console.error(e.message);
-    res.status(500).json({ data: e?.response?.data, error: e.message });
-  }
-});
+const handler = async (req, res) => {
+  const transactions = await processLatestTransactions();
+  res.status(200).json({ data: { transactions } });
+};
+
+export default withMiddleware([checkMethod("POST"), authorize], handler);
