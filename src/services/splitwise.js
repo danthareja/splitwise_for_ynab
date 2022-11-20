@@ -25,7 +25,7 @@ export async function getUnprocessedExpenses(lastProcessedDate) {
     params: {
       group_id: process.env.SPLITWISE_GROUP_ID,
       // dated_after: lastProcessedDate || FIRST_KNOWN_DATE,
-      limit: 10,
+      limit: 25,
     },
   });
 
