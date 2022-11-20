@@ -22,9 +22,11 @@ export async function createExpense(data) {
 
 export async function getUnprocessedExpenses(lastProcessedDate) {
   const res = await splitwise.get("/get_expenses", {
-    group_id: process.env.SPLITWISE_GROUP_ID,
-    // dated_after: lastProcessedDate || FIRST_KNOWN_DATE,
-    limit: 10,
+    params: {
+      group_id: process.env.SPLITWISE_GROUP_ID,
+      // dated_after: lastProcessedDate || FIRST_KNOWN_DATE,
+      limit: 10,
+    },
   });
 
   return pFilter(res.data.expenses, isExpenseUnprocessed);
