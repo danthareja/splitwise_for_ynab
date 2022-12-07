@@ -6,27 +6,19 @@ const redis = new Redis({
 });
 
 const ENV = process.env.VERCEL_ENV || "development";
-const SERVER_KNOWLEDGE_KEY = `ynab:${ENV}:server_knowledge`;
-const SPLITWISE_LAST_PROCESSED = `splitwise:${ENV}:last_processed`;
 
-export async function setServerKnowledge(value) {
-  await redis.set(SERVER_KNOWLEDGE_KEY, value);
-  return value;
-}
+export class KeyValueStore {
+  constructor(key) {
+    this.key = `${key}:${ENV}`;
+  }
 
-export async function getServerKnowledge() {
-  const value = await redis.get(SERVER_KNOWLEDGE_KEY);
-  return value;
-}
+  async get() {
+    const value = await redis.get(this.key);
+    return value;
+  }
 
-export async function setSplitwiseLastProcessed(
-  value = new Date().toISOString()
-) {
-  await redis.set(SPLITWISE_LAST_PROCESSED, value);
-  return value;
-}
-
-export async function getSplitwiseLastProcessed() {
-  const value = await redis.get(SPLITWISE_LAST_PROCESSED);
-  return value;
+  async set(value) {
+    await redis.set(this.key, value);
+    return value;
+  }
 }
