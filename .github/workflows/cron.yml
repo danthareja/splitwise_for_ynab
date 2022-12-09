@@ -2,7 +2,7 @@ name: cron
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "0 */4 * * *"
 jobs:
   cron:
     runs-on: ubuntu-latest
@@ -11,23 +11,27 @@ jobs:
         run: |
           curl --request POST \
           --url 'https://splitwise-for-ynab.vercel.app/api/ynab_to_splitwise' \
-          -d '{"who":"mine"}' \
-          --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}'
+          --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}' \
+          --header 'Content-Type: application/json' \
+          --data '{"who":"mine"}'
       - name: YNAB to Splitwise (partner)
         run: |
           curl --request POST \
           --url 'https://splitwise-for-ynab.vercel.app/api/ynab_to_splitwise' \
-          -d '{"who":"partner"}' \
-          --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}'
+          --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}' \
+          --header 'Content-Type: application/json' \
+          --data '{"who":"mine"}'
       - name: Splitwise to YNAB (mine)
         run: |
           curl --request POST \
           --url 'https://splitwise-for-ynab.vercel.app/api/splitwise_to_ynab' \
-          -d '{"who":"mine"}' \
-          --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}'
+          --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}' \
+          --header 'Content-Type: application/json' \
+          --data '{"who":"mine"}'
       - name: Splitwise to YNAB (partner)
         run: |
           curl --request POST \
           --url 'https://splitwise-for-ynab.vercel.app/api/splitwise_to_ynab' \
-          -d '{"who":"partner"}' \
-          --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}'
+          --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}' \
+          --header 'Content-Type: application/json' \
+          --data '{"who":"mine"}'
