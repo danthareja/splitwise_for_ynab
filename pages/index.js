@@ -14,10 +14,12 @@ export default function Home() {
   const mutation = useMutation(async () => {
     const { visitorId } = await FingerprintJS.load().then((fp) => fp.get());
 
-    const transactions = await axios
+    const myTransactions = await axios
       .post(
         "/api/ynab_to_splitwise",
-        {},
+        {
+          who: "mine",
+        },
         {
           headers: {
             Authorization: `Bearer ${visitorId}`,
@@ -26,10 +28,28 @@ export default function Home() {
       )
       .then((res) => res.data.data.transactions);
 
-    const expenses = await axios
+    const partnerTransactions = await axios
+      .post(
+        "/api/ynab_to_splitwise",
+        {
+          who: "partner",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${visitorId}`,
+          },
+        }
+      )
+      .then((res) => res.data.data.transactions);
+
+    const transactions = [...myTransactions, ...partnerTransactions];
+
+    const myExpenses = await axios
       .post(
         "/api/splitwise_to_ynab",
-        {},
+        {
+          who: "mine",
+        },
         {
           headers: {
             Authorization: `Bearer ${visitorId}`,
@@ -37,6 +57,22 @@ export default function Home() {
         }
       )
       .then((res) => res.data.data.expenses);
+
+    const partnerExpenses = await axios
+      .post(
+        "/api/splitwise_to_ynab",
+        {
+          who: "partner",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${visitorId}`,
+          },
+        }
+      )
+      .then((res) => res.data.data.expenses);
+
+    const expenses = [...myExpenses, ...partnerExpenses];
 
     return {
       transactions,

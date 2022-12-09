@@ -9,21 +9,29 @@ import {
 import { processLatestTransactions } from "@/lib/glue";
 
 const handler = async (req, res) => {
-  const myTransactions = await processLatestTransactions(
-    new MyYNABService(),
-    new MySplitwiseService()
-  );
+  const { who } = req.body;
 
-  const partnerTransactions = await processLatestTransactions(
-    new PartnerYNABService(),
-    new PartnerSplitwiseService()
-  );
+  if (who === "mine") {
+    const transactions = await processLatestTransactions(
+      new MyYNABService(),
+      new MySplitwiseService()
+    );
+    return res.status(200).json({
+      data: { transactions },
+    });
+  }
 
-  const transactions = [...myTransactions, ...partnerTransactions];
+  if (who === "partner") {
+    const transactions = await processLatestTransactions(
+      new PartnerYNABService(),
+      new PartnerSplitwiseService()
+    );
+    return res.status(200).json({
+      data: { transactions },
+    });
+  }
 
-  res.status(200).json({
-    data: { transactions },
-  });
+  return res.status(400).json({ message: "Invalid params" });
 };
 
 export default withMiddleware([checkMethod("POST"), authorize], handler);

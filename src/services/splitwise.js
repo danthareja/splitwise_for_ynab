@@ -1,9 +1,10 @@
 import axios from "axios";
+import axiosRetry, { isNetworkOrIdempotentRequestError } from "axios-retry";
 import pFilter from "p-filter";
 
 import { KeyValueStore } from "./db";
 
-const FIRST_KNOWN_DATE = "2022-12-05T01:57:12.090Z";
+const FIRST_KNOWN_DATE = "2022-12-09T01:33:50.492Z";
 
 export class SplitwiseService {
   constructor({
@@ -23,6 +24,14 @@ export class SplitwiseService {
     this.axios = axios.create({
       baseURL: "https://secure.splitwise.com/api/v3.0",
       headers: { Authorization: `Bearer ${apiKey}` },
+      timeout: 500,
+    });
+
+    axiosRetry(this.axios, {
+      retries: 3,
+      shouldResetTimeout: true,
+      retryCondition: (e) =>
+        e?.code === "ECONNABORTED" || isNetworkOrIdempotentRequestError(e),
     });
   }
 
@@ -37,17 +46,19 @@ export class SplitwiseService {
     return res.data.expenses[0];
   }
 
-  async getUnprocessedExpenses(lastProcessedDate) {
+  async getUnprocessedExpenses() {
     const res = await this.axios.get("/get_expenses", {
       params: {
         group_id: this.groupId,
-        dated_after: FIRST_KNOWN_DATE, // option: use lastProcessedDate
-        limit: 25,
+        updated_after: FIRST_KNOWN_DATE,
+        limit: 10,
       },
     });
 
-    return pFilter(res.data.expenses, async (expense) =>
-      this.isExpenseUnprocessed(expense)
+    return pFilter(
+      res.data.expenses,
+      (expense) => this.isExpenseUnprocessed(expense),
+      { concurrency: 10 }
     );
   }
 
@@ -66,7 +77,6 @@ export class SplitwiseService {
     if (isDeleted) {
       return false;
     }
-
     const comments = await this.getComments(expense);
     const hasKnownComment = comments.find(
       (comment) => comment.content === this.knownComment

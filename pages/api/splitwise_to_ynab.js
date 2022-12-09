@@ -9,19 +9,25 @@ import {
 import { processLatestExpenses } from "@/lib/glue";
 
 const handler = async (req, res) => {
-  const myExpenses = await processLatestExpenses(
-    new MyYNABService(),
-    new MySplitwiseService()
-  );
+  const { who } = req.body;
 
-  const partnerExpenses = await processLatestExpenses(
-    new PartnerYNABService(),
-    new PartnerSplitwiseService()
-  );
+  if (who === "mine") {
+    const expenses = await processLatestExpenses(
+      new MyYNABService(),
+      new MySplitwiseService()
+    );
+    return res.status(200).json({ data: { expenses } });
+  }
 
-  const expenses = [...myExpenses, ...partnerExpenses];
+  if (who === "partner") {
+    const expenses = await processLatestExpenses(
+      new PartnerYNABService(),
+      new PartnerSplitwiseService()
+    );
+    return res.status(200).json({ data: { expenses } });
+  }
 
-  res.status(200).json({ data: { expenses } });
+  return res.status(400).json({ message: "Invalid params" });
 };
 
 export default withMiddleware([checkMethod("POST"), authorize], handler);

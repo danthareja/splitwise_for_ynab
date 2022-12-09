@@ -7,13 +7,27 @@ jobs:
   cron:
     runs-on: ubuntu-latest
     steps:
-      - name: YNAB to Splitwise
+      - name: YNAB to Splitwise (mine)
         run: |
           curl --request POST \
           --url 'https://splitwise-for-ynab.vercel.app/api/ynab_to_splitwise' \
+          -d '{"who":"mine"}' \
           --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}'
-      - name: Splitwise to YNAB
+      - name: YNAB to Splitwise (partner)
+        run: |
+          curl --request POST \
+          --url 'https://splitwise-for-ynab.vercel.app/api/ynab_to_splitwise' \
+          -d '{"who":"partner"}' \
+          --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}'
+      - name: Splitwise to YNAB (mine)
         run: |
           curl --request POST \
           --url 'https://splitwise-for-ynab.vercel.app/api/splitwise_to_ynab' \
+          -d '{"who":"mine"}' \
+          --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}'
+      - name: Splitwise to YNAB (partner)
+        run: |
+          curl --request POST \
+          --url 'https://splitwise-for-ynab.vercel.app/api/splitwise_to_ynab' \
+          -d '{"who":"partner"}' \
           --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}'
