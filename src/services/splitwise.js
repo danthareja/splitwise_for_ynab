@@ -4,7 +4,7 @@ import pFilter from "p-filter";
 
 import { KeyValueStore } from "./db";
 
-const FIRST_KNOWN_DATE = "2022-12-09T01:33:50.492Z";
+const FIRST_KNOWN_DATE = "2023-01-03T04:07:44.315Z";
 
 export class SplitwiseService {
   constructor({
@@ -51,7 +51,7 @@ export class SplitwiseService {
       params: {
         group_id: this.groupId,
         updated_after: FIRST_KNOWN_DATE,
-        limit: 50,
+        limit: 10,
       },
     });
 
@@ -141,7 +141,8 @@ export class SplitwiseService {
   }
 
   costToYNABInflow(amount) {
-    return parseFloat(amount) * 1000;
+    // https://stackoverflow.com/questions/21472828/javascript-multiplying-by-100-giving-weird-result
+    return parseInt((parseFloat(amount) * 1000).toFixed(0));
   }
 
   costToYNABOutflow(amount) {
