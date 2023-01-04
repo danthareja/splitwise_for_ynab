@@ -51,7 +51,7 @@ export class SplitwiseService {
       params: {
         group_id: this.groupId,
         updated_after: FIRST_KNOWN_DATE,
-        limit: 10,
+        limit: 50,
       },
     });
 
