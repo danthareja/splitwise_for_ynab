@@ -20,7 +20,7 @@ jobs:
           --url 'https://splitwise-for-ynab.vercel.app/api/ynab_to_splitwise' \
           --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}' \
           --header 'Content-Type: application/json' \
-          --data '{"who":"mine"}'
+          --data '{"who":"partner"}'
       - name: Splitwise to YNAB (mine)
         run: |
           curl --request POST \
@@ -34,4 +34,4 @@ jobs:
           --url 'https://splitwise-for-ynab.vercel.app/api/splitwise_to_ynab' \
           --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}' \
           --header 'Content-Type: application/json' \
-          --data '{"who":"mine"}'
+          --data '{"who":"partner"}'
