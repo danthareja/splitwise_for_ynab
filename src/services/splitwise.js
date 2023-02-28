@@ -4,7 +4,7 @@ import pFilter from "p-filter";
 
 import { KeyValueStore } from "./db";
 
-const FIRST_KNOWN_DATE = "2023-01-03T04:07:44.315Z";
+const FIRST_KNOWN_DATE = "2023-02-26T04:07:44.315Z";
 
 export class SplitwiseService {
   constructor({
@@ -51,7 +51,7 @@ export class SplitwiseService {
       params: {
         group_id: this.groupId,
         updated_after: FIRST_KNOWN_DATE,
-        limit: 10,
+        limit: 15,
       },
     });
 
