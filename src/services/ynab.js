@@ -36,7 +36,7 @@ export class YNABService {
   async markTransactionProcessed(transaction) {
     return this.updateTransaction(transaction.id, {
       ...transaction,
-      flag_color: null,
+      flag_color: "green",
     });
   }
 
