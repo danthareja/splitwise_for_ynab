@@ -46,11 +46,11 @@ export class SplitwiseService {
     return res.data.expenses[0];
   }
 
-  async getUnprocessedExpenses({ updated_after = FIRST_KNOWN_DATE } = {}) {
+  async getUnprocessedExpenses() {
     const res = await this.axios.get("/get_expenses", {
       params: {
         group_id: this.groupId,
-        updated_after,
+        updated_after: FIRST_KNOWN_DATE,
         limit: 15,
       },
     });
