@@ -1,11 +1,15 @@
 export async function processLatestExpenses(ynab, splitwise) {
-  const expenses = await splitwise.getUnprocessedExpenses();
+  const lastProcessedDate = await splitwise.getLastProcessedDate();
+  const expenses = await splitwise.getUnprocessedExpenses({
+    updated_after: lastProcessedDate,
+  });
 
   for (let expense of expenses) {
     await ynab.createTransaction(splitwise.toYNABTransaction(expense));
     await splitwise.markExpenseProcessed(expense);
   }
 
+  await splitwise.setLastProcessedDate();
   return expenses;
 }
 
