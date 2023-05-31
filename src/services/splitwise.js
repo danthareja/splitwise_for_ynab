@@ -1,22 +1,21 @@
 import axios from "axios";
 import axiosRetry, { isNetworkOrIdempotentRequestError } from "axios-retry";
-import pFilter from "p-filter";
 
 import { KeyValueStore } from "./db";
 
-const FIRST_KNOWN_DATE = "2023-02-26T04:07:44.315Z";
+export const FIRST_KNOWN_DATE = "2023-05-31T16:49:26.012Z";
 
 export class SplitwiseService {
   constructor({
     db,
-    knownComment,
+    knownEmoji,
     userId,
     apiKey,
     groupId = process.env.SPLITWISE_GROUP_ID,
     currencyCode = process.env.SPLITWISE_CURRENCY_CODE,
   }) {
     this.db = db;
-    this.knownComment = knownComment;
+    this.knownEmoji = knownEmoji;
     this.userId = userId;
     this.groupId = groupId;
     this.currencyCode = currencyCode;
@@ -51,52 +50,40 @@ export class SplitwiseService {
       params: {
         group_id: this.groupId,
         updated_after,
-        limit: 15,
+        limit: 50,
       },
     });
 
-    return pFilter(
-      res.data.expenses,
-      (expense) => this.isExpenseUnprocessed(expense),
-      { concurrency: 10 }
+    return res.data.expenses.filter((expense) =>
+      this.isExpenseUnprocessed(expense)
     );
   }
 
   async markExpenseProcessed(expense) {
-    const res = await this.axios.post("/create_comment", {
-      expense_id: expense.id,
-      content: this.knownComment,
+    await this.axios.post(`/update_expense/${expense.id}`, {
+      description: `${this.knownEmoji}${expense.description}`,
     });
-
-    return res.data.comment;
   }
 
-  async isExpenseUnprocessed(expense) {
+  isExpenseUnprocessed(expense) {
     const isDeleted = !!expense.deleted_at;
-
     if (isDeleted) {
       return false;
     }
-    const comments = await this.getComments(expense);
-    const hasKnownComment = comments.find(
-      (comment) => comment.content === this.knownComment
-    );
 
-    return !hasKnownComment;
-  }
-
-  async getComments(expense) {
-    const res = await this.axios.get("/get_comments", {
-      params: {
-        expense_id: expense.id,
-      },
-    });
-
-    return res.data.comments;
+    const hasKnownEmoji = expense.description.includes(this.knownEmoji);
+    return !hasKnownEmoji;
   }
 
   async getLastProcessedDate() {
-    return this.db.get();
+    const dbDate = await this.db.get();
+
+    const isStaleDbDate = new Date(dbDate) < new Date(FIRST_KNOWN_DATE);
+    if (isStaleDbDate) {
+      return FIRST_KNOWN_DATE;
+    }
+
+    return dbDate;
   }
 
   async setLastProcessedDate(value = new Date().toISOString()) {
@@ -116,7 +103,7 @@ export class SplitwiseService {
   toYNABTransactionWithKnownPayee(expense) {
     return {
       amount: this.toYNABAmount(expense),
-      payee_name: expense.description,
+      payee_name: this.stripEmojis(expense.description),
       memo: expense.details,
       date: expense.date,
     };
@@ -126,7 +113,7 @@ export class SplitwiseService {
     return {
       amount: this.toYNABAmount(expense),
       payee_name: `Splitwise from ${expense.created_by.first_name}`,
-      memo: expense.description,
+      memo: this.stripEmojis(expense.description),
       date: expense.date,
     };
   }
@@ -148,13 +135,17 @@ export class SplitwiseService {
   costToYNABOutflow(amount) {
     return this.costToYNABInflow(amount) * -1;
   }
+
+  stripEmojis(string) {
+    return string.replace(/\p{Extended_Pictographic}/gu, "");
+  }
 }
 
 export class MySplitwiseService extends SplitwiseService {
   constructor() {
     super({
       db: new KeyValueStore("splitwise:my_last_processed"),
-      knownComment: "Processed by DanBOT 9005",
+      knownEmoji: "🤴",
       userId: parseInt(process.env.SPLITWISE_MY_USER_ID),
       apiKey: process.env.SPLITWISE_MY_API_KEY,
     });
@@ -165,7 +156,7 @@ export class PartnerSplitwiseService extends SplitwiseService {
   constructor() {
     super({
       db: new KeyValueStore("splitwise:partner_last_processed"),
-      knownComment: "Processed by EiraBOT 9005",
+      knownEmoji: "👸",
       userId: parseInt(process.env.SPLITWISE_PARTNER_USER_ID),
       apiKey: process.env.SPLITWISE_PARTNER_API_KEY,
     });
