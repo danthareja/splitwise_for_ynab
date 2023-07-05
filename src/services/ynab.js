@@ -16,8 +16,27 @@ export class YNABService {
 
     this.axios = axios.create({
       baseURL: `https://api.youneedabudget.com/v1/budgets/${budgetId}`,
-      headers: { Authorization: `Bearer ${apiKey}` },
+      // headers: { Authorization: `Bearer ${apiKey}` },
     });
+
+    // IDK why the 'headers' auth solution doesn't work
+    //
+    // I can use headers in Postman, but not in axios
+    // I tried updating axios to 1.x, that didn't help
+    // Splitwise's axios headers still work
+    //
+    // YNAB supports an alternate auth method where you append
+    // the API key to the URL, so we're just using that for now
+
+    this.axios.interceptors.request.use(
+      (config) => {
+        config.url = config.url + "?access_token=" + apiKey;
+        return config;
+      },
+      (error) => {
+        return Promise.reject(error);
+      }
+    );
   }
 
   async getUnprocessedTransactions(serverKnowledge) {
