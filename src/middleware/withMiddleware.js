@@ -20,7 +20,7 @@ export function withMiddleware(
 
 function defaultErrorHandler(e, req, res) {
   console.error(e);
-  return res.status(500).json({ data: e?.response?.data, error: e.message });
+  return res.status(500).json({ error: e.message });
 }
 
 async function runAsyncStack(fns, ...args) {

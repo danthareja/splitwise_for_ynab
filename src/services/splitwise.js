@@ -2,8 +2,9 @@ import axios from "axios";
 import axiosRetry, { isNetworkOrIdempotentRequestError } from "axios-retry";
 
 import { KeyValueStore } from "./db";
+import { addStackToAxios } from "./utils";
 
-export const FIRST_KNOWN_DATE = "2023-05-31T16:49:26.012Z";
+export const FIRST_KNOWN_DATE = "2023-11-20T08:49:26.012Z";
 
 export class SplitwiseService {
   constructor({
@@ -23,8 +24,9 @@ export class SplitwiseService {
     this.axios = axios.create({
       baseURL: "https://secure.splitwise.com/api/v3.0",
       headers: { Authorization: `Bearer ${apiKey}` },
-      timeout: 500,
     });
+
+    addStackToAxios(this.axios);
 
     axiosRetry(this.axios, {
       retries: 3,

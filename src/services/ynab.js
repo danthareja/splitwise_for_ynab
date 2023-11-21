@@ -1,6 +1,7 @@
 import axios from "axios";
 
 import { KeyValueStore } from "./db";
+import { addStackToAxios } from "./utils";
 
 export class YNABService {
   constructor({
@@ -27,6 +28,13 @@ export class YNABService {
     //
     // YNAB supports an alternate auth method where you append
     // the API key to the URL, so we're just using that for now
+
+    addStackToAxios(this.axios, (e) => {
+      e.message = `YNAB Request failed with ${e.response.data.error.name} (${e.response.data.error.id}): ${e.response.data.error.detail} `;
+      delete e.request;
+      delete e.response;
+      return e;
+    });
 
     this.axios.interceptors.request.use(
       (config) => {
