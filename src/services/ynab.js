@@ -105,7 +105,8 @@ export class YNABService {
   isTransactionUnprocessed(transaction) {
     return (
       transaction.flag_color === this.ynabFlagColor &&
-      transaction.account_id !== this.splitwiseAccountId
+      transaction.account_id !== this.splitwiseAccountId &&
+      !transaction.deleted
     );
   }
 
