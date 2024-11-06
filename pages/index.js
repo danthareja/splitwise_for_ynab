@@ -42,7 +42,21 @@ export default function Home() {
       )
       .then((res) => res.data.data.transactions);
 
-    const transactions = [...myTransactions, ...partnerTransactions];
+    const laTransactions = await axios
+      .post(
+        "/api/ynab_to_splitwise",
+        {
+          who: "2024.11 LA",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${inputRef.current.value}`,
+          },
+        }
+      )
+      .then((res) => res.data.data.transactions);
+
+    const transactions = [...myTransactions, ...partnerTransactions, ...laTransactions];
 
     const myExpenses = await axios
       .post(
