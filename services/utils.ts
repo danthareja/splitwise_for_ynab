@@ -1,4 +1,15 @@
-export function addStackToAxios(axiosInstance, formatError = (e) => e) {
+import { AxiosInstance } from "axios";
+
+declare module "axios" {
+  export interface AxiosRequestConfig {
+    errorContext?: Error;
+  }
+}
+
+export function addStackToAxios(
+  axiosInstance: AxiosInstance,
+  formatError = (e: any) => e
+) {
   axiosInstance.interceptors.request.use((config) => {
     config.errorContext = new Error("AxiosError was thrown from:");
     return config;

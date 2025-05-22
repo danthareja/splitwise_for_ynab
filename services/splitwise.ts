@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosInstance } from "axios";
 import axiosRetry, { isNetworkOrIdempotentRequestError } from "axios-retry";
 
 import { KeyValueStore } from "./db";
@@ -6,15 +6,42 @@ import { addStackToAxios } from "./utils";
 
 export const FIRST_KNOWN_DATE = "2023-11-20T08:49:26.012Z";
 
+interface SplitwiseServiceConstructorParams {
+  db: KeyValueStore;
+  knownEmoji: string;
+  userId: number;
+  apiKey: string;
+  groupId?: string;
+  currencyCode?: string;
+}
+
+interface Expense {
+  id: number;
+  description: string;
+  deleted_at?: string | null;
+  details?: string;
+  date: string; // Consider using Date type if appropriate
+  repayments: { to: number; amount: string }[];
+  created_by: { first_name: string };
+  // Add other expense properties here
+}
+
 export class SplitwiseService {
+  private db: KeyValueStore;
+  private knownEmoji: string;
+  private userId: number;
+  private groupId: string;
+  private currencyCode: string;
+  private axios: AxiosInstance;
+
   constructor({
     db,
     knownEmoji,
     userId,
     apiKey,
-    groupId = process.env.SPLITWISE_GROUP_ID,
-    currencyCode = process.env.SPLITWISE_CURRENCY_CODE,
-  }) {
+    groupId = process.env.SPLITWISE_GROUP_ID!,
+    currencyCode = process.env.SPLITWISE_CURRENCY_CODE!,
+  }: SplitwiseServiceConstructorParams) {
     this.db = db;
     this.knownEmoji = knownEmoji;
     this.userId = userId;
@@ -36,7 +63,7 @@ export class SplitwiseService {
     });
   }
 
-  async createExpense(data) {
+  async createExpense(data: Partial<Expense>) {
     const res = await this.axios.post("/create_expense", {
       currency_code: this.currencyCode,
       group_id: this.groupId,
@@ -44,7 +71,7 @@ export class SplitwiseService {
       ...data,
     });
 
-    return res.data.expenses[0];
+    return res.data.expenses[0] as Expense;
   }
 
   async getUnprocessedExpenses({ updated_after = FIRST_KNOWN_DATE } = {}) {
@@ -56,18 +83,18 @@ export class SplitwiseService {
       },
     });
 
-    return res.data.expenses.filter((expense) =>
+    return res.data.expenses.filter((expense: Expense) =>
       this.isExpenseUnprocessed(expense)
     );
   }
 
-  async markExpenseProcessed(expense) {
+  async markExpenseProcessed(expense: Expense) {
     await this.axios.post(`/update_expense/${expense.id}`, {
       description: `${this.knownEmoji}${expense.description}`,
     });
   }
 
-  isExpenseUnprocessed(expense) {
+  isExpenseUnprocessed(expense: Expense) {
     const isDeleted = !!expense.deleted_at;
     if (isDeleted) {
       return false;
@@ -92,17 +119,17 @@ export class SplitwiseService {
     return this.db.set(value);
   }
 
-  toYNABTransaction(expense) {
+  toYNABTransaction(expense: Expense) {
     return this.hasKnownPayee(expense)
       ? this.toYNABTransactionWithKnownPayee(expense)
       : this.toYNABTranstionWithUnknownPayee(expense);
   }
 
-  hasKnownPayee() {
+  hasKnownPayee(expense: Expense) {
     return true;
   }
 
-  toYNABTransactionWithKnownPayee(expense) {
+  toYNABTransactionWithKnownPayee(expense: Expense) {
     return {
       amount: this.toYNABAmount(expense),
       payee_name: this.stripEmojis(expense.description),
@@ -111,7 +138,7 @@ export class SplitwiseService {
     };
   }
 
-  toYNABTranstionWithUnknownPayee(expense) {
+  toYNABTranstionWithUnknownPayee(expense: Expense) {
     return {
       amount: this.toYNABAmount(expense),
       payee_name: `Splitwise from ${expense.created_by.first_name}`,
@@ -120,7 +147,7 @@ export class SplitwiseService {
     };
   }
 
-  toYNABAmount(expense) {
+  toYNABAmount(expense: Expense) {
     const repayment = expense.repayments[0];
     const isInflow = repayment.to == this.userId;
 
@@ -129,16 +156,16 @@ export class SplitwiseService {
       : this.costToYNABOutflow(repayment.amount);
   }
 
-  costToYNABInflow(amount) {
+  costToYNABInflow(amount: string) {
     // https://stackoverflow.com/questions/21472828/javascript-multiplying-by-100-giving-weird-result
     return parseInt((parseFloat(amount) * 1000).toFixed(0));
   }
 
-  costToYNABOutflow(amount) {
+  costToYNABOutflow(amount: string) {
     return this.costToYNABInflow(amount) * -1;
   }
 
-  stripEmojis(string) {
+  stripEmojis(string: string) {
     return string.replace(/\p{Extended_Pictographic}/gu, "");
   }
 }
@@ -148,8 +175,8 @@ export class MySplitwiseService extends SplitwiseService {
     super({
       db: new KeyValueStore("splitwise:my_last_processed"),
       knownEmoji: "🤴",
-      userId: parseInt(process.env.SPLITWISE_MY_USER_ID),
-      apiKey: process.env.SPLITWISE_MY_API_KEY,
+      userId: parseInt(process.env.SPLITWISE_MY_USER_ID!),
+      apiKey: process.env.SPLITWISE_MY_API_KEY!,
     });
   }
 }
@@ -159,8 +186,8 @@ export class PartnerSplitwiseService extends SplitwiseService {
     super({
       db: new KeyValueStore("splitwise:partner_last_processed"),
       knownEmoji: "👸",
-      userId: parseInt(process.env.SPLITWISE_PARTNER_USER_ID),
-      apiKey: process.env.SPLITWISE_PARTNER_API_KEY,
+      userId: parseInt(process.env.SPLITWISE_PARTNER_USER_ID!),
+      apiKey: process.env.SPLITWISE_PARTNER_API_KEY!,
     });
   }
 }

@@ -1,4 +1,4 @@
-import { Redis } from "@upstash/redis/with-fetch";
+import { Redis } from "@upstash/redis";
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL,
@@ -8,16 +8,17 @@ const redis = new Redis({
 const ENV = process.env.VERCEL_ENV || "development";
 
 export class KeyValueStore {
-  constructor(key) {
+  private key: string;
+  constructor(key: string) {
     this.key = `${key}:${ENV}`;
   }
 
-  async get() {
+  async get(): Promise<any> {
     const value = await redis.get(this.key);
     return value;
   }
 
-  async set(value) {
+  async set(value: any): Promise<any> {
     await redis.set(this.key, value);
     return value;
   }

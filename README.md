@@ -65,10 +65,10 @@ A common scenario is when you front a full purchase for your partner. In your Sp
 
 ## Development
 
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ### Prerequisites
-* Node >= v16
+* Node >= v22
 * A free [Upstash](https://upstash.com/) account
 
 ### Setup
@@ -101,4 +101,3 @@ To kick off a sync:
 2. Enter your defined `API_SECRET_KEY_LIST` as the password, and press **Sync**
 
 It worked if you see the flagged transactions turn green, and a new entry into your Splitwise app and account.
-
