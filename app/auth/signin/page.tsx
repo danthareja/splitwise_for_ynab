@@ -1,10 +1,20 @@
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
+import { redirect } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { signIn } from "@/auth"
+import { auth } from "@/auth"
 
-export default function SignInPage() {
+export default async function SignInPage() {
+  const session = await auth()
+
+  // If the user is already signed in, redirect to the dashboard
+  if (session) {
+    redirect("/dashboard")
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       <div className="flex flex-1 flex-col items-center justify-center p-4">
@@ -21,9 +31,16 @@ export default function SignInPage() {
             <CardDescription>Connect your YNAB and Splitwise accounts to get started</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <Button className="w-full" size="lg">
-              Sign in with YNAB
-            </Button>
+            <form
+              action={async () => {
+                "use server"
+                await signIn("ynab", { redirectTo: "/dashboard" })
+              }}
+            >
+              <Button className="w-full" size="lg" type="submit">
+                Sign in with YNAB
+              </Button>
+            </form>
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
@@ -32,8 +49,8 @@ export default function SignInPage() {
                 <span className="bg-background px-2 text-muted-foreground">Then</span>
               </div>
             </div>
-            <Button className="w-full" variant="outline" size="lg">
-              Connect Splitwise
+            <Button className="w-full" variant="outline" size="lg" disabled>
+              Connect Splitwise (After YNAB)
             </Button>
           </CardContent>
           <CardFooter className="flex flex-col items-center justify-center gap-2">

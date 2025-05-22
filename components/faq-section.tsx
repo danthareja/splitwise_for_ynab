@@ -16,17 +16,17 @@ export default function FaqSection() {
         <div className="mx-auto max-w-3xl space-y-4 py-12">
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="item-1">
-              <AccordionTrigger>What if my partner doesn't use YNAB?</AccordionTrigger>
+              <AccordionTrigger>What if my partner doesn&apos;t use YNAB?</AccordionTrigger>
               <AccordionContent>
                 This still works as long as your partner enters an expense into the configured shared group in their
                 Splitwise app.
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-2">
-              <AccordionTrigger>What if an expense isn't split evenly?</AccordionTrigger>
+              <AccordionTrigger>What if an expense isn&apos;t split evenly?</AccordionTrigger>
               <AccordionContent>
                 Enter it directly in the Splitwise app as such. A common scenario is when you front a full purchase for
-                your partner. In your Splitwise app, add an expense where you're owed the full amount. Both transactions
+                your partner. In your Splitwise app, add an expense where you&apos;re owed the full amount. Both transactions
                 will cancel out in YNAB, and would be a good candidate for a Reimbursements category.
               </AccordionContent>
             </AccordionItem>

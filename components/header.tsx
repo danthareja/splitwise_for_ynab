@@ -6,10 +6,12 @@ import { Menu, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { useMobile } from "@/hooks/use-mobile"
+import { useSession } from "next-auth/react"
 
 export default function Header() {
   const isMobile = useMobile()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const { data: session } = useSession()
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -43,9 +45,15 @@ export default function Header() {
                     FAQ
                   </Button>
                 </Link>
-                <Link href="/auth/signin">
-                  <Button className="w-full">Sign in with YNAB</Button>
-                </Link>
+                {session ? (
+                  <Link href="/dashboard">
+                    <Button className="w-full">Dashboard</Button>
+                  </Link>
+                ) : (
+                  <Link href="/auth/signin">
+                    <Button className="w-full">Sign in with YNAB</Button>
+                  </Link>
+                )}
               </div>
             )}
           </>
@@ -62,9 +70,15 @@ export default function Header() {
                 FAQ
               </Link>
             </nav>
-            <Link href="/auth/signin">
-              <Button>Sign in with YNAB</Button>
-            </Link>
+            {session ? (
+              <Link href="/dashboard">
+                <Button>Dashboard</Button>
+              </Link>
+            ) : (
+              <Link href="/auth/signin">
+                <Button>Sign in with YNAB</Button>
+              </Link>
+            )}
           </div>
         )}
       </div>

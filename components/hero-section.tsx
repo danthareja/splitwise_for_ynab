@@ -30,7 +30,7 @@ export default function HeroSection() {
               </Link>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              No more manual entry. Flag a transaction in YNAB and we'll handle the rest.
+              No more manual entry. Flag a transaction in YNAB and we&apos;ll handle the rest.
             </p>
           </div>
           <div className="flex items-center justify-center">
@@ -53,7 +53,7 @@ export default function HeroSection() {
                     <h4 className="mb-2 font-medium">With Splitwise for YNAB:</h4>
                     <ol className="ml-5 list-decimal text-sm text-gray-500 dark:text-gray-400">
                       <li className="mb-1">Flag transaction in YNAB</li>
-                      <li className="mb-1">That's it! We handle the rest</li>
+                      <li className="mb-1">That&apos;s it! We handle the rest</li>
                     </ol>
                   </div>
                 </div>

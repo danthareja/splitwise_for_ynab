@@ -64,7 +64,7 @@ export default function HowItWorksSection() {
                   className="rounded-lg"
                 />
                 <p className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
-                  YNAB shows you've only spent $25 on your half of gas
+                  YNAB shows you&apos;ve only spent $25 on your half of gas
                 </p>
               </div>
             </div>
@@ -81,7 +81,7 @@ export default function HowItWorksSection() {
                   className="rounded-lg"
                 />
                 <p className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
-                  YNAB shows you've spent $50 on your half of the electricity bill
+                  YNAB shows you&apos;ve spent $50 on your half of the electricity bill
                 </p>
               </div>
             </div>
