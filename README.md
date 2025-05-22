@@ -33,7 +33,7 @@ After this, YNAB shows I've spent $50 on my half of the electricity bill, and my
 
 When we settle up on Splitwise, the transaction is categorized as a transfer between my Splitwise account and my Checking account.
 
-> [!IMPORTANT]
+> [!WARNING]
 > With this workflow, **the dollars in your fake Splitwise cash account are not spendable**. When the balance is positive (you are owed money), you can assign those dollars in your plan, but they are not in your Checking account yet. You must keep an eye on this and settle up as needed.
 
 ## Concept
