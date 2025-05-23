@@ -29,8 +29,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: "YNAB User",
         }
       },
-      clientId: process.env.YNAB_CLIENT_ID,
-      clientSecret: process.env.YNAB_CLIENT_SECRET,
     },
   ]
 })
