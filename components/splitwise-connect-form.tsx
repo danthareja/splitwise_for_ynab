@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SplitwiseConfirmModal } from "@/components/splitwise-confirm-modal"
 import type { SplitwiseUser } from "@/services/splitwise-auth"
-import { AlertCircle, Eye, EyeOff, Loader2, AlertTriangle } from "lucide-react"
+import { AlertCircle, Eye, EyeOff, Loader2, AlertTriangle, HelpCircle, ChevronDown, ChevronUp } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 interface SplitwiseConnectFormProps {
   isUpdate?: boolean
@@ -24,6 +25,7 @@ export function SplitwiseConnectForm({ isUpdate = false, currentApiKey = "" }: S
   const [apiKey, setApiKey] = useState(currentApiKey)
   const [showApiKey, setShowApiKey] = useState(false)
   const [user, setUser] = useState<SplitwiseUser | null>(null)
+  const [isHelpOpen, setIsHelpOpen] = useState(false)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -120,6 +122,52 @@ export function SplitwiseConnectForm({ isUpdate = false, currentApiKey = "" }: S
             </a>
           </p>
         </div>
+
+        <Collapsible
+          open={isHelpOpen}
+          onOpenChange={setIsHelpOpen}
+          className="border rounded-md p-3 bg-gray-50 dark:bg-gray-900"
+        >
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="flex w-full justify-between p-0">
+              <div className="flex items-center text-sm text-blue-600">
+                <HelpCircle className="h-4 w-4 mr-1" />
+                How to get your Splitwise API key
+              </div>
+              {isHelpOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-2 space-y-2 text-sm">
+            <p>To get your Splitwise API key:</p>
+            <ol className="list-decimal pl-5 space-y-2">
+              <li>
+                Visit{" "}
+                <a
+                  href="https://secure.splitwise.com/apps"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 hover:underline"
+                >
+                  https://secure.splitwise.com/apps
+                </a>
+              </li>
+              <li>Click "Register your application"</li>
+              <li>
+                Fill in the required information:
+                <ul className="list-disc pl-5 mt-1">
+                  <li>Name: "Splitwise for YNAB"</li>
+                  <li>Description: "Sync shared expenses between YNAB and Splitwise"</li>
+                  <li>Website: Your website or leave blank</li>
+                </ul>
+              </li>
+              <li>After registering, you'll see your Consumer Key (API Key)</li>
+              <li>Copy this key and paste it in the field above</li>
+            </ol>
+            <p className="text-gray-500 italic">
+              Note: Screenshots will be added here later to make this process clearer.
+            </p>
+          </CollapsibleContent>
+        </Collapsible>
 
         {error && (
           <Alert variant="destructive">
