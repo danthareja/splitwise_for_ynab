@@ -19,16 +19,26 @@ interface SplitwiseConfirmModalProps {
   onClose: () => void
   onConfirm: () => void
   isLoading: boolean
+  isUpdate?: boolean
 }
 
-export function SplitwiseConfirmModal({ user, isOpen, onClose, onConfirm, isLoading }: SplitwiseConfirmModalProps) {
+export function SplitwiseConfirmModal({
+  user,
+  isOpen,
+  onClose,
+  onConfirm,
+  isLoading,
+  isUpdate = false,
+}: SplitwiseConfirmModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Confirm Splitwise Connection</DialogTitle>
+          <DialogTitle>{isUpdate ? "Update Splitwise Connection" : "Confirm Splitwise Connection"}</DialogTitle>
           <DialogDescription>
-            Is this your Splitwise account? This will update your profile information.
+            {isUpdate
+              ? "Update your Splitwise connection with this account?"
+              : "Is this your Splitwise account? This will update your profile information."}
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col items-center gap-4 py-4">
@@ -55,8 +65,10 @@ export function SplitwiseConfirmModal({ user, isOpen, onClose, onConfirm, isLoad
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Connecting...
+                {isUpdate ? "Updating..." : "Connecting..."}
               </>
+            ) : isUpdate ? (
+              "Yes, Update Connection"
             ) : (
               "Yes, Connect This Account"
             )}

@@ -9,14 +9,20 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SplitwiseConfirmModal } from "@/components/splitwise-confirm-modal"
 import type { SplitwiseUser } from "@/services/splitwise-auth"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
-export function SplitwiseConnectForm() {
+interface SplitwiseConnectFormProps {
+  isUpdate?: boolean
+  currentApiKey?: string
+}
+
+export function SplitwiseConnectForm({ isUpdate = false, currentApiKey = "" }: SplitwiseConnectFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
-  const [apiKey, setApiKey] = useState("")
+  const [apiKey, setApiKey] = useState(currentApiKey)
+  const [showApiKey, setShowApiKey] = useState(false)
   const [user, setUser] = useState<SplitwiseUser | null>(null)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -72,7 +78,26 @@ export function SplitwiseConnectForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="apiKey">Splitwise API Key</Label>
-          <Input id="apiKey" name="apiKey" type="password" placeholder="Enter your Splitwise API key" required />
+          <div className="relative">
+            <Input
+              id="apiKey"
+              name="apiKey"
+              type={showApiKey ? "text" : "password"}
+              placeholder="Enter your Splitwise API key"
+              required
+              defaultValue={currentApiKey}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 h-full px-3"
+              onClick={() => setShowApiKey(!showApiKey)}
+            >
+              {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <span className="sr-only">{showApiKey ? "Hide" : "Show"} API key</span>
+            </Button>
+          </div>
           <p className="text-sm text-gray-500">
             You can find your API key in the{" "}
             <a
@@ -99,6 +124,8 @@ export function SplitwiseConnectForm() {
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Validating...
             </>
+          ) : isUpdate ? (
+            "Update Connection"
           ) : (
             "Connect Splitwise"
           )}
@@ -112,6 +139,7 @@ export function SplitwiseConnectForm() {
           onClose={() => setShowModal(false)}
           onConfirm={handleConfirm}
           isLoading={isLoading}
+          isUpdate={isUpdate}
         />
       )}
     </>

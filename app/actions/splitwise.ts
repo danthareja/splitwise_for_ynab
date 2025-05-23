@@ -41,7 +41,36 @@ export async function saveSplitwiseUser(apiKey: string, splitwiseUser: Splitwise
   }
 
   try {
-    // Store the API key securely (in a real app, you'd encrypt this)
+    // Check if the user already has a Splitwise account
+    const existingAccount = await prisma.account.findFirst({
+      where: {
+        userId: session.user.id,
+        provider: "splitwise",
+      },
+    })
+
+    if (existingAccount) {
+      // Update existing account
+      await prisma.account.update({
+        where: { id: existingAccount.id },
+        data: {
+          access_token: apiKey,
+          providerAccountId: splitwiseUser.id.toString(),
+        },
+      })
+    } else {
+      // Create new account
+      await prisma.account.create({
+        data: {
+          userId: session.user.id,
+          type: "oauth",
+          provider: "splitwise",
+          providerAccountId: splitwiseUser.id.toString(),
+          access_token: apiKey,
+        },
+      })
+    }
+
     // Update user information with Splitwise data
     await prisma.user.update({
       where: { id: session.user.id },
@@ -49,16 +78,6 @@ export async function saveSplitwiseUser(apiKey: string, splitwiseUser: Splitwise
         name: `${splitwiseUser.first_name} ${splitwiseUser.last_name}`,
         email: splitwiseUser.email,
         image: splitwiseUser.picture.medium,
-        // In a real app, you'd store the API key in a more secure way
-        // This is just for demonstration
-        accounts: {
-          create: {
-            type: "manual",
-            provider: "splitwise",
-            providerAccountId: splitwiseUser.id.toString(),
-            access_token: apiKey,
-          },
-        },
       },
     })
 
@@ -73,5 +92,60 @@ export async function saveSplitwiseUser(apiKey: string, splitwiseUser: Splitwise
       success: false,
       error: "Failed to save your Splitwise information",
     }
+  }
+}
+
+export async function disconnectSplitwiseAccount() {
+  const session = await auth()
+
+  if (!session?.user?.id) {
+    return {
+      success: false,
+      error: "You must be logged in to disconnect your Splitwise account",
+    }
+  }
+
+  try {
+    // Delete the Splitwise account
+    await prisma.account.deleteMany({
+      where: {
+        userId: session.user.id,
+        provider: "splitwise",
+      },
+    })
+
+    revalidatePath("/dashboard")
+
+    return {
+      success: true,
+    }
+  } catch (error) {
+    console.error("Error disconnecting Splitwise account:", error)
+    return {
+      success: false,
+      error: "Failed to disconnect your Splitwise account",
+    }
+  }
+}
+
+export async function getSplitwiseApiKey() {
+  const session = await auth()
+
+  if (!session?.user?.id) {
+    return null
+  }
+
+  try {
+    const account = await prisma.account.findFirst({
+      where: {
+        userId: session.user.id,
+        provider: "splitwise",
+      },
+    })
+
+    return account?.access_token || null
+  } catch (error) {
+    console.error("Error getting Splitwise API key:", error)
+    return null
   }
 }

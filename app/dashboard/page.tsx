@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation"
 import { auth, signOut } from "@/auth"
 import { Button } from "@/components/ui/button"
-import { SplitwiseConnectForm } from "@/components/splitwise-connect-form"
+import { SplitwiseConnectionCard } from "@/components/splitwise-connection-card"
 import { PrismaClient } from "@prisma/client"
+import { getSplitwiseApiKey } from "@/app/actions/splitwise"
 
 const prisma = new PrismaClient()
 
@@ -25,6 +26,7 @@ export default async function DashboardPage() {
   })
 
   const hasSplitwiseConnected = user?.accounts.some((account) => account.provider === "splitwise")
+  const splitwiseApiKey = await getSplitwiseApiKey()
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -61,25 +63,7 @@ export default async function DashboardPage() {
             </p>
           </div>
 
-          <div className="border rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">Splitwise Connection</h2>
-            {hasSplitwiseConnected ? (
-              <>
-                <p className="text-green-600 mb-4">✓ Connected</p>
-                <p className="text-sm text-gray-500 mb-4">
-                  Your Splitwise account is connected. Shared expenses will be synced between YNAB and Splitwise.
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-red-600 mb-4">✗ Not Connected</p>
-                <p className="text-sm text-gray-500 mb-4">
-                  Connect your Splitwise account to sync shared expenses between YNAB and Splitwise.
-                </p>
-                <SplitwiseConnectForm />
-              </>
-            )}
-          </div>
+          <SplitwiseConnectionCard isConnected={!!hasSplitwiseConnected} apiKey={splitwiseApiKey} />
         </div>
 
         <div className="mt-8 border rounded-lg p-6">
