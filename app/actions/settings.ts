@@ -2,11 +2,9 @@
 
 import { revalidatePath } from "next/cache"
 import { auth } from "@/auth"
-import { PrismaClient } from "@prisma/client"
+import { prisma } from "@/db"
 import { getSplitwiseGroups } from "@/services/splitwise-auth"
 import { getSplitwiseApiKey } from "@/app/actions/splitwise"
-
-const prisma = new PrismaClient()
 
 export async function getSplitwiseGroupsForUser() {
   const session = await auth()
@@ -47,7 +45,7 @@ export async function getSplitwiseGroupsForUser() {
 // Check for emoji conflicts
 async function checkEmojiConflict(userId: string, groupId: string, emoji: string) {
   // Get all users who have this group configured
-  const usersWithSameGroup = await prisma.settings.findMany({
+  const usersWithSameGroup = await prisma.splitwiseSettings.findMany({
     where: {
       splitwiseGroupId: groupId,
       userId: {
@@ -77,7 +75,7 @@ async function checkEmojiConflict(userId: string, groupId: string, emoji: string
 async function syncCurrencyWithPartners(userId: string, groupId: string, currencyCode: string) {
   try {
     // Find all other users with the same group
-    const partnersWithSameGroup = await prisma.settings.findMany({
+    const partnersWithSameGroup = await prisma.splitwiseSettings.findMany({
       where: {
         splitwiseGroupId: groupId,
         userId: {
@@ -92,7 +90,7 @@ async function syncCurrencyWithPartners(userId: string, groupId: string, currenc
     // Update currency code for all partners
     if (partnersWithSameGroup.length > 0) {
       const updatePromises = partnersWithSameGroup.map((partnerSettings) => {
-        return prisma.settings.update({
+        return prisma.splitwiseSettings.update({
           where: { userId: partnerSettings.userId },
           data: {
             splitwiseCurrencyCode: currencyCode,
@@ -151,7 +149,7 @@ export async function saveUserSettings(formData: FormData) {
 
   try {
     // Get current settings to check if currency has changed
-    const currentSettings = await prisma.settings.findUnique({
+    const currentSettings = await prisma.splitwiseSettings.findUnique({
       where: { userId: session.user.id },
     })
 
@@ -159,7 +157,7 @@ export async function saveUserSettings(formData: FormData) {
     const isGroupChanged = currentSettings?.splitwiseGroupId !== splitwiseGroupId
 
     // Update or create the user's settings
-    await prisma.settings.upsert({
+    await prisma.splitwiseSettings.upsert({
       where: { userId: session.user.id },
       update: {
         splitwiseGroupId,
@@ -208,7 +206,7 @@ export async function getPartnerEmoji(groupId: string) {
 
   try {
     // Find settings for other users with the same group
-    const partnerSettings = await prisma.settings.findFirst({
+    const partnerSettings = await prisma.splitwiseSettings.findFirst({
       where: {
         splitwiseGroupId: groupId,
         userId: {
@@ -250,7 +248,7 @@ export async function checkCurrencySyncStatus() {
   }
 
   try {
-    const settings = await prisma.settings.findUnique({
+    const settings = await prisma.splitwiseSettings.findUnique({
       where: { userId: session.user.id },
       select: {
         currencySyncedAt: true,
@@ -286,7 +284,7 @@ export async function getUserSettings() {
   }
 
   try {
-    const settings = await prisma.settings.findUnique({
+    const settings = await prisma.splitwiseSettings.findUnique({
       where: { userId: session.user.id },
     })
 

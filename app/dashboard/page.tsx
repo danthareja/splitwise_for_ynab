@@ -2,11 +2,11 @@ import { redirect } from "next/navigation"
 import { auth, signOut } from "@/auth"
 import { Button } from "@/components/ui/button"
 import { SplitwiseConnectionCard } from "@/components/splitwise-connection-card"
-import { PrismaClient } from "@prisma/client"
+import { YnabConnectionCard } from "@/components/ynab-connection-card"
+import { prisma } from "@/db"
 import { getSplitwiseApiKey } from "@/app/actions/splitwise"
 import { getUserSettings } from "@/app/actions/settings"
-
-const prisma = new PrismaClient()
+import { getYnabSettings } from "@/app/actions/ynab"
 
 export default async function DashboardPage() {
   const session = await auth()
@@ -20,15 +20,16 @@ export default async function DashboardPage() {
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     include: {
-      accounts: {
-        where: { provider: "splitwise" },
-      },
+      accounts: true,
     },
   })
 
   const hasSplitwiseConnected = user?.accounts.some((account) => account.provider === "splitwise")
+  const hasYnabConnected = user?.accounts.some((account) => account.provider === "ynab")
+
   const splitwiseApiKey = await getSplitwiseApiKey()
   const userSettings = await getUserSettings()
+  const ynabSettings = await getYnabSettings()
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -57,13 +58,7 @@ export default async function DashboardPage() {
         <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <div className="border rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">YNAB Connection</h2>
-            <p className="text-green-600 mb-4">✓ Connected</p>
-            <p className="text-sm text-gray-500 mb-4">
-              Your YNAB account is connected. You can now flag transactions in YNAB to mark them as shared expenses.
-            </p>
-          </div>
+          <YnabConnectionCard isConnected={!!hasYnabConnected} settings={ynabSettings} />
 
           <SplitwiseConnectionCard
             isConnected={!!hasSplitwiseConnected}

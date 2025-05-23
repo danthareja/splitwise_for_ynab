@@ -2,10 +2,8 @@
 
 import { revalidatePath } from "next/cache"
 import { auth } from "@/auth"
-import { PrismaClient } from "@prisma/client"
+import { prisma } from "@/db"
 import { validateSplitwiseApiKey, type SplitwiseUser } from "@/services/splitwise-auth"
-
-const prisma = new PrismaClient()
 
 export async function validateApiKey(formData: FormData) {
   const apiKey = formData.get("apiKey") as string
@@ -51,7 +49,7 @@ export async function saveSplitwiseUser(apiKey: string, splitwiseUser: Splitwise
 
     // Delete any existing settings when updating the API key
     // This ensures users reconfigure their settings with the new API key
-    await prisma.settings.deleteMany({
+    await prisma.splitwiseSettings.deleteMany({
       where: {
         userId: session.user.id,
       },
@@ -123,7 +121,7 @@ export async function disconnectSplitwiseAccount() {
     })
 
     // Delete the user's settings as well
-    await prisma.settings.deleteMany({
+    await prisma.splitwiseSettings.deleteMany({
       where: {
         userId: session.user.id,
       },

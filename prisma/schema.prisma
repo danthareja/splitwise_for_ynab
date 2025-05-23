@@ -8,16 +8,17 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  settings      Settings?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                String              @id @default(cuid())
+  name              String?
+  email             String?             @unique
+  emailVerified     DateTime?
+  image             String?
+  accounts          Account[]
+  sessions          Session[]
+  splitwiseSettings SplitwiseSettings?
+  ynabSettings      YnabSettings?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 }
 
 model Account {
@@ -57,7 +58,7 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Settings {
+model SplitwiseSettings {
   id                    String    @id @default(cuid())
   userId                String    @unique
   splitwiseGroupId      String?
@@ -67,6 +68,21 @@ model Settings {
   currencySyncedAt      DateTime?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model YnabSettings {
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+  budgetId            String
+  budgetName          String
+  splitwiseAccountId  String?
+  splitwiseAccountName String?
+  manualFlagColor     String    @default("blue")
+  syncedFlagColor     String    @default("green")
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
