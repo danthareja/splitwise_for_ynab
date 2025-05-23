@@ -172,10 +172,10 @@ export function SplitwiseSettingsForm({
       const selectedGroup = validGroups.find((group) => group.id.toString() === selectedGroupId)
 
       // Ensure the form data has the current emoji value
-      formData.set("splitwiseEmoji", selectedEmoji)
+      formData.set("emoji", selectedEmoji)
 
       if (selectedGroup) {
-        formData.set("splitwiseGroupName", selectedGroup.name)
+        formData.set("groupName", selectedGroup.name)
       }
 
       const result = await saveUserSettings(formData)
@@ -246,8 +246,8 @@ export function SplitwiseSettingsForm({
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="splitwiseGroupId">Splitwise Group</Label>
-            <Select name="splitwiseGroupId" value={selectedGroupId} onValueChange={setSelectedGroupId} required>
+            <Label htmlFor="groupId">Splitwise Group</Label>
+            <Select name="groupId" value={selectedGroupId} onValueChange={setSelectedGroupId} required>
               <SelectTrigger>
                 <SelectValue placeholder="Select a group" />
               </SelectTrigger>
@@ -308,8 +308,8 @@ export function SplitwiseSettingsForm({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="splitwiseCurrencyCode">Currency</Label>
-            <Select name="splitwiseCurrencyCode" value={selectedCurrency} onValueChange={setSelectedCurrency} required>
+            <Label htmlFor="currencyCode">Currency</Label>
+            <Select name="currencyCode" value={selectedCurrency} onValueChange={setSelectedCurrency} required>
               <SelectTrigger>
                 <SelectValue placeholder="Select currency" />
               </SelectTrigger>

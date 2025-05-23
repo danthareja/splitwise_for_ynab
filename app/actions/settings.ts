@@ -47,7 +47,7 @@ async function checkEmojiConflict(userId: string, groupId: string, emoji: string
   // Get all users who have this group configured
   const usersWithSameGroup = await prisma.splitwiseSettings.findMany({
     where: {
-      splitwiseGroupId: groupId,
+      groupId: groupId,
       userId: {
         not: userId, // Exclude the current user
       },
@@ -58,7 +58,7 @@ async function checkEmojiConflict(userId: string, groupId: string, emoji: string
   })
 
   // Check if any other user in this group is using the same emoji
-  const conflictingUser = usersWithSameGroup.find((settings) => settings.splitwiseEmoji === emoji)
+  const conflictingUser = usersWithSameGroup.find((settings) => settings.emoji === emoji)
 
   if (conflictingUser) {
     return {
@@ -77,7 +77,7 @@ async function syncCurrencyWithPartners(userId: string, groupId: string, currenc
     // Find all other users with the same group
     const partnersWithSameGroup = await prisma.splitwiseSettings.findMany({
       where: {
-        splitwiseGroupId: groupId,
+        groupId: groupId,
         userId: {
           not: userId, // Exclude the current user
         },
@@ -93,7 +93,7 @@ async function syncCurrencyWithPartners(userId: string, groupId: string, currenc
         return prisma.splitwiseSettings.update({
           where: { userId: partnerSettings.userId },
           data: {
-            splitwiseCurrencyCode: currencyCode,
+            currencyCode: currencyCode,
             // Add a flag to indicate the currency was synchronized
             currencySyncedAt: new Date(),
           },
@@ -124,12 +124,12 @@ export async function saveUserSettings(formData: FormData) {
     }
   }
 
-  const splitwiseGroupId = formData.get("splitwiseGroupId") as string
-  const splitwiseGroupName = formData.get("splitwiseGroupName") as string
-  const splitwiseCurrencyCode = formData.get("splitwiseCurrencyCode") as string
-  const splitwiseEmoji = formData.get("splitwiseEmoji") as string
+  const groupId = formData.get("groupId") as string
+  const groupName = formData.get("groupName") as string
+  const currencyCode = formData.get("currencyCode") as string
+  const emoji = formData.get("emoji") as string
 
-  if (!splitwiseGroupId || !splitwiseCurrencyCode) {
+  if (!groupId || !currencyCode) {
     return {
       success: false,
       error: "Group and currency code are required",
@@ -137,7 +137,7 @@ export async function saveUserSettings(formData: FormData) {
   }
 
   // Check for emoji conflicts
-  const emojiConflict = await checkEmojiConflict(session.user.id, splitwiseGroupId, splitwiseEmoji || "✅")
+  const emojiConflict = await checkEmojiConflict(session.user.id, groupId, emoji || "✅")
 
   if (emojiConflict.hasConflict) {
     return {
@@ -153,31 +153,31 @@ export async function saveUserSettings(formData: FormData) {
       where: { userId: session.user.id },
     })
 
-    const isCurrencyChanged = currentSettings?.splitwiseCurrencyCode !== splitwiseCurrencyCode
-    const isGroupChanged = currentSettings?.splitwiseGroupId !== splitwiseGroupId
+    const isCurrencyChanged = currentSettings?.currencyCode !== currencyCode
+    const isGroupChanged = currentSettings?.groupId !== groupId
 
     // Update or create the user's settings
     await prisma.splitwiseSettings.upsert({
       where: { userId: session.user.id },
       update: {
-        splitwiseGroupId,
-        splitwiseGroupName,
-        splitwiseCurrencyCode,
-        splitwiseEmoji: splitwiseEmoji || "✅",
+        groupId,
+        groupName,
+        currencyCode,
+        emoji: emoji || "✅",
       },
       create: {
         userId: session.user.id,
-        splitwiseGroupId,
-        splitwiseGroupName,
-        splitwiseCurrencyCode,
-        splitwiseEmoji: splitwiseEmoji || "✅",
+        groupId,
+        groupName,
+        currencyCode,
+        emoji: emoji || "✅",
       },
     })
 
     // If currency code changed or group changed, sync with partners
     let syncResult = { success: true, updatedPartners: [] }
-    if ((isCurrencyChanged || isGroupChanged) && splitwiseCurrencyCode) {
-      syncResult = await syncCurrencyWithPartners(session.user.id, splitwiseGroupId, splitwiseCurrencyCode)
+    if ((isCurrencyChanged || isGroupChanged) && currencyCode) {
+      syncResult = await syncCurrencyWithPartners(session.user.id, groupId, currencyCode)
     }
 
     revalidatePath("/dashboard")
@@ -208,14 +208,14 @@ export async function getPartnerEmoji(groupId: string) {
     // Find settings for other users with the same group
     const partnerSettings = await prisma.splitwiseSettings.findFirst({
       where: {
-        splitwiseGroupId: groupId,
+        groupId: groupId,
         userId: {
           not: session.user.id,
         },
       },
       select: {
-        splitwiseEmoji: true,
-        splitwiseCurrencyCode: true,
+        emoji: true,
+        currencyCode: true,
         user: {
           select: {
             name: true,
@@ -226,8 +226,8 @@ export async function getPartnerEmoji(groupId: string) {
 
     if (partnerSettings) {
       return {
-        emoji: partnerSettings.splitwiseEmoji,
-        currencyCode: partnerSettings.splitwiseCurrencyCode,
+        emoji: partnerSettings.emoji,
+        currencyCode: partnerSettings.currencyCode,
         partnerName: partnerSettings.user.name || "Your partner",
       }
     }

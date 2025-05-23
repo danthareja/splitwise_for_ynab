@@ -63,10 +63,10 @@ model VerificationToken {
 model SplitwiseSettings {
   id                    String    @id @default(cuid())
   userId                String    @unique
-  splitwiseGroupId      String?
-  splitwiseGroupName    String?
-  splitwiseCurrencyCode String?
-  splitwiseEmoji        String?   @default("✅")
+  groupId               String?
+  groupName             String?
+  currencyCode          String?
+  emoji                 String?   @default("✅")
   currencySyncedAt      DateTime?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt

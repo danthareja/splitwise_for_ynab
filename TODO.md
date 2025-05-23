@@ -1,7 +1,5 @@
 # TODO
 
-1. When flags settings are updated, name them in the budget
-1. Rename fields in SplitwiseSettings
 1. Fix date bug on sync -- YNAB to splitwise shows a different day than Splitwise to YNAB
 1. DRY up services/splitwise-auth and ynab-api
 1. Fix build errors and deploy

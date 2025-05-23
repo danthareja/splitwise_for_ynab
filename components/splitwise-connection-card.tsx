@@ -17,10 +17,10 @@ interface SplitwiseConnectionCardProps {
   isConnected: boolean
   apiKey?: string | null
   settings?: {
-    splitwiseGroupId?: string | null
-    splitwiseGroupName?: string | null
-    splitwiseCurrencyCode?: string | null
-    splitwiseEmoji?: string | null
+    groupId?: string | null
+    groupName?: string | null
+    currencyCode?: string | null
+    emoji?: string | null
   } | null
 }
 
@@ -30,23 +30,23 @@ export function SplitwiseConnectionCard({ isConnected, apiKey, settings }: Split
   const [showSettings, setShowSettings] = useState(false)
   const [selectedGroup, setSelectedGroup] = useState<SplitwiseGroup | null>(null)
 
-  const isConfigured = settings?.splitwiseGroupId && settings?.splitwiseCurrencyCode
+  const isConfigured = settings?.groupId && settings?.currencyCode
   const needsConfiguration = isConnected && !isConfigured
 
   useEffect(() => {
     // Load the selected group details if we have settings
-    if (settings?.splitwiseGroupId && apiKey) {
+    if (settings?.groupId && apiKey) {
       loadSelectedGroup()
     }
-  }, [settings?.splitwiseGroupId, apiKey])
+  }, [settings?.groupId, apiKey])
 
   async function loadSelectedGroup() {
-    if (!settings?.splitwiseGroupId) return
+    if (!settings?.groupId) return
 
     try {
       const result = await getSplitwiseGroupsForUser()
       if (result.success && 'validGroups' in result && result.validGroups) {
-        const group = result.validGroups.find((g: SplitwiseGroup) => g.id.toString() === settings.splitwiseGroupId)
+        const group = result.validGroups.find((g: SplitwiseGroup) => g.id.toString() === settings.groupId)
         if (group) {
           setSelectedGroup(group)
         }
@@ -121,10 +121,10 @@ export function SplitwiseConnectionCard({ isConnected, apiKey, settings }: Split
 
                 {showSettings ? (
                   <SplitwiseSettingsForm
-                    initialGroupId={settings?.splitwiseGroupId}
-                    initialGroupName={settings?.splitwiseGroupName}
-                    initialCurrencyCode={settings?.splitwiseCurrencyCode}
-                    initialEmoji={settings?.splitwiseEmoji}
+                    initialGroupId={settings?.groupId}
+                    initialGroupName={settings?.groupName}
+                    initialCurrencyCode={settings?.currencyCode}
+                    initialEmoji={settings?.emoji}
                     onSaveSuccess={handleSettingsSaveSuccess}
                   />
                 ) : (
@@ -136,10 +136,10 @@ export function SplitwiseConnectionCard({ isConnected, apiKey, settings }: Split
               </div>
             ) : showSettings ? (
               <SplitwiseSettingsForm
-                initialGroupId={settings?.splitwiseGroupId}
-                initialGroupName={settings?.splitwiseGroupName}
-                initialCurrencyCode={settings?.splitwiseCurrencyCode}
-                initialEmoji={settings?.splitwiseEmoji}
+                initialGroupId={settings?.groupId}
+                initialGroupName={settings?.groupName}
+                initialCurrencyCode={settings?.currencyCode}
+                initialEmoji={settings?.emoji}
                 onSaveSuccess={handleSettingsSaveSuccess}
               />
             ) : showUpdateForm ? (
@@ -151,20 +151,20 @@ export function SplitwiseConnectionCard({ isConnected, apiKey, settings }: Split
               </div>
             ) : (
               <div className="space-y-4">
-                {settings?.splitwiseGroupName && (
+                {settings?.groupName && (
                   <div className="space-y-2 border rounded-md p-3 bg-gray-50 dark:bg-gray-900">
                     <div>
                       <span className="text-sm font-medium">Group: </span>
-                      <span className="text-sm">{settings.splitwiseGroupName}</span>
+                      <span className="text-sm">{settings.groupName}</span>
                     </div>
                     {selectedGroup && <GroupMembersDisplay members={selectedGroup.members} size="sm" />}
                     <div>
                       <span className="text-sm font-medium">Currency: </span>
-                      <span className="text-sm">{settings.splitwiseCurrencyCode}</span>
+                      <span className="text-sm">{settings.currencyCode}</span>
                     </div>
                     <div>
                       <span className="text-sm font-medium">Sync Marker: </span>
-                      <span className="text-sm text-xl">{settings.splitwiseEmoji || "✅"}</span>
+                      <span className="text-sm text-xl">{settings.emoji || "✅"}</span>
                       <span className="text-xs text-gray-500 ml-2">(Added to Splitwise expenses when synced)</span>
                     </div>
                   </div>

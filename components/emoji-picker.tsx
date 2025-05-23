@@ -61,7 +61,7 @@ export function EmojiPicker({ value, onChange, label, description }: EmojiPicker
         <Input
           ref={inputRef}
           id="emoji-input"
-          name="splitwiseEmoji"
+          name="emoji"
           value={emoji}
           onChange={handleChange}
           className="h-10 w-20 text-center text-xl"

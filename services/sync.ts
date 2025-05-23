@@ -44,7 +44,7 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
       throw new Error("Splitwise account not configured in YNAB settings")
     }
 
-    if (!user.splitwiseSettings.splitwiseGroupId || !user.splitwiseSettings.splitwiseCurrencyCode) {
+    if (!user.splitwiseSettings.groupId || !user.splitwiseSettings.currencyCode) {
       throw new Error("Splitwise group or currency not configured")
     }
 
@@ -59,7 +59,7 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
       throw new Error("Splitwise account not found or missing access token/provider ID")
     }
 
-    if (!user.splitwiseSettings.splitwiseEmoji) {
+    if (!user.splitwiseSettings.emoji) {
       throw new Error("Splitwise emoji not configured")
     }
 
@@ -74,10 +74,10 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
 
     const splitwiseService = new SplitwiseService({
       userId: user.id,
-      knownEmoji: user.splitwiseSettings.splitwiseEmoji,
+      knownEmoji: user.splitwiseSettings.emoji,
       splitwiseUserId: Number(splitwiseAccount.providerAccountId),
-      groupId: user.splitwiseSettings.splitwiseGroupId,
-      currencyCode: user.splitwiseSettings.splitwiseCurrencyCode,
+      groupId: user.splitwiseSettings.groupId,
+      currencyCode: user.splitwiseSettings.currencyCode,
       apiKey: splitwiseAccount.access_token,
     })
 
@@ -178,10 +178,10 @@ export async function syncAllUsers(): Promise<{
         },
       },
       splitwiseSettings: {
-        splitwiseGroupId: {
+        groupId: {
           not: null,
         },
-        splitwiseCurrencyCode: {
+        currencyCode: {
           not: null,
         },
       },
