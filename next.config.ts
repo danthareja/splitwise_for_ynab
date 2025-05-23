@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
       {
         hostname: "splitwise.s3.amazonaws.com",
       },
+      {
+        hostname: "s3.amazonaws.com",
+      },
     ],
   },
 }

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { SplitwiseConnectionCard } from "@/components/splitwise-connection-card"
 import { PrismaClient } from "@prisma/client"
 import { getSplitwiseApiKey } from "@/app/actions/splitwise"
+import { getUserSettings } from "@/app/actions/settings"
 
 const prisma = new PrismaClient()
 
@@ -27,6 +28,7 @@ export default async function DashboardPage() {
 
   const hasSplitwiseConnected = user?.accounts.some((account) => account.provider === "splitwise")
   const splitwiseApiKey = await getSplitwiseApiKey()
+  const userSettings = await getUserSettings()
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -63,7 +65,11 @@ export default async function DashboardPage() {
             </p>
           </div>
 
-          <SplitwiseConnectionCard isConnected={!!hasSplitwiseConnected} apiKey={splitwiseApiKey} />
+          <SplitwiseConnectionCard
+            isConnected={!!hasSplitwiseConnected}
+            apiKey={splitwiseApiKey}
+            settings={userSettings}
+          />
         </div>
 
         <div className="mt-8 border rounded-lg p-6">

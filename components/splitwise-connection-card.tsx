@@ -1,19 +1,63 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { SplitwiseConnectForm } from "@/components/splitwise-connect-form"
 import { SplitwiseDisconnectModal } from "@/components/splitwise-disconnect-modal"
-import { Pencil, Trash2 } from "lucide-react"
+import { SplitwiseSettingsForm } from "@/components/splitwise-settings-form"
+import { GroupMembersDisplay } from "@/components/group-members-display"
+import { getSplitwiseGroupsForUser } from "@/app/actions/settings"
+import type { SplitwiseGroup } from "@/services/splitwise-auth"
+import { Pencil, Trash2, Settings, AlertCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface SplitwiseConnectionCardProps {
   isConnected: boolean
   apiKey?: string | null
+  settings?: {
+    splitwiseGroupId?: string | null
+    splitwiseGroupName?: string | null
+    splitwiseCurrencyCode?: string | null
+  } | null
 }
 
-export function SplitwiseConnectionCard({ isConnected, apiKey }: SplitwiseConnectionCardProps) {
+export function SplitwiseConnectionCard({ isConnected, apiKey, settings }: SplitwiseConnectionCardProps) {
   const [showUpdateForm, setShowUpdateForm] = useState(false)
   const [showDisconnectModal, setShowDisconnectModal] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [selectedGroup, setSelectedGroup] = useState<SplitwiseGroup | null>(null)
+
+  const isConfigured = settings?.splitwiseGroupId && settings?.splitwiseCurrencyCode
+  const needsConfiguration = isConnected && !isConfigured
+
+  useEffect(() => {
+    // Load the selected group details if we have settings
+    if (settings?.splitwiseGroupId && apiKey) {
+      loadSelectedGroup()
+    }
+  }, [settings?.splitwiseGroupId, apiKey])
+
+  async function loadSelectedGroup() {
+    if (!settings?.splitwiseGroupId) return
+
+    try {
+      const result = await getSplitwiseGroupsForUser()
+      if (result.success) {
+        const group = result.validGroups?.find((g) => g.id.toString() === settings.splitwiseGroupId)
+        if (group) {
+          setSelectedGroup(group)
+        }
+      }
+    } catch (error) {
+      console.error("Error loading selected group:", error)
+    }
+  }
+
+  const handleSettingsSaveSuccess = () => {
+    setShowSettings(false)
+    // Trigger a page reload to refresh the data
+    window.location.reload()
+  }
 
   return (
     <div className="border rounded-lg p-6">
@@ -22,12 +66,44 @@ export function SplitwiseConnectionCard({ isConnected, apiKey }: SplitwiseConnec
       {isConnected ? (
         <>
           <p className="text-green-600 mb-4">✓ Connected</p>
-          <p className="text-sm text-gray-500 mb-4">
-            Your Splitwise account is connected. Shared expenses will be synced between YNAB and Splitwise.
-          </p>
 
-          {!showUpdateForm ? (
-            <div className="flex gap-2">
+          {needsConfiguration ? (
+            <Alert className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <div className="space-y-3">
+                  <p className="font-medium">Configuration Required</p>
+                  <p className="text-sm">
+                    Please configure your Splitwise group and currency to start syncing expenses.
+                  </p>
+                  <Button onClick={() => setShowSettings(true)} className="w-full">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Configure Settings Now
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="space-y-3 mb-4">
+              <p className="text-sm text-gray-500">Your Splitwise account is connected and configured.</p>
+              {settings?.splitwiseGroupName && (
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-sm font-medium">Group: </span>
+                    <span className="text-sm">{settings.splitwiseGroupName}</span>
+                  </div>
+                  {selectedGroup && <GroupMembersDisplay members={selectedGroup.members} size="sm" />}
+                  <div>
+                    <span className="text-sm font-medium">Currency: </span>
+                    <span className="text-sm">{settings.splitwiseCurrencyCode}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!showUpdateForm && !showSettings ? (
+            <div className="flex gap-2 flex-wrap">
               <Button
                 variant="outline"
                 size="sm"
@@ -37,6 +113,17 @@ export function SplitwiseConnectionCard({ isConnected, apiKey }: SplitwiseConnec
                 <Pencil className="h-3.5 w-3.5" />
                 Update API Key
               </Button>
+              {!needsConfiguration && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSettings(true)}
+                  className="flex items-center gap-1"
+                >
+                  <Settings className="h-3.5 w-3.5" />
+                  Configure Settings
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -47,16 +134,30 @@ export function SplitwiseConnectionCard({ isConnected, apiKey }: SplitwiseConnec
                 Disconnect
               </Button>
             </div>
-          ) : (
+          ) : showUpdateForm ? (
             <div className="space-y-4">
               <SplitwiseConnectForm isUpdate={true} currentApiKey={apiKey || ""} />
               <Button variant="ghost" size="sm" onClick={() => setShowUpdateForm(false)}>
                 Cancel
               </Button>
             </div>
-          )}
+          ) : showSettings ? (
+            <div className="space-y-4">
+              <SplitwiseSettingsForm
+                initialGroupId={settings?.splitwiseGroupId}
+                initialGroupName={settings?.splitwiseGroupName}
+                initialCurrencyCode={settings?.splitwiseCurrencyCode}
+                onSaveSuccess={handleSettingsSaveSuccess}
+              />
+              <Button variant="ghost" size="sm" onClick={() => setShowSettings(false)}>
+                Cancel
+              </Button>
+            </div>
+          ) : null}
 
-          <SplitwiseDisconnectModal isOpen={showDisconnectModal} onClose={() => setShowDisconnectModal(false)} />
+          {showDisconnectModal && (
+            <SplitwiseDisconnectModal isOpen={showDisconnectModal} onClose={() => setShowDisconnectModal(false)} />
+          )}
         </>
       ) : (
         <>

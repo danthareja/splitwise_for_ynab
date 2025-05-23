@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SplitwiseConfirmModal } from "@/components/splitwise-confirm-modal"
 import type { SplitwiseUser } from "@/services/splitwise-auth"
-import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react"
+import { AlertCircle, Eye, EyeOff, Loader2, AlertTriangle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface SplitwiseConnectFormProps {
@@ -76,6 +76,16 @@ export function SplitwiseConnectForm({ isUpdate = false, currentApiKey = "" }: S
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-4">
+        {isUpdate && (
+          <Alert variant="warning" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Updating your API key will reset your Splitwise settings. You will need to reconfigure your group and
+              currency preferences.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="space-y-2">
           <Label htmlFor="apiKey">Splitwise API Key</Label>
           <div className="relative">
@@ -140,6 +150,7 @@ export function SplitwiseConnectForm({ isUpdate = false, currentApiKey = "" }: S
           onConfirm={handleConfirm}
           isLoading={isLoading}
           isUpdate={isUpdate}
+          showResetWarning={isUpdate}
         />
       )}
     </>

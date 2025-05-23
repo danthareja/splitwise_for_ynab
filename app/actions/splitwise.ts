@@ -49,6 +49,14 @@ export async function saveSplitwiseUser(apiKey: string, splitwiseUser: Splitwise
       },
     })
 
+    // Delete any existing settings when updating the API key
+    // This ensures users reconfigure their settings with the new API key
+    await prisma.settings.deleteMany({
+      where: {
+        userId: session.user.id,
+      },
+    })
+
     if (existingAccount) {
       // Update existing account
       await prisma.account.update({
@@ -111,6 +119,13 @@ export async function disconnectSplitwiseAccount() {
       where: {
         userId: session.user.id,
         provider: "splitwise",
+      },
+    })
+
+    // Delete the user's settings as well
+    await prisma.settings.deleteMany({
+      where: {
+        userId: session.user.id,
       },
     })
 

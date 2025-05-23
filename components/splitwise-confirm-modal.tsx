@@ -10,7 +10,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Loader2 } from "lucide-react"
+import { Loader2, AlertTriangle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import Image from "next/image"
 
 interface SplitwiseConfirmModalProps {
@@ -20,6 +21,7 @@ interface SplitwiseConfirmModalProps {
   onConfirm: () => void
   isLoading: boolean
   isUpdate?: boolean
+  showResetWarning?: boolean
 }
 
 export function SplitwiseConfirmModal({
@@ -29,6 +31,7 @@ export function SplitwiseConfirmModal({
   onConfirm,
   isLoading,
   isUpdate = false,
+  showResetWarning = false,
 }: SplitwiseConfirmModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -41,6 +44,17 @@ export function SplitwiseConfirmModal({
               : "Is this your Splitwise account? This will update your profile information."}
           </DialogDescription>
         </DialogHeader>
+
+        {showResetWarning && (
+          <Alert variant="warning">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Updating your API key will reset your Splitwise settings. You will need to reconfigure your group and
+              currency preferences.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="flex flex-col items-center gap-4 py-4">
           {user.picture?.medium && (
             <div className="relative h-20 w-20 overflow-hidden rounded-full">
