@@ -57,6 +57,7 @@ export async function saveUserSettings(formData: FormData) {
   const splitwiseGroupId = formData.get("splitwiseGroupId") as string
   const splitwiseGroupName = formData.get("splitwiseGroupName") as string
   const splitwiseCurrencyCode = formData.get("splitwiseCurrencyCode") as string
+  const splitwiseEmoji = formData.get("splitwiseEmoji") as string
 
   if (!splitwiseGroupId || !splitwiseCurrencyCode) {
     return {
@@ -72,12 +73,14 @@ export async function saveUserSettings(formData: FormData) {
         splitwiseGroupId,
         splitwiseGroupName,
         splitwiseCurrencyCode,
+        splitwiseEmoji: splitwiseEmoji || "✅",
       },
       create: {
         userId: session.user.id,
         splitwiseGroupId,
         splitwiseGroupName,
         splitwiseCurrencyCode,
+        splitwiseEmoji: splitwiseEmoji || "✅",
       },
     })
 

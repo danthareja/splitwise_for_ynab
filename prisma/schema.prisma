@@ -63,6 +63,7 @@ model Settings {
   splitwiseGroupId      String?
   splitwiseGroupName    String?
   splitwiseCurrencyCode String?
+  splitwiseEmoji        String?  @default("✅")
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 

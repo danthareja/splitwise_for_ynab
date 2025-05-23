@@ -18,6 +18,7 @@ interface SplitwiseConnectionCardProps {
     splitwiseGroupId?: string | null
     splitwiseGroupName?: string | null
     splitwiseCurrencyCode?: string | null
+    splitwiseEmoji?: string | null
   } | null
 }
 
@@ -97,6 +98,11 @@ export function SplitwiseConnectionCard({ isConnected, apiKey, settings }: Split
                     <span className="text-sm font-medium">Currency: </span>
                     <span className="text-sm">{settings.splitwiseCurrencyCode}</span>
                   </div>
+                  <div>
+                    <span className="text-sm font-medium">Sync Marker: </span>
+                    <span className="text-sm text-xl">{settings.splitwiseEmoji || "✅"}</span>
+                    <span className="text-xs text-gray-500 ml-2">(Added to Splitwise expenses when synced)</span>
+                  </div>
                 </div>
               )}
             </div>
@@ -147,6 +153,7 @@ export function SplitwiseConnectionCard({ isConnected, apiKey, settings }: Split
                 initialGroupId={settings?.splitwiseGroupId}
                 initialGroupName={settings?.splitwiseGroupName}
                 initialCurrencyCode={settings?.splitwiseCurrencyCode}
+                initialEmoji={settings?.splitwiseEmoji}
                 onSaveSuccess={handleSettingsSaveSuccess}
               />
               <Button variant="ghost" size="sm" onClick={() => setShowSettings(false)}>

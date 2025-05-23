@@ -11,12 +11,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { getSplitwiseGroupsForUser, saveUserSettings } from "@/app/actions/settings"
 import type { SplitwiseGroup } from "@/services/splitwise-auth"
 import { AlertCircle, Loader2, AlertTriangle } from "lucide-react"
+import { EmojiPicker } from "@/components/emoji-picker"
 import Image from "next/image"
 
 interface SplitwiseSettingsFormProps {
   initialGroupId?: string | null
   initialGroupName?: string | null
   initialCurrencyCode?: string | null
+  initialEmoji?: string | null
   onSaveSuccess?: () => void
 }
 
@@ -37,6 +39,7 @@ export function SplitwiseSettingsForm({
   initialGroupId,
   initialGroupName,
   initialCurrencyCode,
+  initialEmoji = "✅",
   onSaveSuccess,
 }: SplitwiseSettingsFormProps) {
   const [isLoading, setIsLoading] = useState(false)
@@ -46,6 +49,7 @@ export function SplitwiseSettingsForm({
   const [invalidGroups, setInvalidGroups] = useState<SplitwiseGroup[]>([])
   const [selectedGroupId, setSelectedGroupId] = useState(initialGroupId || "")
   const [selectedCurrency, setSelectedCurrency] = useState(initialCurrencyCode || "")
+  const [selectedEmoji, setSelectedEmoji] = useState(initialEmoji || "✅")
 
   useEffect(() => {
     loadGroups()
@@ -201,6 +205,13 @@ export function SplitwiseSettingsForm({
               </SelectContent>
             </Select>
           </div>
+
+          <EmojiPicker
+            label="Sync Marker Emoji"
+            value={selectedEmoji}
+            onChange={setSelectedEmoji}
+            description="Press CTRL + CMD + Space (mac) or Windows Key + . (period) to open the emoji picker."
+          />
 
           {error && (
             <Alert variant="destructive">
