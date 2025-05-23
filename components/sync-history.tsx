@@ -31,8 +31,6 @@ interface SyncHistoryProps {
 export function SyncHistory({ syncHistory }: SyncHistoryProps) {
   const [selectedSync, setSelectedSync] = useState<SyncHistoryItem | null>(null)
 
-  console.log(syncHistory)
-
   return (
     <div className="space-y-4">
       <div className="relative">

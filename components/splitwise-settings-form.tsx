@@ -347,25 +347,23 @@ export function SplitwiseSettingsForm({
               </Alert>
             )}
 
-            {isEmojiConflict && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                <p className="text-sm w-full">Suggested alternatives:</p>
-                {SUGGESTED_EMOJIS.filter((emoji) => emoji !== partnerInfo?.emoji)
-                  .slice(0, 8)
-                  .map((emoji) => (
-                    <Button
-                      key={emoji}
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-lg"
-                      onClick={() => handleSuggestedEmojiClick(emoji)}
-                    >
-                      {emoji}
-                    </Button>
-                  ))}
-              </div>
-            )}
+            <div className="flex flex-wrap gap-2 mt-2">
+              <p className="text-sm w-full">Suggested alternatives:</p>
+              {SUGGESTED_EMOJIS.filter((emoji) => emoji !== partnerInfo?.emoji)
+                .slice(0, 8)
+                .map((emoji) => (
+                  <Button
+                    key={emoji}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-lg"
+                    onClick={() => handleSuggestedEmojiClick(emoji)}
+                  >
+                    {emoji}
+                  </Button>
+                ))}
+            </div>
           </div>
 
           {error && (

@@ -1,10 +1,9 @@
 import axios, { type AxiosInstance } from "axios"
 import axiosRetry, { isNetworkOrIdempotentRequestError } from "axios-retry"
-
-import { KeyValueStore } from "./db"
+import { type SyncState, SyncStateFactory } from "./sync-state"
 import { addStackToAxios } from "./utils"
 
-export const FIRST_KNOWN_DATE = "2023-11-20T08:49:26.012Z"
+export const FIRST_KNOWN_DATE = "2025-05-23T08:49:26.012Z"
 
 interface User {
   id: number
@@ -84,35 +83,39 @@ interface Expense {
 }
 
 interface SplitwiseServiceConstructorParams {
-  db: KeyValueStore
+  userId: string
   knownEmoji: string
-  userId: number
+  splitwiseUserId: number
   apiKey: string
   groupId?: string
   currencyCode?: string
+  syncState?: SyncState
 }
 
 export class SplitwiseService {
-  private db: KeyValueStore
+  private userId: string
   private knownEmoji: string
-  private userId: number
+  private splitwiseUserId: number
   private groupId: string
   private currencyCode: string
   private axios: AxiosInstance
+  private syncState: SyncState
 
   constructor({
-    db,
-    knownEmoji,
     userId,
+    knownEmoji,
+    splitwiseUserId,
     apiKey,
+    syncState,
     groupId = process.env.SPLITWISE_GROUP_ID!,
     currencyCode = process.env.SPLITWISE_CURRENCY_CODE!,
   }: SplitwiseServiceConstructorParams) {
-    this.db = db
-    this.knownEmoji = knownEmoji
     this.userId = userId
+    this.knownEmoji = knownEmoji
+    this.splitwiseUserId = splitwiseUserId
     this.groupId = groupId
     this.currencyCode = currencyCode
+    this.syncState = syncState || SyncStateFactory.create()
 
     this.axios = axios.create({
       baseURL: "https://secure.splitwise.com/api/v3.0",
@@ -190,9 +193,9 @@ export class SplitwiseService {
   }
 
   async getLastProcessedDate() {
-    const dbDate = await this.db.get()
+    const dbDate = await this.syncState.getSplitwiseLastProcessed(this.userId)
 
-    const isStaleDbDate = new Date(dbDate) < new Date(FIRST_KNOWN_DATE)
+    const isStaleDbDate = dbDate ? new Date(dbDate) < new Date(FIRST_KNOWN_DATE) : true
     if (isStaleDbDate) {
       return FIRST_KNOWN_DATE
     }
@@ -201,7 +204,7 @@ export class SplitwiseService {
   }
 
   async setLastProcessedDate(value = new Date().toISOString()) {
-    return this.db.set(value)
+    return this.syncState.setSplitwiseLastProcessed(this.userId, value)
   }
 
   toYNABTransaction(expense: Expense) {
@@ -234,7 +237,7 @@ export class SplitwiseService {
 
   toYNABAmount(expense: Expense) {
     const repayment = expense.repayments[0]
-    const isInflow = repayment.to == this.userId
+    const isInflow = repayment.to == this.splitwiseUserId
 
     return isInflow ? this.costToYNABInflow(repayment.amount) : this.costToYNABOutflow(repayment.amount)
   }
@@ -254,22 +257,22 @@ export class SplitwiseService {
 }
 
 export class MySplitwiseService extends SplitwiseService {
-  constructor() {
+  constructor(userId: string) {
     super({
-      db: new KeyValueStore("splitwise:my_last_processed"),
+      userId,
       knownEmoji: "🤴",
-      userId: Number.parseInt(process.env.SPLITWISE_MY_USER_ID!),
+      splitwiseUserId: Number.parseInt(process.env.SPLITWISE_MY_USER_ID!),
       apiKey: process.env.SPLITWISE_MY_API_KEY!,
     })
   }
 }
 
 export class PartnerSplitwiseService extends SplitwiseService {
-  constructor() {
+  constructor(userId: string) {
     super({
-      db: new KeyValueStore("splitwise:partner_last_processed"),
+      userId,
       knownEmoji: "👸",
-      userId: Number.parseInt(process.env.SPLITWISE_PARTNER_USER_ID!),
+      splitwiseUserId: Number.parseInt(process.env.SPLITWISE_PARTNER_USER_ID!),
       apiKey: process.env.SPLITWISE_PARTNER_API_KEY!,
     })
   }
