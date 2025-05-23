@@ -68,7 +68,8 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
       budgetId: user.ynabSettings.budgetId,
       splitwiseAccountId: user.ynabSettings.splitwiseAccountId,
       apiKey: ynabAccount.access_token,
-      ynabFlagColor: user.ynabSettings.manualFlagColor,
+      manualFlagColor: user.ynabSettings.manualFlagColor,
+      syncedFlagColor: user.ynabSettings.syncedFlagColor,
     })
 
     const splitwiseService = new SplitwiseService({

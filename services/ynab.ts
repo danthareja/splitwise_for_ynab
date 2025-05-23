@@ -7,7 +7,8 @@ interface YNABServiceConstructorParams {
   budgetId: string
   splitwiseAccountId: string
   apiKey?: string
-  ynabFlagColor?: string
+  manualFlagColor: string
+  syncedFlagColor: string
   syncState?: SyncState
 }
 
@@ -66,7 +67,8 @@ interface YNABErrorResponse {
 
 export class YNABService {
   private userId: string
-  private ynabFlagColor: string
+  private manualFlagColor: string
+  private syncedFlagColor: string
   private splitwiseAccountId: string
   private axios: AxiosInstance
   private syncState: SyncState
@@ -75,12 +77,14 @@ export class YNABService {
     userId,
     budgetId,
     splitwiseAccountId,
-    apiKey = process.env.YNAB_API_KEY!,
-    ynabFlagColor = process.env.YNAB_FLAG_COLOR!,
+    apiKey,
+    manualFlagColor,
+    syncedFlagColor,
     syncState,
   }: YNABServiceConstructorParams) {
     this.userId = userId
-    this.ynabFlagColor = ynabFlagColor
+    this.manualFlagColor = manualFlagColor
+    this.syncedFlagColor = syncedFlagColor
     this.splitwiseAccountId = splitwiseAccountId
     this.syncState = syncState || SyncStateFactory.create()
 
@@ -132,7 +136,7 @@ export class YNABService {
   async markTransactionProcessed(transaction: YNABTransaction) {
     return this.updateTransaction(transaction.id, {
       ...transaction,
-      flag_color: "green",
+      flag_color: this.syncedFlagColor as TransactionFlagColor,
     })
   }
 
@@ -173,7 +177,7 @@ export class YNABService {
 
   isTransactionUnprocessed(transaction: YNABTransaction) {
     return (
-      transaction.flag_color === this.ynabFlagColor &&
+      transaction.flag_color === this.manualFlagColor &&
       transaction.account_id !== this.splitwiseAccountId &&
       !transaction.deleted
     )
@@ -193,22 +197,28 @@ export class YNABService {
   }
 }
 
+// TODO: rethink this
+
 export class MyYNABService extends YNABService {
-  constructor(userId: string) {
+  constructor(userId: string, manualFlagColor = "blue", syncedFlagColor = "green") {
     super({
       userId,
       budgetId: process.env.YNAB_MY_BUDGET_ID!,
       splitwiseAccountId: process.env.YNAB_MY_SPLITWISE_ACCOUNT_ID!,
+      manualFlagColor,
+      syncedFlagColor,
     })
   }
 }
 
 export class PartnerYNABService extends YNABService {
-  constructor(userId: string) {
+  constructor(userId: string, manualFlagColor = "blue", syncedFlagColor = "green") {
     super({
       userId,
       budgetId: process.env.YNAB_PARTNER_BUDGET_ID!,
       splitwiseAccountId: process.env.YNAB_PARTNER_SPLITWISE_ACCOUNT_ID!,
+      manualFlagColor,
+      syncedFlagColor,
     })
   }
 }

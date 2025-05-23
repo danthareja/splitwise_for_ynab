@@ -87,8 +87,8 @@ interface SplitwiseServiceConstructorParams {
   knownEmoji: string
   splitwiseUserId: number
   apiKey: string
-  groupId?: string
-  currencyCode?: string
+  groupId: string
+  currencyCode: string
   syncState?: SyncState
 }
 
@@ -107,8 +107,8 @@ export class SplitwiseService {
     splitwiseUserId,
     apiKey,
     syncState,
-    groupId = process.env.SPLITWISE_GROUP_ID!,
-    currencyCode = process.env.SPLITWISE_CURRENCY_CODE!,
+    groupId,
+    currencyCode,
   }: SplitwiseServiceConstructorParams) {
     this.userId = userId
     this.knownEmoji = knownEmoji
@@ -263,6 +263,8 @@ export class MySplitwiseService extends SplitwiseService {
       knownEmoji: "🤴",
       splitwiseUserId: Number.parseInt(process.env.SPLITWISE_MY_USER_ID!),
       apiKey: process.env.SPLITWISE_MY_API_KEY!,
+      groupId: process.env.SPLITWISE_GROUP_ID!,
+      currencyCode: process.env.SPLITWISE_CURRENCY_CODE!,
     })
   }
 }
@@ -274,6 +276,8 @@ export class PartnerSplitwiseService extends SplitwiseService {
       knownEmoji: "👸",
       splitwiseUserId: Number.parseInt(process.env.SPLITWISE_PARTNER_USER_ID!),
       apiKey: process.env.SPLITWISE_PARTNER_API_KEY!,
+      groupId: process.env.SPLITWISE_GROUP_ID!,
+      currencyCode: process.env.SPLITWISE_CURRENCY_CODE!,
     })
   }
 }
