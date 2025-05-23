@@ -11,16 +11,57 @@ interface YNABServiceConstructorParams {
   ynabFlagColor?: string;
 }
 
+type TransactionClearedStatus = 'cleared' | 'uncleared' | 'reconciled';
+type TransactionFlagColor = 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple';
+
+interface SubTransaction {
+  id: string;
+  transaction_id: string;
+  amount: number; // in milliunits format
+  memo?: string | null;
+  payee_id?: string | null;
+  payee_name?: string | null;
+  category_id?: string | null;
+  category_name?: string | null;
+  transfer_account_id?: string | null;
+  transfer_transaction_id?: string | null;
+  deleted: boolean;
+}
+
 interface YNABTransaction {
   id: string;
+  date: string; // ISO format (e.g. 2016-12-01)
+  amount: number; // in milliunits format
+  memo?: string | null;
+  cleared: TransactionClearedStatus;
+  approved: boolean;
+  flag_color?: TransactionFlagColor | null;
+  flag_name?: string | null;
   account_id: string;
-  flag_color?: string | null; // YNAB API can return null for flag_color
+  payee_id?: string | null;
+  category_id?: string | null;
+  transfer_account_id?: string | null;
+  transfer_transaction_id?: string | null;
+  matched_transaction_id?: string | null;
+  import_id?: string | null;
+  import_payee_name?: string | null;
+  import_payee_name_original?: string | null;
+  debt_transaction_type?: string | null;
   deleted: boolean;
-  payee_name?: string;
-  memo?: string;
-  date: string; // Consider using Date type
-  amount: number;
-  // Add other transaction properties here
+  account_name: string;
+  payee_name?: string | null;
+  category_name?: string | null;
+  subtransactions: SubTransaction[];
+}
+
+interface YNABErrorDetail {
+  id: string;
+  name: string;
+  detail: string;
+}
+
+interface YNABErrorResponse {
+  error: YNABErrorDetail;
 }
 
 export class YNABService {
@@ -54,9 +95,9 @@ export class YNABService {
     // YNAB supports an alternate auth method where you append
     // the API key to the URL, so we're just using that for now
 
-    addStackToAxios(this.axios, (e: AxiosError<any>) => {
-      if (e.response && e.response.data && (e.response.data as any).error) {
-        const errorData = (e.response.data as any).error;
+    addStackToAxios(this.axios, (e: AxiosError<YNABErrorResponse>) => {
+      if (e.response && e.response.data && e.response.data.error) {
+        const errorData = e.response.data.error;
         e.message = `YNAB Request failed with ${errorData.name} (${errorData.id}): ${errorData.detail} `;
       } else {
         // Default message if the expected error structure is not present
@@ -72,7 +113,7 @@ export class YNABService {
         config.url = (config.url || "") + "?access_token=" + apiKey;
         return config;
       },
-      (error: any) => {
+      (error: AxiosError) => {
         return Promise.reject(error);
       }
     );
@@ -84,7 +125,7 @@ export class YNABService {
     });
 
     return {
-      transactions: data.transactions.filter((transaction: YNABTransaction) =>
+      transactions: (data.transactions as YNABTransaction[]).filter((transaction) =>
         this.isTransactionUnprocessed(transaction)
       ),
       serverKnowledge: data.server_knowledge as number,

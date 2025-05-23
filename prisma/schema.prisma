@@ -17,6 +17,7 @@ model User {
   sessions          Session[]
   splitwiseSettings SplitwiseSettings?
   ynabSettings      YnabSettings?
+  syncHistory       SyncHistory[]
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 }
@@ -73,16 +74,41 @@ model SplitwiseSettings {
 }
 
 model YnabSettings {
-  id                  String    @id @default(cuid())
-  userId              String    @unique
-  budgetId            String
-  budgetName          String
-  splitwiseAccountId  String?
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  budgetId             String
+  budgetName           String
+  splitwiseAccountId   String?
   splitwiseAccountName String?
-  manualFlagColor     String    @default("blue")
-  syncedFlagColor     String    @default("green")
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  manualFlagColor      String   @default("blue")
+  syncedFlagColor      String   @default("green")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SyncHistory {
+  id                   String         @id @default(cuid())
+  userId               String
+  status               String         @default("success") // success, error, partial
+  errorMessage         String?
+  startedAt            DateTime       @default(now())
+  completedAt          DateTime?
+  syncedItems          SyncedItem[]
+  
+  user                 User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SyncedItem {
+  id                   String         @id @default(cuid())
+  externalId           String         // YNAB transaction ID or Splitwise expense ID
+  type                 String         // "ynab_transaction" or "splitwise_expense"
+  amount               Float
+  description          String?
+  date                 DateTime
+  syncHistoryId        String
+  direction            String         // "ynab_to_splitwise" or "splitwise_to_ynab"
+  
+  syncHistory          SyncHistory    @relation(fields: [syncHistoryId], references: [id], onDelete: Cascade)
 }

@@ -22,5 +22,5 @@ export function middleware(request: NextRequest) {
 
 // Matcher specifies which routes this middleware will run on
 export const config = {
-  matcher: ['/api/splitwise_to_ynab/:path*', '/api/ynab_to_splitwise/:path*'],
+  matcher: ['/api/splitwise_to_ynab/:path*', '/api/ynab_to_splitwise/:path*', '/api/sync/:path*'],
 }; 
