@@ -8,9 +8,14 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getSplitwiseGroupsForUser, saveUserSettings } from "@/app/actions/settings"
+import {
+  getSplitwiseGroupsForUser,
+  saveUserSettings,
+  getPartnerEmoji,
+  checkCurrencySyncStatus,
+} from "@/app/actions/settings"
 import type { SplitwiseGroup } from "@/services/splitwise-auth"
-import { AlertCircle, Loader2, AlertTriangle } from "lucide-react"
+import { AlertCircle, Loader2, AlertTriangle, Info, Check } from "lucide-react"
 import { EmojiPicker } from "@/components/emoji-picker"
 import Image from "next/image"
 
@@ -35,9 +40,11 @@ const CURRENCY_OPTIONS = [
   { value: "DKK", label: "DKK - Danish Krone" },
 ]
 
+// Suggested emojis that are visually distinct
+const SUGGESTED_EMOJIS = ["🤴", "👸", "👨", "💰", "💸", "📊", "📝", "🔄"]
+
 export function SplitwiseSettingsForm({
   initialGroupId,
-  initialGroupName,
   initialCurrencyCode,
   initialEmoji = "✅",
   onSaveSuccess,
@@ -45,15 +52,40 @@ export function SplitwiseSettingsForm({
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [validGroups, setValidGroups] = useState<SplitwiseGroup[]>([])
   const [invalidGroups, setInvalidGroups] = useState<SplitwiseGroup[]>([])
   const [selectedGroupId, setSelectedGroupId] = useState(initialGroupId || "")
   const [selectedCurrency, setSelectedCurrency] = useState(initialCurrencyCode || "")
   const [selectedEmoji, setSelectedEmoji] = useState(initialEmoji || "✅")
+  const [partnerInfo, setPartnerInfo] = useState<{ emoji: string; currencyCode: string; partnerName: string } | null>(
+    null,
+  )
+  const [isEmojiConflict, setIsEmojiConflict] = useState(false)
+  const [currencySynced, setCurrencySynced] = useState(false)
 
   useEffect(() => {
     loadGroups()
+    checkCurrencySync()
   }, [])
+
+  useEffect(() => {
+    if (selectedGroupId) {
+      checkPartnerEmoji(selectedGroupId)
+    }
+  }, [selectedGroupId])
+
+  // Check if currency was recently synced by partner
+  async function checkCurrencySync() {
+    try {
+      const syncStatus = await checkCurrencySyncStatus()
+      if (syncStatus?.recentlyUpdated) {
+        setCurrencySynced(true)
+      }
+    } catch (error) {
+      console.error("Error checking currency sync:", error)
+    }
+  }
 
   async function loadGroups() {
     setIsLoading(true)
@@ -75,14 +107,72 @@ export function SplitwiseSettingsForm({
     }
   }
 
+  async function checkPartnerEmoji(groupId: string) {
+    try {
+      const partnerData = await getPartnerEmoji(groupId)
+      if (partnerData) {
+        setPartnerInfo(partnerData)
+
+        // Check if current emoji conflicts with partner's
+        if (selectedEmoji === partnerData.emoji) {
+          setIsEmojiConflict(true)
+          // Suggest a different emoji
+          suggestDifferentEmoji(partnerData.emoji)
+        } else {
+          setIsEmojiConflict(false)
+        }
+
+        // If partner has a currency set and we don't, adopt their currency
+        if (partnerData.currencyCode && !selectedCurrency) {
+          setSelectedCurrency(partnerData.currencyCode)
+        }
+      } else {
+        setPartnerInfo(null)
+        setIsEmojiConflict(false)
+      }
+    } catch (error) {
+      console.error("Error checking partner emoji:", error)
+    }
+  }
+
+  function suggestDifferentEmoji(partnerEmoji: string) {
+    // Find an emoji that's not the same as the partner's
+    const availableEmojis = SUGGESTED_EMOJIS.filter((emoji) => emoji !== partnerEmoji)
+    if (availableEmojis.length > 0) {
+      // Pick a random emoji from the available ones
+      const randomEmoji = availableEmojis[Math.floor(Math.random() * availableEmojis.length)]
+      setSelectedEmoji(randomEmoji)
+    }
+  }
+
+  function handleEmojiChange(emoji: string) {
+    setSelectedEmoji(emoji)
+    // Check if this new emoji conflicts with partner's
+    if (partnerInfo && emoji === partnerInfo.emoji) {
+      setIsEmojiConflict(true)
+    } else {
+      setIsEmojiConflict(false)
+    }
+  }
+
+  // Handle clicking on a suggested emoji
+  function handleSuggestedEmojiClick(emoji: string) {
+    setSelectedEmoji(emoji)
+    setIsEmojiConflict(false)
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsSaving(true)
     setError(null)
+    setSuccessMessage(null)
 
     try {
       const formData = new FormData(event.currentTarget)
       const selectedGroup = validGroups.find((group) => group.id.toString() === selectedGroupId)
+
+      // Ensure the form data has the current emoji value
+      formData.set("splitwiseEmoji", selectedEmoji)
 
       if (selectedGroup) {
         formData.set("splitwiseGroupName", selectedGroup.name)
@@ -91,10 +181,28 @@ export function SplitwiseSettingsForm({
       const result = await saveUserSettings(formData)
 
       if (result.success) {
-        // Call the success callback to close the form (no page reload here)
-        onSaveSuccess?.()
+        // If currency was synced with partners, show a success message
+        if (result.currencySynced && result.updatedPartners?.length > 0) {
+          setSuccessMessage(`Settings saved! Currency synchronized with ${result.updatedPartners.join(", ")}.`)
+          // Wait a moment before closing the form
+          setTimeout(() => {
+            onSaveSuccess?.()
+          }, 3000)
+        } else {
+          // Call the success callback to close the form
+          onSaveSuccess?.()
+        }
       } else {
         setError(result.error || "Failed to save settings")
+
+        // If there's an emoji conflict, highlight it
+        if (result.isEmojiConflict) {
+          setIsEmojiConflict(true)
+          // Try to suggest a different emoji
+          if (partnerInfo) {
+            suggestDifferentEmoji(partnerInfo.emoji)
+          }
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
@@ -127,6 +235,15 @@ export function SplitwiseSettingsForm({
         <CardDescription>Configure your Splitwise group and currency preferences</CardDescription>
       </CardHeader>
       <CardContent>
+        {currencySynced && (
+          <Alert className="mb-4" variant="success">
+            <Check className="h-4 w-4" />
+            <AlertDescription>
+              Your currency settings were recently updated to match your partner's settings.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="splitwiseGroupId">Splitwise Group</Label>
@@ -204,14 +321,52 @@ export function SplitwiseSettingsForm({
                 ))}
               </SelectContent>
             </Select>
+            {partnerInfo?.currencyCode && (
+              <p className="text-sm text-gray-500">
+                Note: Currency will be synchronized with your partner. You both need to use the same currency.
+              </p>
+            )}
           </div>
 
-          <EmojiPicker
-            label="Sync Marker Emoji"
-            value={selectedEmoji}
-            onChange={setSelectedEmoji}
-            description="Press CTRL + CMD + Space (mac) or Windows Key + . (period) to open the emoji picker."
-          />
+          <div className="space-y-2">
+            <EmojiPicker
+              label="Sync Marker Emoji"
+              value={selectedEmoji}
+              onChange={handleEmojiChange}
+              description="This emoji will be added to expense descriptions in Splitwise to mark them as synced."
+            />
+
+            {partnerInfo && (
+              <Alert variant={isEmojiConflict ? "destructive" : "default"}>
+                {isEmojiConflict ? <AlertCircle className="h-4 w-4" /> : <Info className="h-4 w-4" />}
+                <AlertDescription>
+                  {isEmojiConflict
+                    ? `Emoji conflict! ${partnerInfo.partnerName} is already using "${partnerInfo.emoji}". Please choose a different emoji.`
+                    : `${partnerInfo.partnerName} is using "${partnerInfo.emoji}" as their sync marker.`}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {isEmojiConflict && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                <p className="text-sm w-full">Suggested alternatives:</p>
+                {SUGGESTED_EMOJIS.filter((emoji) => emoji !== partnerInfo?.emoji)
+                  .slice(0, 8)
+                  .map((emoji) => (
+                    <Button
+                      key={emoji}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-lg"
+                      onClick={() => handleSuggestedEmojiClick(emoji)}
+                    >
+                      {emoji}
+                    </Button>
+                  ))}
+              </div>
+            )}
+          </div>
 
           {error && (
             <Alert variant="destructive">
@@ -220,7 +375,14 @@ export function SplitwiseSettingsForm({
             </Alert>
           )}
 
-          <Button type="submit" disabled={isSaving || validGroups.length === 0}>
+          {successMessage && (
+            <Alert variant="success">
+              <Check className="h-4 w-4" />
+              <AlertDescription>{successMessage}</AlertDescription>
+            </Alert>
+          )}
+
+          <Button type="submit" disabled={isSaving || validGroups.length === 0 || isEmojiConflict}>
             {isSaving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -230,6 +392,8 @@ export function SplitwiseSettingsForm({
               "Save Settings"
             )}
           </Button>
+
+          {isEmojiConflict && <p className="text-sm text-red-500">Please choose a different emoji before saving.</p>}
         </form>
       </CardContent>
     </Card>

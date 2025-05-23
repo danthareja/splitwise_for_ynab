@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -18,10 +18,24 @@ export function EmojiPicker({ value, onChange, label, description }: EmojiPicker
   const inputRef = useRef<HTMLInputElement>(null)
   const [emoji, setEmoji] = useState(value || "✅")
 
+  // Update local state when prop value changes
+  useEffect(() => {
+    setEmoji(value || "✅")
+  }, [value])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value
+
+    // Allow the input to be edited freely
     setEmoji(newValue)
-    onChange(newValue)
+
+    // Only send the update to parent if we have a valid emoji
+    if (newValue) {
+      onChange(newValue)
+    } else {
+      // If the field is cleared, set a default emoji
+      onChange("✅")
+    }
   }
 
   const handleFocus = () => {
@@ -42,7 +56,7 @@ export function EmojiPicker({ value, onChange, label, description }: EmojiPicker
           onClick={handleFocus}
           aria-label="Select emoji"
         >
-          {emoji}
+          {emoji || "✅"}
         </Button>
         <Input
           ref={inputRef}
@@ -51,7 +65,8 @@ export function EmojiPicker({ value, onChange, label, description }: EmojiPicker
           value={emoji}
           onChange={handleChange}
           className="h-10 w-20 text-center text-xl"
-          maxLength={2}
+          maxLength={4}
+          placeholder="✅"
         />
       </div>
       {description && <p className="text-sm text-gray-500">{description}</p>}
