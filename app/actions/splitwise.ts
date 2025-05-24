@@ -1,41 +1,50 @@
-"use server"
+"use server";
 
-import { revalidatePath } from "next/cache"
-import { auth } from "@/auth"
-import { prisma } from "@/db"
-import { validateSplitwiseApiKey, type SplitwiseUser } from "@/services/splitwise-auth"
+import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+import { prisma } from "@/db";
+import {
+  validateSplitwiseApiKey,
+  type SplitwiseUser,
+} from "@/services/splitwise-auth";
 
 export async function validateApiKey(formData: FormData) {
-  const apiKey = formData.get("apiKey") as string
+  const apiKey = formData.get("apiKey") as string;
 
   if (!apiKey || apiKey.trim() === "") {
     return {
       success: false,
       error: "API key is required",
-    }
+    };
   }
 
-  const result = await validateSplitwiseApiKey(apiKey)
+  const result = await validateSplitwiseApiKey(apiKey);
 
   if (!result.success) {
-    return result
+    return {
+      ...result,
+      apiKey: null,
+    };
   }
 
   return {
     success: true,
     user: result.user,
     apiKey,
-  }
+  };
 }
 
-export async function saveSplitwiseUser(apiKey: string, splitwiseUser: SplitwiseUser) {
-  const session = await auth()
+export async function saveSplitwiseUser(
+  apiKey: string,
+  splitwiseUser: SplitwiseUser,
+) {
+  const session = await auth();
 
   if (!session?.user?.id) {
     return {
       success: false,
       error: "You must be logged in to save your Splitwise information",
-    }
+    };
   }
 
   try {
@@ -45,7 +54,7 @@ export async function saveSplitwiseUser(apiKey: string, splitwiseUser: Splitwise
         userId: session.user.id,
         provider: "splitwise",
       },
-    })
+    });
 
     // Delete any existing settings when updating the API key
     // This ensures users reconfigure their settings with the new API key
@@ -53,7 +62,7 @@ export async function saveSplitwiseUser(apiKey: string, splitwiseUser: Splitwise
       where: {
         userId: session.user.id,
       },
-    })
+    });
 
     if (existingAccount) {
       // Update existing account
@@ -63,7 +72,7 @@ export async function saveSplitwiseUser(apiKey: string, splitwiseUser: Splitwise
           access_token: apiKey,
           providerAccountId: splitwiseUser.id.toString(),
         },
-      })
+      });
     } else {
       // Create new account
       await prisma.account.create({
@@ -74,7 +83,7 @@ export async function saveSplitwiseUser(apiKey: string, splitwiseUser: Splitwise
           providerAccountId: splitwiseUser.id.toString(),
           access_token: apiKey,
         },
-      })
+      });
     }
 
     // Update user information with Splitwise data
@@ -85,30 +94,30 @@ export async function saveSplitwiseUser(apiKey: string, splitwiseUser: Splitwise
         email: splitwiseUser.email,
         image: splitwiseUser.picture.medium,
       },
-    })
+    });
 
-    revalidatePath("/dashboard")
+    revalidatePath("/dashboard");
 
     return {
       success: true,
-    }
+    };
   } catch (error) {
-    console.error("Error saving Splitwise user:", error)
+    console.error("Error saving Splitwise user:", error);
     return {
       success: false,
       error: "Failed to save your Splitwise information",
-    }
+    };
   }
 }
 
 export async function disconnectSplitwiseAccount() {
-  const session = await auth()
+  const session = await auth();
 
   if (!session?.user?.id) {
     return {
       success: false,
       error: "You must be logged in to disconnect your Splitwise account",
-    }
+    };
   }
 
   try {
@@ -118,34 +127,34 @@ export async function disconnectSplitwiseAccount() {
         userId: session.user.id,
         provider: "splitwise",
       },
-    })
+    });
 
     // Delete the user's settings as well
     await prisma.splitwiseSettings.deleteMany({
       where: {
         userId: session.user.id,
       },
-    })
+    });
 
-    revalidatePath("/dashboard")
+    revalidatePath("/dashboard");
 
     return {
       success: true,
-    }
+    };
   } catch (error) {
-    console.error("Error disconnecting Splitwise account:", error)
+    console.error("Error disconnecting Splitwise account:", error);
     return {
       success: false,
       error: "Failed to disconnect your Splitwise account",
-    }
+    };
   }
 }
 
 export async function getSplitwiseApiKey() {
-  const session = await auth()
+  const session = await auth();
 
   if (!session?.user?.id) {
-    return null
+    return null;
   }
 
   try {
@@ -154,11 +163,11 @@ export async function getSplitwiseApiKey() {
         userId: session.user.id,
         provider: "splitwise",
       },
-    })
+    });
 
-    return account?.access_token || null
+    return account?.access_token || null;
   } catch (error) {
-    console.error("Error getting Splitwise API key:", error)
-    return null
+    console.error("Error getting Splitwise API key:", error);
+    return null;
   }
 }

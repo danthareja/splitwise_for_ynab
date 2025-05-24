@@ -1,14 +1,19 @@
-import Link from "next/link"
-import { ArrowRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="w-full py-12 md:py-16 bg-gray-50 dark:bg-gray-900">
+    <section
+      id="how-it-works"
+      className="w-full py-12 md:py-16 bg-gray-50 dark:bg-gray-900"
+    >
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center text-center space-y-4 mb-8">
           <h2 className="text-3xl font-bold tracking-tighter">How It Works</h2>
-          <p className="text-gray-500 dark:text-gray-400 max-w-[600px]">Simple workflow for both partners</p>
+          <p className="text-gray-500 dark:text-gray-400 max-w-[600px]">
+            Simple workflow for both partners
+          </p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -22,12 +27,15 @@ export default function HowItWorksSection() {
             <ol className="space-y-3 ml-10 list-decimal">
               <li className="text-gray-600 dark:text-gray-300">
                 <span className="font-medium">Categorize & flag in YNAB</span>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Flag the transaction with your chosen color</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Flag the transaction with your chosen color
+                </p>
               </li>
               <li className="text-gray-600 dark:text-gray-300">
                 <span className="font-medium">We handle the rest</span>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  We add the expense to Splitwise and create the balancing transaction in YNAB
+                  We add the expense to Splitwise and create the balancing
+                  transaction in YNAB
                 </p>
               </li>
             </ol>
@@ -43,12 +51,15 @@ export default function HowItWorksSection() {
             <ol className="space-y-3 ml-10 list-decimal">
               <li className="text-gray-600 dark:text-gray-300">
                 <span className="font-medium">Partner adds to Splitwise</span>
-                <p className="text-sm text-gray-500 dark:text-gray-400">They add the expense to your shared group</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  They add the expense to your shared group
+                </p>
               </li>
               <li className="text-gray-600 dark:text-gray-300">
                 <span className="font-medium">We create the transaction</span>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  We add your half of the expense to your YNAB budget automatically
+                  We add your half of the expense to your YNAB budget
+                  automatically
                 </p>
               </li>
             </ol>
@@ -64,5 +75,5 @@ export default function HowItWorksSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

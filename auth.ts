@@ -1,6 +1,6 @@
-import NextAuth from "next-auth"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma } from "@/db"
+import NextAuth from "next-auth";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { prisma } from "@/db";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -25,8 +25,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           id: profile.data.user.id,
           email: `user-${profile.data.user.id}@ynab-generated.com`,
           name: "YNAB User",
-        }
+        };
       },
     },
-  ]
-})
+  ],
+});

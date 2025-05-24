@@ -1,6 +1,6 @@
-import Link from "next/link"
-import { ArrowRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function HeroSection() {
   return (
@@ -12,7 +12,7 @@ export default function HeroSection() {
               Sync YNAB & Splitwise Automatically
             </h1>
             <p className="text-xl text-gray-500 dark:text-gray-400 max-w-[600px] mx-auto">
-              Flag a transaction in YNAB, we'll handle the rest.
+              Flag a transaction in YNAB, we&apos;ll handle the rest.
             </p>
           </div>
 
@@ -42,12 +42,12 @@ export default function HeroSection() {
               <h3 className="text-xl font-bold mb-2">After</h3>
               <ol className="ml-5 list-decimal text-gray-600 dark:text-gray-300 space-y-2">
                 <li>Flag transaction in YNAB</li>
-                <li>That's it! We handle the rest</li>
+                <li>That&apos;s it! We handle the rest</li>
               </ol>
             </div>
           </div>
         </div>
       </div>
     </section>
-  )
+  );
 }

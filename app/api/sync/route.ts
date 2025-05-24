@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server"
-import { syncAllUsers } from "@/services/sync"
+import { NextResponse } from "next/server";
+import { syncAllUsers } from "@/services/sync";
 
 export async function POST() {
-  const result = await syncAllUsers()
+  const result = await syncAllUsers();
 
-  return NextResponse.json(result)
+  return NextResponse.json(result);
 }

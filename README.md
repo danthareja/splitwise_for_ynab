@@ -10,11 +10,11 @@ My partner and I use separate YNAB plans but we use Splitwise as the source of t
 
 If I pay $50 for gas with my debit card, here's the manual process to categorize this expense:
 
-1. In YNAB, I categorize the $50 **outflow** in my *Gas/Parking* category.
+1. In YNAB, I categorize the $50 **outflow** in my _Gas/Parking_ category.
 2. In Splitwise, I add a $50 **split evenly** expense to our shared group.
-3. In YNAB, I add a new $25 **inflow** transaction into a Splitwise cash account, and categorize it back into *Gas/Parking*
+3. In YNAB, I add a new $25 **inflow** transaction into a Splitwise cash account, and categorize it back into _Gas/Parking_
 
-After this, YNAB shows I've only spent $25 on my half of gas, and my Splitwise account shows a **positive** balance of $25 (what *I'm owed* in the Splitwise app)
+After this, YNAB shows I've only spent $25 on my half of gas, and my Splitwise account shows a **positive** balance of $25 (what _I'm owed_ in the Splitwise app)
 
 <img width="400" alt="Screenshot 2025-05-19 at 10 27 31 PM" src="https://github.com/user-attachments/assets/d07b05d5-cf4b-45b2-a9b3-55ef3fd5c202" />
 
@@ -23,9 +23,9 @@ After this, YNAB shows I've only spent $25 on my half of gas, and my Splitwise a
 If she pays $100 for our electricity bill, here's the manual process to categorize this expense:
 
 2. In Splitwise, she adds a $100 **split evenly** expense to our shared group.
-3. In YNAB, I add a new $50 **outflow** transaction into a Splitwise cash account, and categorize it into *Utilities*
+3. In YNAB, I add a new $50 **outflow** transaction into a Splitwise cash account, and categorize it into _Utilities_
 
-After this, YNAB shows I've spent $50 on my half of the electricity bill, and my Splitwise account would show a **negative** balance of $50 (what *I owe* in the Splitwise app).
+After this, YNAB shows I've spent $50 on my half of the electricity bill, and my Splitwise account would show a **negative** balance of $50 (what _I owe_ in the Splitwise app).
 
 <img width="400" alt="Screenshot 2025-05-22 at 10 11 49 AM" src="https://github.com/user-attachments/assets/b9a44869-4265-4073-bea4-266f22e903fd" />
 
@@ -68,8 +68,9 @@ A common scenario is when you front a full purchase for your partner. In your Sp
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ### Prerequisites
-* Node >= v22
-* A free [Upstash](https://upstash.com/) account
+
+- Node >= v22
+- A free [Upstash](https://upstash.com/) account
 
 ### Setup
 
@@ -97,7 +98,8 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the main page.
 
 To kick off a sync:
+
 1. In YNAB, flag a transaction with your defined `YNAB_FLAG_COLOR`
-2. Enter your defined `API_SECRET_KEY_LIST` as the password, and press **Sync**
+2. Enter your defined `API_SECRET_KEY` as the password, and press **Sync**
 
 It worked if you see the flagged transactions turn green, and a new entry into your Splitwise app and account.

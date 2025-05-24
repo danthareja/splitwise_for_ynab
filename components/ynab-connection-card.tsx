@@ -1,58 +1,68 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { YnabSettingsForm } from "@/components/ynab-settings-form"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Settings, AlertCircle, Check, X, AlertTriangle } from "lucide-react"
-import { FLAG_COLORS } from "@/services/ynab-api"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { YnabSettingsForm } from "@/components/ynab-settings-form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Settings, AlertCircle, Check, X, AlertTriangle } from "lucide-react";
+import { FLAG_COLORS } from "@/services/ynab-api";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 
 interface YnabConnectionCardProps {
-  isConnected: boolean
+  isConnected: boolean;
   settings?: {
-    budgetId?: string | null
-    budgetName?: string | null
-    splitwiseAccountId?: string | null
-    splitwiseAccountName?: string | null
-    manualFlagColor?: string
-    syncedFlagColor?: string
-  } | null
+    budgetId?: string | null;
+    budgetName?: string | null;
+    splitwiseAccountId?: string | null;
+    splitwiseAccountName?: string | null;
+    manualFlagColor?: string;
+    syncedFlagColor?: string;
+  } | null;
 }
 
-export function YnabConnectionCard({ isConnected, settings }: YnabConnectionCardProps) {
-  const [showSettings, setShowSettings] = useState(false)
+export function YnabConnectionCard({
+  isConnected,
+  settings,
+}: YnabConnectionCardProps) {
+  const [showSettings, setShowSettings] = useState(false);
 
-  const isConfigured = settings?.budgetId && settings?.splitwiseAccountId
-  const needsConfiguration = isConnected && !isConfigured
+  const isConfigured = settings?.budgetId && settings?.splitwiseAccountId;
+  const needsConfiguration = isConnected && !isConfigured;
 
   const getColorName = (colorId: string) => {
-    return FLAG_COLORS.find((c) => c.id === colorId)?.name || colorId
-  }
+    return FLAG_COLORS.find((c) => c.id === colorId)?.name || colorId;
+  };
 
   const getColorStyle = (colorId: string) => {
     return {
-      backgroundColor: FLAG_COLORS.find((c) => c.id === colorId)?.color || "#cccccc",
-    }
-  }
+      backgroundColor:
+        FLAG_COLORS.find((c) => c.id === colorId)?.color || "#cccccc",
+    };
+  };
 
   const handleSettingsSaveSuccess = () => {
-    setShowSettings(false)
+    setShowSettings(false);
     // Trigger a page reload to refresh the data
-    window.location.reload()
-  }
+    window.location.reload();
+  };
 
   // Helper function to get status text
   const getStatusText = () => {
     if (!isConnected) {
-      return "Your YNAB account is not connected. Sign in to get started."
+      return "Your YNAB account is not connected. Sign in to get started.";
     }
     if (needsConfiguration) {
-      return "Your YNAB account is connected but needs configuration."
+      return "Your YNAB account is connected but needs configuration.";
     }
-    return "Your YNAB account is connected and configured."
-  }
+    return "Your YNAB account is connected and configured.";
+  };
 
   return (
     <Card>
@@ -62,12 +72,14 @@ export function YnabConnectionCard({ isConnected, settings }: YnabConnectionCard
             <CardTitle>YNAB Connection</CardTitle>
             <CardDescription>{getStatusText()}</CardDescription>
           </div>
-          <Badge 
+          <Badge
             variant={
-              !isConnected ? "error" : 
-              needsConfiguration ? "warning" : 
-              "success"
-            } 
+              !isConnected
+                ? "destructive"
+                : needsConfiguration
+                  ? "warning"
+                  : "success"
+            }
             className="flex items-center gap-1"
           >
             {!isConnected ? (
@@ -77,9 +89,11 @@ export function YnabConnectionCard({ isConnected, settings }: YnabConnectionCard
             ) : (
               <Check className="h-3 w-3" />
             )}
-            {!isConnected ? "Not Connected" : 
-             needsConfiguration ? "Needs Configuration" : 
-             "Connected"}
+            {!isConnected
+              ? "Not Connected"
+              : needsConfiguration
+                ? "Needs Configuration"
+                : "Connected"}
           </Badge>
         </div>
       </CardHeader>
@@ -94,23 +108,33 @@ export function YnabConnectionCard({ isConnected, settings }: YnabConnectionCard
                     <div className="space-y-3">
                       <p className="font-medium">Configuration Required</p>
                       <p className="text-sm">
-                        Please configure your YNAB budget and account to start syncing expenses.
+                        Please configure your YNAB budget and account to start
+                        syncing expenses.
                       </p>
                     </div>
                   </AlertDescription>
                 </Alert>
 
                 {showSettings ? (
-                  <YnabSettingsForm initialSettings={settings} onSaveSuccess={handleSettingsSaveSuccess} />
+                  <YnabSettingsForm
+                    initialSettings={settings}
+                    onSaveSuccess={handleSettingsSaveSuccess}
+                  />
                 ) : (
-                  <Button onClick={() => setShowSettings(true)} className="w-full">
+                  <Button
+                    onClick={() => setShowSettings(true)}
+                    className="w-full"
+                  >
                     <Settings className="mr-2 h-4 w-4" />
                     Configure YNAB Settings
                   </Button>
                 )}
               </div>
             ) : showSettings ? (
-              <YnabSettingsForm initialSettings={settings} onSaveSuccess={handleSettingsSaveSuccess} />
+              <YnabSettingsForm
+                initialSettings={settings}
+                onSaveSuccess={handleSettingsSaveSuccess}
+              />
             ) : (
               <div className="space-y-4">
                 {settings?.budgetName && (
@@ -120,24 +144,36 @@ export function YnabConnectionCard({ isConnected, settings }: YnabConnectionCard
                       <span className="text-sm">{settings.budgetName}</span>
                     </div>
                     <div>
-                      <span className="text-sm font-medium">Splitwise Account: </span>
-                      <span className="text-sm">{settings.splitwiseAccountName}</span>
+                      <span className="text-sm font-medium">
+                        Splitwise Account:{" "}
+                      </span>
+                      <span className="text-sm">
+                        {settings.splitwiseAccountName}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <span className="text-sm font-medium">Manual Flag: </span>
                       <div
                         className="h-3 w-3 rounded-full inline-block mr-1"
-                        style={getColorStyle(settings.manualFlagColor || "blue")}
+                        style={getColorStyle(
+                          settings.manualFlagColor || "blue",
+                        )}
                       />
-                      <span className="text-sm">{getColorName(settings.manualFlagColor || "blue")}</span>
+                      <span className="text-sm">
+                        {getColorName(settings.manualFlagColor || "blue")}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <span className="text-sm font-medium">Synced Flag: </span>
                       <div
                         className="h-3 w-3 rounded-full inline-block mr-1"
-                        style={getColorStyle(settings.syncedFlagColor || "green")}
+                        style={getColorStyle(
+                          settings.syncedFlagColor || "green",
+                        )}
                       />
-                      <span className="text-sm">{getColorName(settings.syncedFlagColor || "green")}</span>
+                      <span className="text-sm">
+                        {getColorName(settings.syncedFlagColor || "green")}
+                      </span>
                     </div>
                   </div>
                 )}
@@ -162,5 +198,5 @@ export function YnabConnectionCard({ isConnected, settings }: YnabConnectionCard
         )}
       </CardContent>
     </Card>
-  )
+  );
 }

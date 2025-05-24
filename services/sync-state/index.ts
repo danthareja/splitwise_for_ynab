@@ -1,2 +1,2 @@
-export * from "./sync-state"
-export * from "./sync-state-prisma"
+export * from "./sync-state";
+export * from "./sync-state-prisma";

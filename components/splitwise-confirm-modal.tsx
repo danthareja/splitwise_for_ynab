@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import type { SplitwiseUser } from "@/services/splitwise-auth"
+import type { SplitwiseUser } from "@/services/splitwise-auth";
 import {
   Dialog,
   DialogContent,
@@ -8,20 +8,20 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Loader2, AlertTriangle } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import Image from "next/image"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Loader2, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import Image from "next/image";
 
 interface SplitwiseConfirmModalProps {
-  user: SplitwiseUser
-  isOpen: boolean
-  onClose: () => void
-  onConfirm: () => void
-  isLoading: boolean
-  isUpdate?: boolean
-  showResetWarning?: boolean
+  user: SplitwiseUser;
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  isLoading: boolean;
+  isUpdate?: boolean;
+  showResetWarning?: boolean;
 }
 
 export function SplitwiseConfirmModal({
@@ -37,7 +37,11 @@ export function SplitwiseConfirmModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isUpdate ? "Update Splitwise Connection" : "Confirm Splitwise Connection"}</DialogTitle>
+          <DialogTitle>
+            {isUpdate
+              ? "Update Splitwise Connection"
+              : "Confirm Splitwise Connection"}
+          </DialogTitle>
           <DialogDescription>
             {isUpdate
               ? "Update your Splitwise connection with this account?"
@@ -49,8 +53,8 @@ export function SplitwiseConfirmModal({
           <Alert variant="warning">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              Updating your API key will reset your Splitwise settings. You will need to reconfigure your group and
-              currency preferences.
+              Updating your API key will reset your Splitwise settings. You will
+              need to reconfigure your group and currency preferences.
             </AlertDescription>
           </Alert>
         )}
@@ -90,5 +94,5 @@ export function SplitwiseConfirmModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

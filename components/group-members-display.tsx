@@ -1,23 +1,26 @@
-import Image from "next/image"
-import type { SplitwiseMember } from "@/services/splitwise-auth"
+import Image from "next/image";
+import type { SplitwiseMember } from "@/services/splitwise-auth";
 
 interface GroupMembersDisplayProps {
-  members: SplitwiseMember[]
-  size?: "sm" | "md" | "lg"
+  members: SplitwiseMember[];
+  size?: "sm" | "md" | "lg";
 }
 
-export function GroupMembersDisplay({ members, size = "sm" }: GroupMembersDisplayProps) {
+export function GroupMembersDisplay({
+  members,
+  size = "sm",
+}: GroupMembersDisplayProps) {
   const sizeClasses = {
     sm: "h-6 w-6",
     md: "h-8 w-8",
     lg: "h-10 w-10",
-  }
+  };
 
   const textSizeClasses = {
     sm: "text-xs",
     md: "text-base",
     lg: "text-lg",
-  }
+  };
 
   return (
     <div className="flex items-center gap-3">
@@ -36,7 +39,9 @@ export function GroupMembersDisplay({ members, size = "sm" }: GroupMembersDispla
           </div>
         ))}
       </div>
-      <span className={`${textSizeClasses[size]} text-gray-600`}>{members.map((m) => m.first_name).join(" & ")}</span>
+      <span className={`${textSizeClasses[size]} text-gray-600`}>
+        {members.map((m) => m.first_name).join(" & ")}
+      </span>
     </div>
-  )
+  );
 }

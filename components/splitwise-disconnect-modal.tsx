@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   AlertDialog,
@@ -8,31 +8,34 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Button } from "@/components/ui/button"
-import { disconnectSplitwiseAccount } from "@/app/actions/splitwise"
-import { useState } from "react"
-import { Loader2 } from "lucide-react"
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { disconnectSplitwiseAccount } from "@/app/actions/splitwise";
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
 
 interface SplitwiseDisconnectModalProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export function SplitwiseDisconnectModal({ isOpen, onClose }: SplitwiseDisconnectModalProps) {
-  const [isLoading, setIsLoading] = useState(false)
+export function SplitwiseDisconnectModal({
+  isOpen,
+  onClose,
+}: SplitwiseDisconnectModalProps) {
+  const [isLoading, setIsLoading] = useState(false);
 
   async function handleDisconnect() {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      await disconnectSplitwiseAccount()
+      await disconnectSplitwiseAccount();
       // Force a page refresh to show updated user data
-      window.location.href = "/dashboard"
+      window.location.href = "/dashboard";
     } catch (error) {
-      console.error("Error disconnecting account:", error)
+      console.error("Error disconnecting account:", error);
     } finally {
-      setIsLoading(false)
-      onClose()
+      setIsLoading(false);
+      onClose();
     }
   }
 
@@ -42,13 +45,17 @@ export function SplitwiseDisconnectModal({ isOpen, onClose }: SplitwiseDisconnec
         <AlertDialogHeader>
           <AlertDialogTitle>Disconnect Splitwise Account?</AlertDialogTitle>
           <AlertDialogDescription>
-            This will remove your Splitwise connection and stop syncing between YNAB and Splitwise. You can reconnect at
-            any time.
+            This will remove your Splitwise connection and stop syncing between
+            YNAB and Splitwise. You can reconnect at any time.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
-          <Button variant="destructive" onClick={handleDisconnect} disabled={isLoading}>
+          <Button
+            variant="destructive"
+            onClick={handleDisconnect}
+            disabled={isLoading}
+          >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -61,5 +68,5 @@ export function SplitwiseDisconnectModal({ isOpen, onClose }: SplitwiseDisconnec
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
+  );
 }

@@ -1,35 +1,43 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { format, formatDistanceToNow } from "date-fns"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { SyncDetailsDialog } from "@/components/sync-details-dialog"
-import { CheckCircle, XCircle, Clock, RefreshCw, ChevronRight } from "lucide-react"
+import { useState } from "react";
+import { format, formatDistanceToNow } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { SyncDetailsDialog } from "@/components/sync-details-dialog";
+import {
+  CheckCircle,
+  XCircle,
+  Clock,
+  RefreshCw,
+  ChevronRight,
+} from "lucide-react";
 
 export type SyncHistoryItem = {
-  id: string
-  startedAt: Date
-  completedAt: Date | null
-  status: string
-  errorMessage?: string | null
+  id: string;
+  startedAt: Date;
+  completedAt: Date | null;
+  status: string;
+  errorMessage?: string | null;
   syncedItems: {
-    id: string
-    type: string
-    externalId: string
-    amount: number
-    description: string | null
-    date: Date
-    direction: string
-  }[]
-}
+    id: string;
+    type: string;
+    externalId: string;
+    amount: number;
+    description: string | null;
+    date: Date;
+    direction: string;
+  }[];
+};
 
 interface SyncHistoryProps {
-  syncHistory: SyncHistoryItem[]
+  syncHistory: SyncHistoryItem[];
 }
 
 export function SyncHistory({ syncHistory }: SyncHistoryProps) {
-  const [selectedSync, setSelectedSync] = useState<SyncHistoryItem | null>(null)
+  const [selectedSync, setSelectedSync] = useState<SyncHistoryItem | null>(
+    null,
+  );
 
   return (
     <div className="space-y-4">
@@ -51,18 +59,30 @@ export function SyncHistory({ syncHistory }: SyncHistoryProps) {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-medium">Sync {format(new Date(sync.startedAt), "MMM d, yyyy")}</h3>
+                  <h3 className="text-sm font-medium">
+                    Sync {format(new Date(sync.startedAt), "MMM d, yyyy")}
+                  </h3>
                   <Badge
                     variant={
-                      sync.status === "success" ? "success" : sync.status === "error" ? "destructive" : "default"
+                      sync.status === "success"
+                        ? "success"
+                        : sync.status === "error"
+                          ? "destructive"
+                          : "default"
                     }
                   >
-                    {sync.status === "success" ? "Success" : sync.status === "error" ? "Failed" : "In Progress"}
+                    {sync.status === "success"
+                      ? "Success"
+                      : sync.status === "error"
+                        ? "Failed"
+                        : "In Progress"}
                   </Badge>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {format(new Date(sync.startedAt), "h:mm a")} ·{" "}
-                  {formatDistanceToNow(new Date(sync.startedAt), { addSuffix: true })}
+                  {formatDistanceToNow(new Date(sync.startedAt), {
+                    addSuffix: true,
+                  })}
                 </p>
               </div>
 
@@ -72,7 +92,12 @@ export function SyncHistory({ syncHistory }: SyncHistoryProps) {
                   <span>{sync.syncedItems.length} items synced</span>
                 </div>
 
-                <Button variant="ghost" size="sm" className="text-xs" onClick={() => setSelectedSync(sync)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => setSelectedSync(sync)}
+                >
                   Details
                   <ChevronRight className="ml-1 h-3 w-3" />
                 </Button>
@@ -82,16 +107,30 @@ export function SyncHistory({ syncHistory }: SyncHistoryProps) {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900">
                 <p className="text-xs font-medium mb-1">YNAB → Splitwise</p>
-                <p className="text-lg font-semibold">{sync.syncedItems.filter(item => item.type === "ynab_transaction").length}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">transactions</p>
+                <p className="text-lg font-semibold">
+                  {
+                    sync.syncedItems.filter(
+                      (item) => item.type === "ynab_transaction",
+                    ).length
+                  }
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  transactions
+                </p>
               </div>
 
               <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900">
                 <p className="text-xs font-medium mb-1">Splitwise → YNAB</p>
                 <p className="text-lg font-semibold">
-                  {sync.syncedItems.filter(item => item.type === "splitwise_expense").length}
+                  {
+                    sync.syncedItems.filter(
+                      (item) => item.type === "splitwise_expense",
+                    ).length
+                  }
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">expenses</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  expenses
+                </p>
               </div>
             </div>
 
@@ -113,5 +152,5 @@ export function SyncHistory({ syncHistory }: SyncHistoryProps) {
         />
       )}
     </div>
-  )
+  );
 }

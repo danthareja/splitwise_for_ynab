@@ -1,13 +1,15 @@
-import { prisma } from "@/db"
-import type { SyncState } from "./sync-state"
+import { prisma } from "@/db";
+import type { SyncState } from "./sync-state";
 
 export class PrismaSyncState implements SyncState {
   async getYNABServerKnowledge(userId: string): Promise<number | undefined> {
     const syncState = await prisma.syncState.findUnique({
       where: { userId },
-    })
+    });
 
-    return syncState?.ynabServerKnowledge ? Number(syncState.ynabServerKnowledge) : undefined
+    return syncState?.ynabServerKnowledge
+      ? Number(syncState.ynabServerKnowledge)
+      : undefined;
   }
 
   async setYNABServerKnowledge(userId: string, value: number): Promise<void> {
@@ -21,17 +23,17 @@ export class PrismaSyncState implements SyncState {
         userId,
         ynabServerKnowledge: value.toString(),
       },
-    })
+    });
   }
 
   async getSplitwiseLastProcessed(userId: string): Promise<string | undefined> {
     // First try to get from SyncState
     const syncState = await prisma.syncState.findUnique({
       where: { userId },
-    })
+    });
 
     if (syncState?.splitwiseLastSynced) {
-      return syncState.splitwiseLastSynced.toISOString()
+      return syncState.splitwiseLastSynced.toISOString();
     }
 
     // Fallback to last successful sync
@@ -44,12 +46,15 @@ export class PrismaSyncState implements SyncState {
       orderBy: {
         completedAt: "desc",
       },
-    })
+    });
 
-    return lastSuccessfulSync?.completedAt?.toISOString()
+    return lastSuccessfulSync?.completedAt?.toISOString();
   }
 
-  async setSplitwiseLastProcessed(userId: string, value: string): Promise<void> {
+  async setSplitwiseLastProcessed(
+    userId: string,
+    value: string,
+  ): Promise<void> {
     await prisma.syncState.upsert({
       where: { userId },
       update: {
@@ -60,6 +65,6 @@ export class PrismaSyncState implements SyncState {
         userId,
         splitwiseLastSynced: new Date(value),
       },
-    })
+    });
   }
 }

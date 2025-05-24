@@ -1,49 +1,54 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useRef, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
+import { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface EmojiPickerProps {
-  value: string
-  onChange: (emoji: string) => void
-  label?: string
-  description?: string
+  value: string;
+  onChange: (emoji: string) => void;
+  label?: string;
+  description?: string;
 }
 
-export function EmojiPicker({ value, onChange, label, description }: EmojiPickerProps) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [emoji, setEmoji] = useState(value || "✅")
+export function EmojiPicker({
+  value,
+  onChange,
+  label,
+  description,
+}: EmojiPickerProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [emoji, setEmoji] = useState(value || "✅");
 
   // Update local state when prop value changes
   useEffect(() => {
-    setEmoji(value || "✅")
-  }, [value])
+    setEmoji(value || "✅");
+  }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value
+    const newValue = e.target.value;
 
     // Allow the input to be edited freely
-    setEmoji(newValue)
+    setEmoji(newValue);
 
     // Only send the update to parent if we have a valid emoji
     if (newValue) {
-      onChange(newValue)
+      onChange(newValue);
     } else {
       // If the field is cleared, set a default emoji
-      onChange("✅")
+      onChange("✅");
     }
-  }
+  };
 
   const handleFocus = () => {
     // This will trigger the emoji picker on most modern browsers
     if (inputRef.current) {
-      inputRef.current.focus()
+      inputRef.current.focus();
     }
-  }
+  };
 
   return (
     <div className="space-y-2">
@@ -71,5 +76,5 @@ export function EmojiPicker({ value, onChange, label, description }: EmojiPicker
       </div>
       {description && <p className="text-sm text-gray-500">{description}</p>}
     </div>
-  )
+  );
 }

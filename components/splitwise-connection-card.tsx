@@ -1,77 +1,99 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { SplitwiseConnectForm } from "@/components/splitwise-connect-form"
-import { SplitwiseDisconnectModal } from "@/components/splitwise-disconnect-modal"
-import { SplitwiseSettingsForm } from "@/components/splitwise-settings-form"
-import { GroupMembersDisplay } from "@/components/group-members-display"
-import { getSplitwiseGroupsForUser } from "@/app/actions/settings"
-import type { SplitwiseGroup } from "@/services/splitwise-auth"
-import { Pencil, Trash2, Settings, AlertCircle, Check, X, AlertTriangle } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { SplitwiseConnectForm } from "@/components/splitwise-connect-form";
+import { SplitwiseDisconnectModal } from "@/components/splitwise-disconnect-modal";
+import { SplitwiseSettingsForm } from "@/components/splitwise-settings-form";
+import { GroupMembersDisplay } from "@/components/group-members-display";
+import { getSplitwiseGroupsForUser } from "@/app/actions/settings";
+import type { SplitwiseGroup } from "@/services/splitwise-auth";
+import {
+  Pencil,
+  Trash2,
+  Settings,
+  AlertCircle,
+  Check,
+  X,
+  AlertTriangle,
+} from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface SplitwiseConnectionCardProps {
-  isConnected: boolean
-  apiKey?: string | null
+  isConnected: boolean;
+  apiKey?: string | null;
   settings?: {
-    groupId?: string | null
-    groupName?: string | null
-    currencyCode?: string | null
-    emoji?: string | null
-  } | null
+    groupId?: string | null;
+    groupName?: string | null;
+    currencyCode?: string | null;
+    emoji?: string | null;
+  } | null;
 }
 
-export function SplitwiseConnectionCard({ isConnected, apiKey, settings }: SplitwiseConnectionCardProps) {
-  const [showUpdateForm, setShowUpdateForm] = useState(false)
-  const [showDisconnectModal, setShowDisconnectModal] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
-  const [selectedGroup, setSelectedGroup] = useState<SplitwiseGroup | null>(null)
+export function SplitwiseConnectionCard({
+  isConnected,
+  apiKey,
+  settings,
+}: SplitwiseConnectionCardProps) {
+  const [showUpdateForm, setShowUpdateForm] = useState(false);
+  const [showDisconnectModal, setShowDisconnectModal] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<SplitwiseGroup | null>(
+    null,
+  );
 
-  const isConfigured = settings?.groupId && settings?.currencyCode
-  const needsConfiguration = isConnected && !isConfigured
+  const isConfigured = settings?.groupId && settings?.currencyCode;
+  const needsConfiguration = isConnected && !isConfigured;
 
   useEffect(() => {
     // Load the selected group details if we have settings
-    if (settings?.groupId && apiKey) {
-      loadSelectedGroup()
-    }
-  }, [settings?.groupId, apiKey])
+    async function loadSelectedGroup() {
+      if (!settings?.groupId) return;
 
-  async function loadSelectedGroup() {
-    if (!settings?.groupId) return
-
-    try {
-      const result = await getSplitwiseGroupsForUser()
-      if (result.success && 'validGroups' in result && result.validGroups) {
-        const group = result.validGroups.find((g: SplitwiseGroup) => g.id.toString() === settings.groupId)
-        if (group) {
-          setSelectedGroup(group)
+      try {
+        const result = await getSplitwiseGroupsForUser();
+        if (result.success && "validGroups" in result && result.validGroups) {
+          const group = result.validGroups.find(
+            (g: SplitwiseGroup) => g.id.toString() === settings.groupId,
+          );
+          if (group) {
+            setSelectedGroup(group);
+          }
         }
+      } catch (error) {
+        console.error("Error loading selected group:", error);
       }
-    } catch (error) {
-      console.error("Error loading selected group:", error)
     }
-  }
+
+    if (settings?.groupId && apiKey) {
+      loadSelectedGroup();
+    }
+  }, [settings?.groupId, apiKey]);
 
   const handleSettingsSaveSuccess = () => {
-    setShowSettings(false)
+    setShowSettings(false);
     // Trigger a page reload to refresh the data
-    window.location.reload()
-  }
+    window.location.reload();
+  };
 
   // Helper function to get status text
   const getStatusText = () => {
     if (!isConnected) {
-      return "Your Splitwise account is not connected. Connect your account to get started."
+      return "Your Splitwise account is not connected. Connect your account to get started.";
     }
     if (needsConfiguration) {
-      return "Your Splitwise account is connected but needs configuration."
+      return "Your Splitwise account is connected but needs configuration.";
     }
-    return "Your Splitwise account is connected and configured."
-  }
+    return "Your Splitwise account is connected and configured.";
+  };
 
   return (
     <Card>
@@ -81,12 +103,14 @@ export function SplitwiseConnectionCard({ isConnected, apiKey, settings }: Split
             <CardTitle>Splitwise Connection</CardTitle>
             <CardDescription>{getStatusText()}</CardDescription>
           </div>
-          <Badge 
+          <Badge
             variant={
-              !isConnected ? "error" : 
-              needsConfiguration ? "warning" : 
-              "success"
-            } 
+              !isConnected
+                ? "destructive"
+                : needsConfiguration
+                  ? "warning"
+                  : "success"
+            }
             className="flex items-center gap-1"
           >
             {!isConnected ? (
@@ -96,9 +120,11 @@ export function SplitwiseConnectionCard({ isConnected, apiKey, settings }: Split
             ) : (
               <Check className="h-3 w-3" />
             )}
-            {!isConnected ? "Not Connected" : 
-             needsConfiguration ? "Needs Configuration" : 
-             "Connected"}
+            {!isConnected
+              ? "Not Connected"
+              : needsConfiguration
+                ? "Needs Configuration"
+                : "Connected"}
           </Badge>
         </div>
       </CardHeader>
@@ -113,7 +139,8 @@ export function SplitwiseConnectionCard({ isConnected, apiKey, settings }: Split
                     <div className="space-y-3">
                       <p className="font-medium">Configuration Required</p>
                       <p className="text-sm">
-                        Please configure your Splitwise group and currency to start syncing expenses.
+                        Please configure your Splitwise group and currency to
+                        start syncing expenses.
                       </p>
                     </div>
                   </AlertDescription>
@@ -128,7 +155,10 @@ export function SplitwiseConnectionCard({ isConnected, apiKey, settings }: Split
                     onSaveSuccess={handleSettingsSaveSuccess}
                   />
                 ) : (
-                  <Button onClick={() => setShowSettings(true)} className="w-full">
+                  <Button
+                    onClick={() => setShowSettings(true)}
+                    className="w-full"
+                  >
                     <Settings className="mr-2 h-4 w-4" />
                     Configure Splitwise Settings
                   </Button>
@@ -144,8 +174,15 @@ export function SplitwiseConnectionCard({ isConnected, apiKey, settings }: Split
               />
             ) : showUpdateForm ? (
               <div className="space-y-4">
-                <SplitwiseConnectForm isUpdate={true} currentApiKey={apiKey || ""} />
-                <Button variant="ghost" size="sm" onClick={() => setShowUpdateForm(false)}>
+                <SplitwiseConnectForm
+                  isUpdate={true}
+                  currentApiKey={apiKey || ""}
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowUpdateForm(false)}
+                >
                   Cancel
                 </Button>
               </div>
@@ -157,15 +194,24 @@ export function SplitwiseConnectionCard({ isConnected, apiKey, settings }: Split
                       <span className="text-sm font-medium">Group: </span>
                       <span className="text-sm">{settings.groupName}</span>
                     </div>
-                    {selectedGroup && <GroupMembersDisplay members={selectedGroup.members} size="sm" />}
+                    {selectedGroup && (
+                      <GroupMembersDisplay
+                        members={selectedGroup.members}
+                        size="sm"
+                      />
+                    )}
                     <div>
                       <span className="text-sm font-medium">Currency: </span>
                       <span className="text-sm">{settings.currencyCode}</span>
                     </div>
                     <div>
                       <span className="text-sm font-medium">Sync Marker: </span>
-                      <span className="text-sm text-xl">{settings.emoji || "✅"}</span>
-                      <span className="text-xs text-gray-500 ml-2">(Added to Splitwise expenses when synced)</span>
+                      <span className="text-sm text-xl">
+                        {settings.emoji || "✅"}
+                      </span>
+                      <span className="text-xs text-gray-500 ml-2">
+                        (Added to Splitwise expenses when synced)
+                      </span>
                     </div>
                   </div>
                 )}
@@ -202,7 +248,10 @@ export function SplitwiseConnectionCard({ isConnected, apiKey, settings }: Split
             )}
 
             {showDisconnectModal && (
-              <SplitwiseDisconnectModal isOpen={showDisconnectModal} onClose={() => setShowDisconnectModal(false)} />
+              <SplitwiseDisconnectModal
+                isOpen={showDisconnectModal}
+                onClose={() => setShowDisconnectModal(false)}
+              />
             )}
           </>
         ) : (
@@ -212,5 +261,5 @@ export function SplitwiseConnectionCard({ isConnected, apiKey, settings }: Split
         )}
       </CardContent>
     </Card>
-  )
+  );
 }

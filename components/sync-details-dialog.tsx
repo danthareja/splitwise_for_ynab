@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { format } from "date-fns"
+import { format } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -8,26 +8,33 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CheckCircle, ArrowUpRight, ArrowDownLeft } from "lucide-react"
-import type { SyncHistoryItem } from "@/components/sync-history"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CheckCircle, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import type { SyncHistoryItem } from "@/components/sync-history";
 
 interface SyncDetailsDialogProps {
-  sync: SyncHistoryItem
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  sync: SyncHistoryItem;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function SyncDetailsDialog({ sync, open, onOpenChange }: SyncDetailsDialogProps) {
-  const ynabTransactions = sync.syncedItems.filter(item => item.type === "ynab_transaction") || []
-  const splitwiseExpenses = sync.syncedItems.filter(item => item.type === "splitwise_expense") || []
+export function SyncDetailsDialog({
+  sync,
+  open,
+  onOpenChange,
+}: SyncDetailsDialogProps) {
+  const ynabTransactions =
+    sync.syncedItems.filter((item) => item.type === "ynab_transaction") || [];
+  const splitwiseExpenses =
+    sync.syncedItems.filter((item) => item.type === "splitwise_expense") || [];
 
-  const completedAt = sync.completedAt || sync.startedAt
-  const duration = new Date(completedAt).getTime() - new Date(sync.startedAt).getTime()
-  const durationInSeconds = Math.round(duration / 1000)
+  const completedAt = sync.completedAt || sync.startedAt;
+  const duration =
+    new Date(completedAt).getTime() - new Date(sync.startedAt).getTime();
+  const durationInSeconds = Math.round(duration / 1000);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -36,14 +43,26 @@ export function SyncDetailsDialog({ sync, open, onOpenChange }: SyncDetailsDialo
           <DialogTitle className="flex items-center gap-2">
             Sync Details
             <Badge
-              variant={sync.status === "success" ? "success" : sync.status === "error" ? "destructive" : "default"}
+              variant={
+                sync.status === "success"
+                  ? "success"
+                  : sync.status === "error"
+                    ? "destructive"
+                    : "default"
+              }
             >
-              {sync.status === "success" ? "Success" : sync.status === "error" ? "Failed" : "In Progress"}
+              {sync.status === "success"
+                ? "Success"
+                : sync.status === "error"
+                  ? "Failed"
+                  : "In Progress"}
             </Badge>
           </DialogTitle>
           <DialogDescription>
             {format(new Date(sync.startedAt), "MMMM d, yyyy 'at' h:mm a")}
-            {sync.status !== "in_progress" && <span> · Completed in {durationInSeconds} seconds</span>}
+            {sync.status !== "in_progress" && (
+              <span> · Completed in {durationInSeconds} seconds</span>
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -78,18 +97,33 @@ export function SyncDetailsDialog({ sync, open, onOpenChange }: SyncDetailsDialo
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-50 dark:bg-gray-900">
-                      <th className="px-4 py-2 text-left font-medium">Description</th>
-                      <th className="px-4 py-2 text-left font-medium">Amount</th>
+                      <th className="px-4 py-2 text-left font-medium">
+                        Description
+                      </th>
+                      <th className="px-4 py-2 text-left font-medium">
+                        Amount
+                      </th>
                       <th className="px-4 py-2 text-left font-medium">Date</th>
-                      <th className="px-4 py-2 text-left font-medium">Status</th>
+                      <th className="px-4 py-2 text-left font-medium">
+                        Status
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     {ynabTransactions.map((transaction) => (
-                      <tr key={transaction.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
-                        <td className="px-4 py-3 truncate max-w-[200px]">{transaction.description}</td>
-                        <td className="px-4 py-3">${Math.abs(transaction.amount).toFixed(2)}</td>
-                        <td className="px-4 py-3">{format(new Date(transaction.date), "MMM d, yyyy")}</td>
+                      <tr
+                        key={transaction.id}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-900/50"
+                      >
+                        <td className="px-4 py-3 truncate max-w-[200px]">
+                          {transaction.description}
+                        </td>
+                        <td className="px-4 py-3">
+                          ${Math.abs(transaction.amount).toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3">
+                          {format(new Date(transaction.date), "MMM d, yyyy")}
+                        </td>
                         <td className="px-4 py-3">
                           <span className="flex items-center text-green-600 dark:text-green-400">
                             <CheckCircle className="h-4 w-4 mr-1" />
@@ -102,7 +136,9 @@ export function SyncDetailsDialog({ sync, open, onOpenChange }: SyncDetailsDialo
                 </table>
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">No YNAB transactions were synced to Splitwise</div>
+              <div className="text-center py-8 text-gray-500">
+                No YNAB transactions were synced to Splitwise
+              </div>
             )}
           </TabsContent>
 
@@ -112,18 +148,33 @@ export function SyncDetailsDialog({ sync, open, onOpenChange }: SyncDetailsDialo
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-50 dark:bg-gray-900">
-                      <th className="px-4 py-2 text-left font-medium">Description</th>
-                      <th className="px-4 py-2 text-left font-medium">Amount</th>
+                      <th className="px-4 py-2 text-left font-medium">
+                        Description
+                      </th>
+                      <th className="px-4 py-2 text-left font-medium">
+                        Amount
+                      </th>
                       <th className="px-4 py-2 text-left font-medium">Date</th>
-                      <th className="px-4 py-2 text-left font-medium">Status</th>
+                      <th className="px-4 py-2 text-left font-medium">
+                        Status
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     {splitwiseExpenses.map((expense) => (
-                      <tr key={expense.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
-                        <td className="px-4 py-3 truncate max-w-[200px]">{expense.description}</td>
-                        <td className="px-4 py-3">${Math.abs(expense.amount).toFixed(2)}</td>
-                        <td className="px-4 py-3">{format(new Date(expense.date), "MMM d, yyyy")}</td>
+                      <tr
+                        key={expense.id}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-900/50"
+                      >
+                        <td className="px-4 py-3 truncate max-w-[200px]">
+                          {expense.description}
+                        </td>
+                        <td className="px-4 py-3">
+                          ${Math.abs(expense.amount).toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3">
+                          {format(new Date(expense.date), "MMM d, yyyy")}
+                        </td>
                         <td className="px-4 py-3">
                           <span className="flex items-center text-green-600 dark:text-green-400">
                             <CheckCircle className="h-4 w-4 mr-1" />
@@ -136,7 +187,9 @@ export function SyncDetailsDialog({ sync, open, onOpenChange }: SyncDetailsDialo
                 </table>
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">No Splitwise expenses were synced to YNAB</div>
+              <div className="text-center py-8 text-gray-500">
+                No Splitwise expenses were synced to YNAB
+              </div>
             )}
           </TabsContent>
         </Tabs>
@@ -148,5 +201,5 @@ export function SyncDetailsDialog({ sync, open, onOpenChange }: SyncDetailsDialo
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

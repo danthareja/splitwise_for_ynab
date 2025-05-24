@@ -1,15 +1,15 @@
-import { prisma } from "@/db"
-import { YNABService } from "./ynab"
-import { SplitwiseService } from "./splitwise"
-import { processLatestExpenses, processLatestTransactions } from "./glue"
-import type { SyncedItem } from "@prisma/client"
+import { prisma } from "@/db";
+import { YNABService } from "./ynab";
+import { SplitwiseService } from "./splitwise";
+import { processLatestExpenses, processLatestTransactions } from "./glue";
+import type { SyncedItem } from "@prisma/client";
 
 interface SyncResult {
-  success: boolean
-  syncHistoryId?: string
-  error?: string
-  syncedTransactions?: SyncedItem[]
-  syncedExpenses?: SyncedItem[]
+  success: boolean;
+  syncHistoryId?: string;
+  error?: string;
+  syncedTransactions?: SyncedItem[];
+  syncedExpenses?: SyncedItem[];
 }
 
 export async function syncUserData(userId: string): Promise<SyncResult> {
@@ -19,7 +19,7 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
       userId,
       status: "pending",
     },
-  })
+  });
 
   try {
     // Check if user has both YNAB and Splitwise configured
@@ -30,37 +30,49 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
         splitwiseSettings: true,
         accounts: true,
       },
-    })
+    });
 
     if (!user) {
-      throw new Error("User not found")
+      throw new Error("User not found");
     }
 
     if (!user.ynabSettings || !user.splitwiseSettings) {
-      throw new Error("User has not configured both YNAB and Splitwise")
+      throw new Error("User has not configured both YNAB and Splitwise");
     }
 
     if (!user.ynabSettings.splitwiseAccountId) {
-      throw new Error("Splitwise account not configured in YNAB settings")
+      throw new Error("Splitwise account not configured in YNAB settings");
     }
 
-    if (!user.splitwiseSettings.groupId || !user.splitwiseSettings.currencyCode) {
-      throw new Error("Splitwise group or currency not configured")
+    if (
+      !user.splitwiseSettings.groupId ||
+      !user.splitwiseSettings.currencyCode
+    ) {
+      throw new Error("Splitwise group or currency not configured");
     }
 
-    const ynabAccount = user.accounts.find((account) => account.provider === "ynab")
-    const splitwiseAccount = user.accounts.find((account) => account.provider === "splitwise")
+    const ynabAccount = user.accounts.find(
+      (account) => account.provider === "ynab",
+    );
+    const splitwiseAccount = user.accounts.find(
+      (account) => account.provider === "splitwise",
+    );
 
     if (!ynabAccount?.access_token) {
-      throw new Error("YNAB account not found or missing access token")
+      throw new Error("YNAB account not found or missing access token");
     }
 
-    if (!splitwiseAccount?.access_token || !splitwiseAccount?.providerAccountId) {
-      throw new Error("Splitwise account not found or missing access token/provider ID")
+    if (
+      !splitwiseAccount?.access_token ||
+      !splitwiseAccount?.providerAccountId
+    ) {
+      throw new Error(
+        "Splitwise account not found or missing access token/provider ID",
+      );
     }
 
     if (!user.splitwiseSettings.emoji) {
-      throw new Error("Splitwise emoji not configured")
+      throw new Error("Splitwise emoji not configured");
     }
 
     const ynabService = new YNABService({
@@ -70,7 +82,7 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
       apiKey: ynabAccount.access_token,
       manualFlagColor: user.ynabSettings.manualFlagColor,
       syncedFlagColor: user.ynabSettings.syncedFlagColor,
-    })
+    });
 
     const splitwiseService = new SplitwiseService({
       userId: user.id,
@@ -79,13 +91,19 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
       groupId: user.splitwiseSettings.groupId,
       currencyCode: user.splitwiseSettings.currencyCode,
       apiKey: splitwiseAccount.access_token,
-    })
+    });
 
     // Process transactions from YNAB to Splitwise
-    const syncedTransactions = await processLatestTransactions(ynabService, splitwiseService)
+    const syncedTransactions = await processLatestTransactions(
+      ynabService,
+      splitwiseService,
+    );
 
     // Process expenses from Splitwise to YNAB
-    const syncedExpenses = await processLatestExpenses(ynabService, splitwiseService)
+    const syncedExpenses = await processLatestExpenses(
+      ynabService,
+      splitwiseService,
+    );
 
     // Record synced transactions
     const createdTransactionItems =
@@ -98,14 +116,17 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
                   externalId: transaction.id,
                   type: "ynab_transaction",
                   amount: transaction.amount / 1000, // Convert from milliunits
-                  description: transaction.payee_name || transaction.memo || "Unknown transaction",
+                  description:
+                    transaction.payee_name ||
+                    transaction.memo ||
+                    "Unknown transaction",
                   date: new Date(transaction.date),
                   direction: "ynab_to_splitwise",
                 },
               }),
             ),
           )
-        : []
+        : [];
 
     // Record synced expenses
     const createdExpenseItems =
@@ -125,7 +146,7 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
               }),
             ),
           )
-        : []
+        : [];
 
     // Update sync history
     await prisma.syncHistory.update({
@@ -134,16 +155,16 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
         status: "success",
         completedAt: new Date(),
       },
-    })
+    });
 
     return {
       success: true,
       syncHistoryId: syncHistory.id,
       syncedTransactions: createdTransactionItems,
       syncedExpenses: createdExpenseItems,
-    }
+    };
   } catch (error) {
-    console.error("Sync error:", error)
+    console.error("Sync error:", error);
 
     // Update sync history with error
     await prisma.syncHistory.update({
@@ -153,21 +174,21 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
         errorMessage: error instanceof Error ? error.message : "Unknown error",
         completedAt: new Date(),
       },
-    })
+    });
 
     return {
       success: false,
       syncHistoryId: syncHistory.id,
       error: error instanceof Error ? error.message : "Unknown error",
-    }
+    };
   }
 }
 
 export async function syncAllUsers(): Promise<{
-  totalUsers: number
-  successCount: number
-  errorCount: number
-  results: Record<string, SyncResult>
+  totalUsers: number;
+  successCount: number;
+  errorCount: number;
+  results: Record<string, SyncResult>;
 }> {
   // Find all fully configured users
   const configuredUsers = await prisma.user.findMany({
@@ -190,33 +211,33 @@ export async function syncAllUsers(): Promise<{
       id: true,
       email: true,
     },
-  })
+  });
 
-  console.log(`Found ${configuredUsers.length} configured users to sync`)
+  console.log(`Found ${configuredUsers.length} configured users to sync`);
 
-  const results: Record<string, SyncResult> = {}
-  let successCount = 0
-  let errorCount = 0
+  const results: Record<string, SyncResult> = {};
+  let successCount = 0;
+  let errorCount = 0;
 
   // Sync each user
   for (const user of configuredUsers) {
     try {
-      console.log(`Syncing user ${user.email || user.id}...`)
-      const result = await syncUserData(user.id)
-      results[user.id] = result
+      console.log(`Syncing user ${user.email || user.id}...`);
+      const result = await syncUserData(user.id);
+      results[user.id] = result;
 
       if (result.success) {
-        successCount++
+        successCount++;
       } else {
-        errorCount++
+        errorCount++;
       }
     } catch (error) {
-      console.error(`Error syncing user ${user.email || user.id}:`, error)
+      console.error(`Error syncing user ${user.email || user.id}:`, error);
       results[user.id] = {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
-      }
-      errorCount++
+      };
+      errorCount++;
     }
   }
 
@@ -225,5 +246,5 @@ export async function syncAllUsers(): Promise<{
     successCount,
     errorCount,
     results,
-  }
+  };
 }

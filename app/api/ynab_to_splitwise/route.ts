@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   if (who === "mine") {
     const transactions = await processLatestTransactions(
       new MyYNABService(),
-      new MySplitwiseService()
+      new MySplitwiseService(),
     );
     return NextResponse.json({
       data: { transactions },
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   if (who === "partner") {
     const transactions = await processLatestTransactions(
       new PartnerYNABService(),
-      new PartnerSplitwiseService()
+      new PartnerSplitwiseService(),
     );
     return NextResponse.json({
       data: { transactions },
@@ -31,4 +31,4 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({ message: "Invalid params" }, { status: 400 });
-} 
+}
