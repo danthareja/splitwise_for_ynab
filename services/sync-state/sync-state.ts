@@ -1,4 +1,3 @@
-// TODO: re-think if we can lazy load, so that we don't have to import prisma right away
 import { PrismaSyncState } from "./sync-state-prisma";
 
 export interface SyncState {

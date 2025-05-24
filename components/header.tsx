@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function Header() {
   return (
@@ -12,6 +13,7 @@ export default function Header() {
           </Link>
         </div>
         <nav className="flex items-center gap-4">
+          <ThemeToggle />
           <Link href="#how-it-works">
             <Button variant="ghost">How it works</Button>
           </Link>

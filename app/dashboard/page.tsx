@@ -11,6 +11,7 @@ import { getSyncHistory } from "@/app/actions/sync";
 import { SyncHistory } from "@/components/sync-history";
 import { ManualSyncButton } from "@/components/manual-sync-button";
 import { RefreshCw } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -57,6 +58,7 @@ export default async function DashboardPage() {
             <span className="text-xl font-bold">Splitwise for YNAB</span>
           </div>
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <span className="text-sm">
               Signed in as {session.user?.name || "YNAB User"}
             </span>
