@@ -162,7 +162,9 @@ export function SplitwiseSettingsForm({
       // Pick a random emoji from the available ones
       const randomEmoji =
         availableEmojis[Math.floor(Math.random() * availableEmojis.length)];
-      setSelectedEmoji(randomEmoji);
+      if (randomEmoji) {
+        setSelectedEmoji(randomEmoji);
+      }
     }
   }
 

@@ -12,6 +12,7 @@ import { SyncHistory } from "@/components/sync-history";
 import { ManualSyncButton } from "@/components/manual-sync-button";
 import { RefreshCw } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import type { Account } from "@prisma/client";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -30,10 +31,10 @@ export default async function DashboardPage() {
   });
 
   const hasSplitwiseConnected = user?.accounts.some(
-    (account) => account.provider === "splitwise",
+    (account: Account) => account.provider === "splitwise",
   );
   const hasYnabConnected = user?.accounts.some(
-    (account) => account.provider === "ynab",
+    (account: Account) => account.provider === "ynab",
   );
 
   const splitwiseApiKey = await getSplitwiseApiKey();

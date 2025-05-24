@@ -7,7 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "postinstall": "prisma generate --no-engine",
+    "type-check": "tsc --noEmit",
+    "type-check:strict": "tsc --noEmit --strict --noImplicitAny",
+    "pre-deploy": "npm run type-check && npm run lint && npm run build",
+    "check-all": "npm run type-check:strict && npm run lint"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown",
@@ -56,6 +61,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.0.0",
     "prettier": "3.5.3",
+    "prisma": "^6.8.2",
     "tailwindcss": "^4.1.7",
     "tw-animate-css": "^1.3.0",
     "typescript": "^5"

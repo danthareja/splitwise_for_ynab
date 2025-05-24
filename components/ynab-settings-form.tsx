@@ -209,7 +209,7 @@ export function YnabSettingsForm({
     if (color === syncedFlagColor) {
       // Find a different color
       const availableColors = FLAG_COLORS.filter((c) => c.id !== color);
-      if (availableColors.length > 0) {
+      if (availableColors.length > 0 && availableColors[0]) {
         setSyncedFlagColor(availableColors[0].id);
       }
     }
@@ -221,7 +221,7 @@ export function YnabSettingsForm({
     if (color === manualFlagColor) {
       // Find a different color
       const availableColors = FLAG_COLORS.filter((c) => c.id !== color);
-      if (availableColors.length > 0) {
+      if (availableColors.length > 0 && availableColors[0]) {
         setManualFlagColor(availableColors[0].id);
       }
     }

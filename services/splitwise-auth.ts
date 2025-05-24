@@ -1,6 +1,24 @@
 import axios, { AxiosError } from "axios";
 import { addStackToAxios } from "./utils";
 
+export interface SplitwiseDebt {
+  from: number;
+  to: number;
+  amount: string;
+  currency_code: string;
+}
+
+export interface SplitwiseBalance {
+  user_id: number;
+  amount: string;
+  currency_code: string;
+}
+
+export interface SplitwiseGroupReminders {
+  enabled: boolean;
+  frequency: string;
+}
+
 export interface SplitwiseUser {
   id: number;
   first_name: string;
@@ -21,12 +39,12 @@ export interface SplitwiseGroup {
   updated_at: string;
   members: SplitwiseMember[];
   simplify_by_default: boolean;
-  original_debts: any[];
-  simplified_debts: any[];
+  original_debts: SplitwiseDebt[];
+  simplified_debts: SplitwiseDebt[];
   whiteboard: string | null;
   group_type: string | null;
   invite_link: string | null;
-  group_reminders: any | null;
+  group_reminders: SplitwiseGroupReminders | null;
   avatar: {
     small: string;
     medium: string;
@@ -49,7 +67,7 @@ export interface SplitwiseMember {
   };
   email: string;
   registration_status: string;
-  balance: any[];
+  balance: SplitwiseBalance[];
 }
 
 export async function validateSplitwiseApiKey(apiKey: string) {

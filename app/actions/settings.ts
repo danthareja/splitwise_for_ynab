@@ -69,7 +69,7 @@ async function checkEmojiConflict(
 
   // Check if any other user in this group is using the same emoji
   const conflictingUser = usersWithSameGroup.find(
-    (settings) => settings.emoji === emoji,
+    (settings: (typeof usersWithSameGroup)[0]) => settings.emoji === emoji,
   );
 
   if (conflictingUser) {
@@ -105,22 +105,25 @@ async function syncCurrencyWithPartners(
 
     // Update currency code for all partners
     if (partnersWithSameGroup.length > 0) {
-      const updatePromises = partnersWithSameGroup.map((partnerSettings) => {
-        return prisma.splitwiseSettings.update({
-          where: { userId: partnerSettings.userId },
-          data: {
-            currencyCode: currencyCode,
-            // Add a flag to indicate the currency was synchronized
-            currencySyncedAt: new Date(),
-          },
-        });
-      });
+      const updatePromises = partnersWithSameGroup.map(
+        (partnerSettings: (typeof partnersWithSameGroup)[0]) => {
+          return prisma.splitwiseSettings.update({
+            where: { userId: partnerSettings.userId },
+            data: {
+              currencyCode: currencyCode,
+              // Add a flag to indicate the currency was synchronized
+              currencySyncedAt: new Date(),
+            },
+          });
+        },
+      );
 
       await Promise.all(updatePromises);
       return {
         success: true,
         updatedPartners: partnersWithSameGroup.map(
-          (p) => p.user.name || `User ${p.userId}`,
+          (p: (typeof partnersWithSameGroup)[0]) =>
+            p.user.name || `User ${p.userId}`,
         ),
       };
     }

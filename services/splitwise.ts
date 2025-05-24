@@ -243,6 +243,11 @@ export class SplitwiseService {
 
   toYNABAmount(expense: Expense) {
     const repayment = expense.repayments[0];
+    if (!repayment) {
+      // Handle case where there are no repayments - perhaps a zero-cost expense
+      return 0;
+    }
+
     const isInflow = repayment.to == this.splitwiseUserId;
 
     return isInflow
