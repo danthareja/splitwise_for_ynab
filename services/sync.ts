@@ -1,8 +1,9 @@
+import type { SyncedItem } from "@prisma/client";
 import { prisma } from "@/db";
+import { SyncStateFactory } from "./sync-state";
 import { YNABService } from "./ynab";
 import { SplitwiseService } from "./splitwise";
 import { processLatestExpenses, processLatestTransactions } from "./glue";
-import type { SyncedItem } from "@prisma/client";
 
 interface SyncResult {
   success: boolean;
@@ -75,6 +76,8 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
       throw new Error("Splitwise emoji not configured");
     }
 
+    const syncState = await SyncStateFactory.create("prisma");
+
     const ynabService = new YNABService({
       userId: user.id,
       budgetId: user.ynabSettings.budgetId,
@@ -82,6 +85,7 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
       apiKey: ynabAccount.access_token,
       manualFlagColor: user.ynabSettings.manualFlagColor,
       syncedFlagColor: user.ynabSettings.syncedFlagColor,
+      syncState,
     });
 
     const splitwiseService = new SplitwiseService({
@@ -91,6 +95,7 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
       groupId: user.splitwiseSettings.groupId,
       currencyCode: user.splitwiseSettings.currencyCode,
       apiKey: splitwiseAccount.access_token,
+      syncState,
     });
 
     // Process transactions from YNAB to Splitwise

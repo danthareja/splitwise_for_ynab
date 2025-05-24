@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance } from "axios";
 import axiosRetry, { isNetworkOrIdempotentRequestError } from "axios-retry";
-import { type SyncState, SyncStateFactory } from "./sync-state";
+import type { SyncState } from "./sync-state";
 import { addStackToAxios } from "./utils";
 import { SplitwiseExpense } from "./splitwise-types";
 
@@ -13,7 +13,7 @@ interface SplitwiseServiceConstructorParams {
   apiKey: string;
   groupId: string;
   currencyCode: string;
-  syncState?: SyncState;
+  syncState: SyncState;
 }
 
 export class SplitwiseService {
@@ -39,7 +39,7 @@ export class SplitwiseService {
     this.splitwiseUserId = splitwiseUserId;
     this.groupId = groupId;
     this.currencyCode = currencyCode;
-    this.syncState = syncState || SyncStateFactory.create();
+    this.syncState = syncState;
 
     this.axios = axios.create({
       baseURL: "https://secure.splitwise.com/api/v3.0",
@@ -190,31 +190,5 @@ export class SplitwiseService {
 
   stripEmojis(string: string) {
     return string.replace(/\p{Extended_Pictographic}/gu, "");
-  }
-}
-
-export class MySplitwiseService extends SplitwiseService {
-  constructor(userId: string) {
-    super({
-      userId,
-      knownEmoji: "🤴",
-      splitwiseUserId: Number.parseInt(process.env.SPLITWISE_MY_USER_ID!),
-      apiKey: process.env.SPLITWISE_MY_API_KEY!,
-      groupId: process.env.SPLITWISE_GROUP_ID!,
-      currencyCode: process.env.SPLITWISE_CURRENCY_CODE!,
-    });
-  }
-}
-
-export class PartnerSplitwiseService extends SplitwiseService {
-  constructor(userId: string) {
-    super({
-      userId,
-      knownEmoji: "👸",
-      splitwiseUserId: Number.parseInt(process.env.SPLITWISE_PARTNER_USER_ID!),
-      apiKey: process.env.SPLITWISE_PARTNER_API_KEY!,
-      groupId: process.env.SPLITWISE_GROUP_ID!,
-      currencyCode: process.env.SPLITWISE_CURRENCY_CODE!,
-    });
   }
 }

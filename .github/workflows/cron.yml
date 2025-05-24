@@ -2,7 +2,7 @@ name: cron
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */12 * * *"
+    - cron: "0 */6 * * *"
 jobs:
   cron:
     runs-on: ubuntu-latest
@@ -10,28 +10,108 @@ jobs:
       - name: YNAB to Splitwise (mine)
         run: |
           curl --request POST \
-          --url 'https://splitwise-for-ynab.vercel.app/api/ynab_to_splitwise' \
+          --url '${{ secrets.API_BASE_URL }}/api/ynab_to_splitwise' \
           --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}' \
           --header 'Content-Type: application/json' \
-          --data '{"who":"mine"}'
+          --data '{
+            "syncState": {
+              "strategy": "upstash"
+            },
+            "ynab": {
+              "apiKey": "${{ secrets.YNAB_API_KEY_MINE }}",
+              "userId": "mine",
+              "budgetId": "${{ secrets.YNAB_BUDGET_ID_MINE }}",
+              "splitwiseAccountId": "${{ secrets.YNAB_SPLITWISE_ACCOUNT_ID_MINE }}",
+              "manualFlagColor": "blue",
+              "syncedFlagColor": "green"
+            },
+            "splitwise": {
+              "apiKey": "${{ secrets.SPLITWISE_API_KEY_MINE }}",
+              "userId": "mine",
+              "splitwiseUserId": ${{ secrets.SPLITWISE_USER_ID_MINE }},
+              "groupId": "${{ secrets.SPLITWISE_GROUP_ID_SHARED }}",
+              "knownEmoji": "🤴",
+              "currencyCode": "CAD"
+            }
+          }'
       - name: YNAB to Splitwise (partner)
         run: |
           curl --request POST \
-          --url 'https://splitwise-for-ynab.vercel.app/api/ynab_to_splitwise' \
+          --url '${{ secrets.API_BASE_URL }}/api/ynab_to_splitwise' \
           --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}' \
           --header 'Content-Type: application/json' \
-          --data '{"who":"partner"}'
+          --data '{
+            "syncState": {
+              "strategy": "upstash"
+            },
+            "ynab": {
+              "apiKey": "${{ secrets.YNAB_API_KEY_PARTNER }}",
+              "userId": "partner",
+              "budgetId": "${{ secrets.YNAB_BUDGET_ID_PARTNER }}",
+              "splitwiseAccountId": "${{ secrets.YNAB_SPLITWISE_ACCOUNT_ID_PARTNER }}",
+              "manualFlagColor": "blue",
+              "syncedFlagColor": "green"
+            },
+            "splitwise": {
+              "apiKey": "${{ secrets.SPLITWISE_API_KEY_PARTNER }}",
+              "userId": "partner",
+              "splitwiseUserId": ${{ secrets.SPLITWISE_USER_ID_PARTNER }},
+              "groupId": "${{ secrets.SPLITWISE_GROUP_ID_SHARED }}",
+              "knownEmoji": "👸",
+              "currencyCode": "CAD"
+            }
+          }'
       - name: Splitwise to YNAB (mine)
         run: |
           curl --request POST \
-          --url 'https://splitwise-for-ynab.vercel.app/api/splitwise_to_ynab' \
+          --url '${{ secrets.API_BASE_URL }}/api/splitwise_to_ynab' \
           --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}' \
           --header 'Content-Type: application/json' \
-          --data '{"who":"mine"}'
+          --data '{
+            "syncState": {
+              "strategy": "upstash"
+            },
+            "ynab": {
+              "apiKey": "${{ secrets.YNAB_API_KEY_MINE }}",
+              "userId": "mine",
+              "budgetId": "${{ secrets.YNAB_BUDGET_ID_MINE }}",
+              "splitwiseAccountId": "${{ secrets.YNAB_SPLITWISE_ACCOUNT_ID_MINE }}",
+              "manualFlagColor": "blue",
+              "syncedFlagColor": "green"
+            },
+            "splitwise": {
+              "apiKey": "${{ secrets.SPLITWISE_API_KEY_MINE }}",
+              "userId": "mine",
+              "splitwiseUserId": ${{ secrets.SPLITWISE_USER_ID_MINE }},
+              "groupId": "${{ secrets.SPLITWISE_GROUP_ID_SHARED_MINE }}",
+              "knownEmoji": "🤴",
+              "currencyCode": "CAD"
+            }
+          }'
       - name: Splitwise to YNAB (partner)
         run: |
           curl --request POST \
-          --url 'https://splitwise-for-ynab.vercel.app/api/splitwise_to_ynab' \
+          --url '${{ secrets.API_BASE_URL }}/api/splitwise_to_ynab' \
           --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}' \
           --header 'Content-Type: application/json' \
-          --data '{"who":"partner"}'
+          --data '{
+            "syncState": {
+              "strategy": "upstash"
+            },
+            "ynab": {
+              "apiKey": "${{ secrets.YNAB_API_KEY_PARTNER }}",
+              "userId": "partner",
+              "budgetId": "${{ secrets.YNAB_BUDGET_ID_PARTNER }}",
+              "splitwiseAccountId": "${{ secrets.YNAB_SPLITWISE_ACCOUNT_ID_PARTNER }}",
+              "manualFlagColor": "blue",
+              "syncedFlagColor": "green"
+            },
+            "splitwise": {
+              "apiKey": "${{ secrets.SPLITWISE_API_KEY_PARTNER }}",
+              "userId": "partner",
+              "splitwiseUserId": ${{ secrets.SPLITWISE_USER_ID_PARTNER }},
+              "groupId": "${{ secrets.SPLITWISE_GROUP_ID_SHARED }}",
+              "knownEmoji": "👸",
+              "currencyCode": "CAD"
+            }
+          }'

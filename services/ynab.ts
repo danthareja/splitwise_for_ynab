@@ -3,7 +3,7 @@ import axios, {
   type InternalAxiosRequestConfig,
   type AxiosError,
 } from "axios";
-import { type SyncState, SyncStateFactory } from "./sync-state";
+import type { SyncState } from "./sync-state";
 import { addStackToAxios } from "./utils";
 import {
   YNABTransaction,
@@ -22,10 +22,10 @@ interface YNABServiceConstructorParams {
   userId: string;
   budgetId: string;
   splitwiseAccountId: string;
-  apiKey?: string;
+  apiKey: string;
   manualFlagColor: string;
   syncedFlagColor: string;
-  syncState?: SyncState;
+  syncState: SyncState;
 }
 
 export class YNABService {
@@ -49,7 +49,7 @@ export class YNABService {
     this.manualFlagColor = manualFlagColor;
     this.syncedFlagColor = syncedFlagColor;
     this.splitwiseAccountId = splitwiseAccountId;
-    this.syncState = syncState || SyncStateFactory.create();
+    this.syncState = syncState;
 
     this.axios = axios.create({
       baseURL: `https://api.youneedabudget.com/v1/budgets/${budgetId}`,
@@ -216,39 +216,5 @@ export class YNABService {
 
   outflowToSplitwiseCost(amount: number) {
     return `${(amount * -1) / 1000}`;
-  }
-}
-
-// TODO: rethink this
-
-export class MyYNABService extends YNABService {
-  constructor(
-    userId: string,
-    manualFlagColor = "blue",
-    syncedFlagColor = "green",
-  ) {
-    super({
-      userId,
-      budgetId: process.env.YNAB_MY_BUDGET_ID!,
-      splitwiseAccountId: process.env.YNAB_MY_SPLITWISE_ACCOUNT_ID!,
-      manualFlagColor,
-      syncedFlagColor,
-    });
-  }
-}
-
-export class PartnerYNABService extends YNABService {
-  constructor(
-    userId: string,
-    manualFlagColor = "blue",
-    syncedFlagColor = "green",
-  ) {
-    super({
-      userId,
-      budgetId: process.env.YNAB_PARTNER_BUDGET_ID!,
-      splitwiseAccountId: process.env.YNAB_PARTNER_SPLITWISE_ACCOUNT_ID!,
-      manualFlagColor,
-      syncedFlagColor,
-    });
   }
 }

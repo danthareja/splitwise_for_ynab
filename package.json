@@ -30,6 +30,7 @@
     "@radix-ui/react-tabs": "^1.1.12",
     "@sentry/nextjs": "^9.22.0",
     "@tanstack/react-query": "^5.76.2",
+    "@upstash/redis": "^1.34.9",
     "axios": "^1.9.0",
     "axios-retry": "^4.5.0",
     "class-variance-authority": "^0.7.1",
@@ -43,7 +44,8 @@
     "react-dom": "19.1.0",
     "sonner": "^2.0.3",
     "tailwind-merge": "^3.3.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.25.28"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
