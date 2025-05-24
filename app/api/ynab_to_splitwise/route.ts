@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     groupId: splitwise.groupId,
     currencyCode: splitwise.currencyCode,
     apiKey: splitwise.apiKey,
-    syncState,
+    syncState: syncStateService,
   });
 
   const transactions = await processLatestTransactions(
