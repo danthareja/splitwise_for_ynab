@@ -109,18 +109,7 @@ export class YNABService {
       baseURL: `https://api.youneedabudget.com/v1/budgets/${budgetId}`,
     });
 
-    addStackToAxios(this.axios, (e: AxiosError<YNABErrorResponse>) => {
-      if (e.response && e.response.data && e.response.data.error) {
-        const errorData = e.response.data.error;
-        e.message = `YNAB Request failed with ${errorData.name} (${errorData.id}): ${errorData.detail} `;
-      } else {
-        // Default message if the expected error structure is not present
-        e.message = `YNAB Request failed: ${e.message}`;
-      }
-      delete e.request;
-      delete e.response;
-      return e;
-    });
+    addStackToAxios(this.axios);
 
     this.axios.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
@@ -138,7 +127,12 @@ export class YNABService {
       async (error: AxiosError<YNABErrorResponse>) => {
         const originalRequest = error.config;
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Check if originalRequest exists and hasn't been retried yet
+        if (
+          originalRequest &&
+          error.response?.status === 401 &&
+          !originalRequest._retry
+        ) {
           console.log(
             "🚨 YNABService: Received 401 response, attempting token refresh",
           );

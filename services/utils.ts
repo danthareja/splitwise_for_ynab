@@ -8,7 +8,7 @@ declare module "axios" {
 
 export function addStackToAxios(
   axiosInstance: AxiosInstance,
-  formatError = (e: any) => e,
+  formatError = (e: Error) => e,
 ) {
   axiosInstance.interceptors.request.use((config) => {
     config.errorContext = new Error("AxiosError was thrown from:");

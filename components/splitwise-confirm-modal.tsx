@@ -63,7 +63,7 @@ export function SplitwiseConfirmModal({
           {user.picture?.medium && (
             <div className="relative h-20 w-20 overflow-hidden rounded-full">
               <Image
-                src={user.picture.medium || "/placeholder.svg"}
+                src={user.picture.medium || "https://placecats.com/50/50"}
                 alt={`${user.first_name} ${user.last_name}`}
                 fill
                 className="object-cover"

@@ -21,11 +21,11 @@ export function EmojiPicker({
   description,
 }: EmojiPickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [emoji, setEmoji] = useState(value || "✅");
+  const [emoji, setEmoji] = useState(value || "");
 
   // Update local state when prop value changes
   useEffect(() => {
-    setEmoji(value || "✅");
+    setEmoji(value || "");
   }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,7 +39,7 @@ export function EmojiPicker({
       onChange(newValue);
     } else {
       // If the field is cleared, set a default emoji
-      onChange("✅");
+      onChange("");
     }
   };
 
@@ -61,7 +61,7 @@ export function EmojiPicker({
           onClick={handleFocus}
           aria-label="Select emoji"
         >
-          {emoji || "✅"}
+          {emoji || ""}
         </Button>
         <Input
           ref={inputRef}
@@ -71,7 +71,8 @@ export function EmojiPicker({
           onChange={handleChange}
           className="h-10 w-20 text-center text-xl"
           maxLength={4}
-          placeholder="✅"
+          placeholder=""
+          required
         />
       </div>
       {description && <p className="text-sm text-gray-500">{description}</p>}

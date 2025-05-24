@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
       {
         hostname: "s3.amazonaws.com",
       },
+      {
+        hostname: "placecats.com",
+      },
     ],
   },
 };

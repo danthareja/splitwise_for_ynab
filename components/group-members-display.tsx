@@ -28,10 +28,10 @@ export function GroupMembersDisplay({
         {members.slice(0, 2).map((member, index) => (
           <div
             key={`${member.user_id}-${index}`}
-            className={`relative ${sizeClasses[size]} overflow-hidden rounded-full border-2 border-white`}
+            className={`relative ${sizeClasses[size]} overflow-hidden rounded-full border-1 border-primary`}
           >
             <Image
-              src={member.picture?.medium || "/placeholder.svg"}
+              src={member.picture?.medium || "https://placecats.com/50/50"}
               alt={`${member.first_name} ${member.last_name}`}
               fill
               className="object-cover"

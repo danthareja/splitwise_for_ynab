@@ -298,10 +298,13 @@ export function SplitwiseSettingsForm({
                         {group.members.slice(0, 2).map((member) => (
                           <div
                             key={member.user_id}
-                            className="relative h-6 w-6 overflow-hidden rounded-full border-2 border-white"
+                            className="relative h-6 w-6 overflow-hidden rounded-full border-1 border-primary"
                           >
                             <Image
-                              src={member.picture?.medium || "/placeholder.svg"}
+                              src={
+                                member.picture?.medium ||
+                                "https://placecats.com/50/50"
+                              }
                               alt={`${member.first_name} ${member.last_name}`}
                               fill
                               className="object-cover"
