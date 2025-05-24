@@ -24,7 +24,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return {
           id: profile.data.user.id,
           email: `user-${profile.data.user.id}@ynab-generated.com`,
-          name: "YNAB User",
+          name: "You",
         };
       },
     },
