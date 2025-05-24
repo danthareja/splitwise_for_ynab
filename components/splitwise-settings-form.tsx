@@ -26,7 +26,7 @@ import {
   getPartnerEmoji,
   checkCurrencySyncStatus,
 } from "@/app/actions/settings";
-import type { SplitwiseGroup } from "@/services/splitwise-auth";
+import type { SplitwiseGroup } from "@/services/splitwise-types";
 import { AlertCircle, Loader2, AlertTriangle, Info, Check } from "lucide-react";
 import { EmojiPicker } from "@/components/emoji-picker";
 import Image from "next/image";

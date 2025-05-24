@@ -3,10 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/db";
-import {
-  validateSplitwiseApiKey,
-  type SplitwiseUser,
-} from "@/services/splitwise-auth";
+import { validateSplitwiseApiKey } from "@/services/splitwise-auth";
+import type { SplitwiseUser } from "@/services/splitwise-types";
 
 export async function validateApiKey(formData: FormData) {
   const apiKey = formData.get("apiKey") as string;

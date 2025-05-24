@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SplitwiseConfirmModal } from "@/components/splitwise-confirm-modal";
-import type { SplitwiseUser } from "@/services/splitwise-auth";
+import type { SplitwiseUser } from "@/services/splitwise-types";
 import {
   AlertCircle,
   Eye,

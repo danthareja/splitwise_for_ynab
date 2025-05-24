@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { YnabSettingsForm } from "@/components/ynab-settings-form";
+import { YNABSettingsForm } from "@/components/ynab-settings-form";
 import {
   Card,
   CardContent,
@@ -10,27 +10,30 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Settings, AlertCircle, Check, X, AlertTriangle } from "lucide-react";
+import { AlertCircle, Check, X, AlertTriangle, Settings } from "lucide-react";
 import { FLAG_COLORS } from "@/services/ynab-api";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Alert,
+  AlertDescription as UiAlertDescription,
+} from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 
-interface YnabConnectionCardProps {
+interface YNABConnectionCardProps {
   isConnected: boolean;
   settings?: {
     budgetId?: string | null;
     budgetName?: string | null;
     splitwiseAccountId?: string | null;
     splitwiseAccountName?: string | null;
-    manualFlagColor?: string;
-    syncedFlagColor?: string;
+    manualFlagColor?: string | null;
+    syncedFlagColor?: string | null;
   } | null;
 }
 
-export function YnabConnectionCard({
+export function YNABConnectionCard({
   isConnected,
   settings,
-}: YnabConnectionCardProps) {
+}: YNABConnectionCardProps) {
   const [showSettings, setShowSettings] = useState(false);
 
   const isConfigured = settings?.budgetId && settings?.splitwiseAccountId;
@@ -104,7 +107,7 @@ export function YnabConnectionCard({
               <div className="space-y-4">
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
+                  <UiAlertDescription>
                     <div className="space-y-3">
                       <p className="font-medium">Configuration Required</p>
                       <p className="text-sm">
@@ -112,12 +115,17 @@ export function YnabConnectionCard({
                         syncing expenses.
                       </p>
                     </div>
-                  </AlertDescription>
+                  </UiAlertDescription>
                 </Alert>
 
                 {showSettings ? (
-                  <YnabSettingsForm
-                    initialSettings={settings}
+                  <YNABSettingsForm
+                    initialBudgetId={settings?.budgetId}
+                    initialBudgetName={settings?.budgetName}
+                    initialSplitAccountId={settings?.splitwiseAccountId}
+                    initialSplitAccountName={settings?.splitwiseAccountName}
+                    initialManualFlagColor={settings?.manualFlagColor}
+                    initialSyncedFlagColor={settings?.syncedFlagColor}
                     onSaveSuccess={handleSettingsSaveSuccess}
                   />
                 ) : (
@@ -131,8 +139,13 @@ export function YnabConnectionCard({
                 )}
               </div>
             ) : showSettings ? (
-              <YnabSettingsForm
-                initialSettings={settings}
+              <YNABSettingsForm
+                initialBudgetId={settings?.budgetId}
+                initialBudgetName={settings?.budgetName}
+                initialSplitAccountId={settings?.splitwiseAccountId}
+                initialSplitAccountName={settings?.splitwiseAccountName}
+                initialManualFlagColor={settings?.manualFlagColor}
+                initialSyncedFlagColor={settings?.syncedFlagColor}
                 onSaveSuccess={handleSettingsSaveSuccess}
               />
             ) : (

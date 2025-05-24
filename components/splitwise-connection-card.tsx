@@ -7,7 +7,7 @@ import { SplitwiseDisconnectModal } from "@/components/splitwise-disconnect-moda
 import { SplitwiseSettingsForm } from "@/components/splitwise-settings-form";
 import { GroupMembersDisplay } from "@/components/group-members-display";
 import { getSplitwiseGroupsForUser } from "@/app/actions/settings";
-import type { SplitwiseGroup } from "@/services/splitwise-auth";
+import type { SplitwiseGroup } from "@/services/splitwise-types";
 import {
   Pencil,
   Trash2,

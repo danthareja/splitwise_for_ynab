@@ -32,57 +32,57 @@ import {
 import {
   getYnabBudgetsForUser,
   getYnabAccountsForBudget,
-  createYnabSplitwiseAccount,
+  createYnabAccountForUser,
   saveYnabSettings,
 } from "@/app/actions/ynab";
-import {
-  FLAG_COLORS,
-  type YnabBudget,
-  type YnabAccount,
-} from "@/services/ynab-api";
+import { FLAG_COLORS } from "@/services/ynab-api";
+import { type YNABBudget, type YNABAccount } from "@/services/ynab-types";
 import { AlertCircle, Loader2, Plus, Check } from "lucide-react";
 
-interface YnabSettingsFormProps {
-  initialSettings?: {
-    budgetId?: string | null;
-    budgetName?: string | null;
-    splitwiseAccountId?: string | null;
-    splitwiseAccountName?: string | null;
-    manualFlagColor?: string;
-    syncedFlagColor?: string;
-  } | null;
+interface YNABSettingsFormProps {
+  initialBudgetId?: string | null;
+  initialBudgetName?: string | null;
+  initialSplitAccountId?: string | null;
+  initialSplitAccountName?: string | null;
+  initialManualFlagColor?: string | null;
+  initialSyncedFlagColor?: string | null;
   onSaveSuccess?: () => void;
 }
 
-export function YnabSettingsForm({
-  initialSettings,
+export function YNABSettingsForm({
+  initialBudgetId,
+  initialBudgetName,
+  initialSplitAccountId,
+  initialSplitAccountName,
+  initialManualFlagColor,
+  initialSyncedFlagColor,
   onSaveSuccess,
-}: YnabSettingsFormProps) {
+}: YNABSettingsFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const [budgets, setBudgets] = useState<YnabBudget[]>([]);
-  const [accounts, setAccounts] = useState<YnabAccount[]>([]);
+  const [budgets, setBudgets] = useState<YNABBudget[]>([]);
+  const [accounts, setAccounts] = useState<YNABAccount[]>([]);
 
   const [selectedBudgetId, setSelectedBudgetId] = useState(
-    initialSettings?.budgetId || "",
+    initialBudgetId || "",
   );
   const [selectedBudgetName, setSelectedBudgetName] = useState(
-    initialSettings?.budgetName || "",
+    initialBudgetName || "",
   );
   const [selectedAccountId, setSelectedAccountId] = useState(
-    initialSettings?.splitwiseAccountId || "",
+    initialSplitAccountId || "",
   );
   const [selectedAccountName, setSelectedAccountName] = useState(
-    initialSettings?.splitwiseAccountName || "",
+    initialSplitAccountName || "",
   );
   const [manualFlagColor, setManualFlagColor] = useState(
-    initialSettings?.manualFlagColor || "blue",
+    initialManualFlagColor || "blue",
   );
   const [syncedFlagColor, setSyncedFlagColor] = useState(
-    initialSettings?.syncedFlagColor || "green",
+    initialSyncedFlagColor || "green",
   );
 
   const [showCreateAccountDialog, setShowCreateAccountDialog] = useState(false);
@@ -152,7 +152,7 @@ export function YnabSettingsForm({
     setError(null);
 
     try {
-      const result = await createYnabSplitwiseAccount(
+      const result = await createYnabAccountForUser(
         selectedBudgetId,
         newAccountName,
       );

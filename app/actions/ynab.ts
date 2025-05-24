@@ -7,12 +7,12 @@ import {
   getYnabBudgets,
   getYnabAccounts,
   createYnabAccount,
-  type YnabBudgetsResult,
-  type YnabAccountsResult,
-  type YnabAccountResult,
+  type YNABBudgetsResult,
+  type YNABAccountsResult,
+  type YNABAccountResult,
 } from "@/services/ynab-api";
 
-export async function getYnabBudgetsForUser(): Promise<YnabBudgetsResult> {
+export async function getYnabBudgetsForUser(): Promise<YNABBudgetsResult> {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -27,7 +27,7 @@ export async function getYnabBudgetsForUser(): Promise<YnabBudgetsResult> {
 
 export async function getYnabAccountsForBudget(
   budgetId: string,
-): Promise<YnabAccountsResult> {
+): Promise<YNABAccountsResult> {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -40,10 +40,10 @@ export async function getYnabAccountsForBudget(
   return await getYnabAccounts(budgetId);
 }
 
-export async function createYnabSplitwiseAccount(
+export async function createYnabAccountForUser(
   budgetId: string,
-  name = "🤝 Splitwise",
-): Promise<YnabAccountResult> {
+  name?: string,
+): Promise<YNABAccountResult> {
   const session = await auth();
 
   if (!session?.user?.id) {

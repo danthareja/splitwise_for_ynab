@@ -2,85 +2,9 @@ import axios, { type AxiosInstance } from "axios";
 import axiosRetry, { isNetworkOrIdempotentRequestError } from "axios-retry";
 import { type SyncState, SyncStateFactory } from "./sync-state";
 import { addStackToAxios } from "./utils";
+import { SplitwiseExpense } from "./splitwise-types";
 
 export const FIRST_KNOWN_DATE = "2025-05-23T08:49:26.012Z";
-
-interface User {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  registration_status: string;
-  picture: object;
-  custom_picture: boolean;
-}
-
-interface Category {
-  id: number;
-  name: string;
-}
-
-interface Receipt {
-  large: string;
-  original: string;
-}
-
-interface ExpenseUser {
-  user: object;
-  user_id: number;
-  paid_share: string;
-  owed_share: string;
-  net_balance: string;
-}
-
-interface Comment {
-  id: number;
-  content: string;
-  comment_type: string;
-  relation_type: string;
-  relation_id: number;
-  created_at: string;
-  deleted_at: string;
-  user: object;
-}
-
-interface Repayment {
-  from: number;
-  to: number;
-  amount: string;
-}
-
-interface Expense {
-  cost: string;
-  description: string;
-  details?: string;
-  date: string;
-  repeat_interval: string;
-  currency_code: string;
-  category_id: number;
-  id: number;
-  group_id: number;
-  friendship_id: number;
-  expense_bundle_id: number;
-  repeats: boolean;
-  email_reminder: boolean;
-  email_reminder_in_advance: string | null;
-  next_repeat: string;
-  comments_count: number;
-  payment: boolean;
-  transaction_confirmed: boolean;
-  repayments: Repayment[];
-  created_at: string;
-  created_by: User;
-  updated_at: string;
-  updated_by: User;
-  deleted_at?: string | null;
-  deleted_by?: User;
-  category: Category;
-  receipt: Receipt;
-  users: ExpenseUser[];
-  comments: Comment[];
-}
 
 interface SplitwiseServiceConstructorParams {
   userId: string;
@@ -155,7 +79,7 @@ export class SplitwiseService {
     }
   }
 
-  async createExpense(data: Partial<Expense>) {
+  async createExpense(data: Partial<SplitwiseExpense>) {
     const res = await this.axios.post("/create_expense", {
       currency_code: this.currencyCode,
       group_id: this.groupId,
@@ -163,7 +87,7 @@ export class SplitwiseService {
       ...data,
     });
 
-    return res.data.expenses[0] as Expense;
+    return res.data.expenses[0] as SplitwiseExpense;
   }
 
   async getUnprocessedExpenses({ updated_after = FIRST_KNOWN_DATE } = {}) {
@@ -175,18 +99,18 @@ export class SplitwiseService {
       },
     });
 
-    return (res.data.expenses as Expense[]).filter((expense) =>
+    return (res.data.expenses as SplitwiseExpense[]).filter((expense) =>
       this.isExpenseUnprocessed(expense),
     );
   }
 
-  async markExpenseProcessed(expense: Expense) {
+  async markExpenseProcessed(expense: SplitwiseExpense) {
     await this.axios.post(`/update_expense/${expense.id}`, {
       description: `${this.knownEmoji}${expense.description}`,
     });
   }
 
-  isExpenseUnprocessed(expense: Expense) {
+  isExpenseUnprocessed(expense: SplitwiseExpense) {
     const isDeleted = !!expense.deleted_at;
     if (isDeleted) {
       return false;
@@ -213,7 +137,7 @@ export class SplitwiseService {
     return this.syncState.setSplitwiseLastProcessed(this.userId, value);
   }
 
-  toYNABTransaction(expense: Expense) {
+  toYNABTransaction(expense: SplitwiseExpense) {
     return this.hasKnownPayee()
       ? this.toYNABTransactionWithKnownPayee(expense)
       : this.toYNABTranstionWithUnknownPayee(expense);
@@ -223,7 +147,7 @@ export class SplitwiseService {
     return true;
   }
 
-  toYNABTransactionWithKnownPayee(expense: Expense) {
+  toYNABTransactionWithKnownPayee(expense: SplitwiseExpense) {
     return {
       amount: this.toYNABAmount(expense),
       payee_name: this.stripEmojis(expense.description),
@@ -232,7 +156,7 @@ export class SplitwiseService {
     };
   }
 
-  toYNABTranstionWithUnknownPayee(expense: Expense) {
+  toYNABTranstionWithUnknownPayee(expense: SplitwiseExpense) {
     return {
       amount: this.toYNABAmount(expense),
       payee_name: `Splitwise from ${expense.created_by.first_name}`,
@@ -241,7 +165,7 @@ export class SplitwiseService {
     };
   }
 
-  toYNABAmount(expense: Expense) {
+  toYNABAmount(expense: SplitwiseExpense) {
     const repayment = expense.repayments[0];
     if (!repayment) {
       // Handle case where there are no repayments - perhaps a zero-cost expense

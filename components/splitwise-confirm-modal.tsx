@@ -1,6 +1,6 @@
 "use client";
 
-import type { SplitwiseUser } from "@/services/splitwise-auth";
+import type { SplitwiseUser } from "@/services/splitwise-types";
 import {
   Dialog,
   DialogContent,

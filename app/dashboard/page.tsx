@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { SplitwiseConnectionCard } from "@/components/splitwise-connection-card";
-import { YnabConnectionCard } from "@/components/ynab-connection-card";
+import { YNABConnectionCard } from "@/components/ynab-connection-card";
 import { prisma } from "@/db";
 import { getSplitwiseApiKey } from "@/app/actions/splitwise";
 import { getUserSettings } from "@/app/actions/settings";
@@ -84,7 +84,7 @@ export default async function DashboardPage() {
           <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
 
           <div className="grid gap-6 md:grid-cols-2">
-            <YnabConnectionCard
+            <YNABConnectionCard
               isConnected={!!hasYnabConnected}
               settings={ynabSettings}
             />

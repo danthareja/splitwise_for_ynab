@@ -1,7 +1,18 @@
 import axios from "axios";
 import { auth } from "@/auth";
 import { addStackToAxios } from "./utils";
-import { prisma } from "@/db"; // Declare the prisma variable
+import { prisma } from "@/db";
+import {
+  YNABBudget,
+  YNABAccount,
+  YNABFlagColor,
+  YNABBudgetsResult,
+  YNABAccountsResult,
+  YNABAccountResult,
+} from "./ynab-types";
+
+// Re-export the result types
+export type { YNABBudgetsResult, YNABAccountsResult, YNABAccountResult };
 
 // Extend the request config type to include our retry flag
 declare module "axios" {
@@ -10,70 +21,8 @@ declare module "axios" {
   }
 }
 
-export interface YnabBudget {
-  id: string;
-  name: string;
-  last_modified_on: string;
-  first_month: string;
-  last_month: string;
-  currency_format: {
-    iso_code: string;
-    example_format: string;
-    decimal_digits: number;
-    decimal_separator: string;
-    symbol_first: boolean;
-    group_separator: string;
-    currency_symbol: string;
-    display_symbol: boolean;
-  };
-}
-
-export interface YnabAccount {
-  id: string;
-  name: string;
-  type: string;
-  on_budget: boolean;
-  closed: boolean;
-  note: string | null;
-  balance: number;
-  cleared_balance: number;
-  uncleared_balance: number;
-  transfer_payee_id: string;
-  direct_import_linked: boolean;
-  direct_import_in_error: boolean;
-  deleted: boolean;
-}
-
-export interface YnabTransaction {
-  id: string;
-  date: string;
-  amount: number;
-  memo: string | null;
-  cleared: string;
-  approved: boolean;
-  flag_color: string | null;
-  account_id: string;
-  account_name: string;
-  payee_id: string | null;
-  payee_name: string | null;
-  category_id: string | null;
-  category_name: string | null;
-  transfer_account_id: string | null;
-  transfer_transaction_id: string | null;
-  matched_transaction_id: string | null;
-  import_id: string | null;
-  deleted: boolean;
-  subtransactions: unknown[];
-}
-
-export interface YnabFlagColor {
-  id: string;
-  name: string;
-  color: string;
-}
-
 // Available flag colors in YNAB
-export const FLAG_COLORS: YnabFlagColor[] = [
+export const FLAG_COLORS: YNABFlagColor[] = [
   { id: "red", name: "Red", color: "#ea5e5e" },
   { id: "orange", name: "Orange", color: "#f8a058" },
   { id: "yellow", name: "Yellow", color: "#f8df58" },
@@ -81,19 +30,6 @@ export const FLAG_COLORS: YnabFlagColor[] = [
   { id: "blue", name: "Blue", color: "#3cb5e5" },
   { id: "purple", name: "Purple", color: "#9768d1" },
 ];
-
-// Return types for service functions
-export type YnabBudgetsResult =
-  | { success: true; budgets: YnabBudget[] }
-  | { success: false; error: string };
-
-export type YnabAccountsResult =
-  | { success: true; accounts: YnabAccount[] }
-  | { success: false; error: string };
-
-export type YnabAccountResult =
-  | { success: true; account: YnabAccount }
-  | { success: false; error: string };
 
 export async function getYnabAccessToken() {
   const session = await auth();
@@ -117,14 +53,14 @@ export async function getYnabAccessToken() {
   return account.access_token;
 }
 
-export async function getYnabBudgets(): Promise<YnabBudgetsResult> {
+export async function getYnabBudgets(): Promise<YNABBudgetsResult> {
   try {
     const axiosInstance = await getYnabAxiosInstance();
 
     const response = await axiosInstance.get("/budgets");
     return {
       success: true,
-      budgets: response.data.data.budgets as YnabBudget[],
+      budgets: response.data.data.budgets as YNABBudget[],
     };
   } catch (error) {
     console.error("Error fetching YNAB budgets:", error);
@@ -138,7 +74,7 @@ export async function getYnabBudgets(): Promise<YnabBudgetsResult> {
 
 export async function getYnabAccounts(
   budgetId: string,
-): Promise<YnabAccountsResult> {
+): Promise<YNABAccountsResult> {
   try {
     const axiosInstance = await getYnabAxiosInstance();
 
@@ -146,13 +82,13 @@ export async function getYnabAccounts(
 
     // Filter to only include on-budget and non-deleted accounts
     const accounts = response.data.data.accounts.filter(
-      (account: YnabAccount) =>
+      (account: YNABAccount) =>
         account.on_budget && !account.deleted && !account.closed,
     );
 
     return {
       success: true,
-      accounts: accounts as YnabAccount[],
+      accounts: accounts as YNABAccount[],
     };
   } catch (error) {
     console.error("Error fetching YNAB accounts:", error);
@@ -169,7 +105,7 @@ export async function getYnabAccounts(
 export async function createYnabAccount(
   budgetId: string,
   name = "🤝 Splitwise",
-): Promise<YnabAccountResult> {
+): Promise<YNABAccountResult> {
   try {
     const axiosInstance = await getYnabAxiosInstance();
 
@@ -183,7 +119,7 @@ export async function createYnabAccount(
 
     return {
       success: true,
-      account: response.data.data.account as YnabAccount,
+      account: response.data.data.account as YNABAccount,
     };
   } catch (error) {
     console.error("Error creating YNAB account:", error);
