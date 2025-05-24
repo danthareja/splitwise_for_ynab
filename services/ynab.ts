@@ -6,6 +6,13 @@ import axios, {
 import { type SyncState, SyncStateFactory } from "./sync-state";
 import { addStackToAxios } from "./utils";
 
+// Extend the request config type to include our retry flag
+declare module "axios" {
+  interface InternalAxiosRequestConfig {
+    _retry?: boolean;
+  }
+}
+
 interface YNABServiceConstructorParams {
   userId: string;
   budgetId: string;
@@ -121,6 +128,69 @@ export class YNABService {
         return config;
       },
       (error: AxiosError) => {
+        return Promise.reject(error);
+      },
+    );
+
+    // Add response interceptor to handle token refresh
+    this.axios.interceptors.response.use(
+      (response) => response,
+      async (error: AxiosError<YNABErrorResponse>) => {
+        const originalRequest = error.config;
+
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          console.log(
+            "🚨 YNABService: Received 401 response, attempting token refresh",
+          );
+          console.log(
+            `📍 YNABService: Failed request URL: ${originalRequest.url}`,
+          );
+          console.log(`👤 YNABService: User ID: ${this.userId}`);
+
+          originalRequest._retry = true;
+
+          try {
+            console.log(
+              "🔄 YNABService: Attempting to refresh YNAB access token...",
+            );
+
+            // Import the refresh function from ynab-api
+            const { refreshYnabAccessToken } = await import("./ynab-api");
+            const newAccessToken = await refreshYnabAccessToken();
+
+            console.log(
+              "✅ YNABService: Token refresh successful, updating request URL",
+            );
+
+            // Update the URL with the new token
+            if (originalRequest.url) {
+              const url = new URL(
+                originalRequest.url,
+                this.axios.defaults.baseURL,
+              );
+              url.searchParams.set("access_token", newAccessToken);
+              originalRequest.url = url.pathname + url.search;
+
+              console.log(
+                `🔗 YNABService: Updated request URL with new token: ${originalRequest.url}`,
+              );
+            }
+
+            console.log(
+              "🔁 YNABService: Retrying original request with new token",
+            );
+
+            // Retry the original request
+            return this.axios(originalRequest);
+          } catch (refreshError) {
+            console.error(
+              "❌ YNABService: Token refresh failed:",
+              refreshError,
+            );
+            return Promise.reject(refreshError);
+          }
+        }
+
         return Promise.reject(error);
       },
     );

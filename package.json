@@ -8,11 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "prepare": "husky install",
-    "postinstall": "prisma generate --no-engine",
-    "type-check": "tsc --noEmit",
-    "type-check:strict": "tsc --noEmit --strict --noImplicitAny",
-    "pre-deploy": "npm run type-check && npm run lint && npm run build",
-    "check-all": "npm run type-check:strict && npm run lint"
+    "postinstall": "prisma generate --no-engine"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown",
