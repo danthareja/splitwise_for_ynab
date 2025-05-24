@@ -57,13 +57,12 @@ export default async function DashboardPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-xl font-bold">Splitwise for YNAB</span>
+              <span className="text-md md:text-xl font-bold">
+                Splitwise for YNAB
+              </span>
             </div>
             <div className="flex items-center gap-4">
               <ThemeToggle />
-              <span className="text-sm">
-                Signed in as {session.user?.name || "YNAB User"}
-              </span>
               <form
                 action={async () => {
                   "use server";
@@ -81,7 +80,9 @@ export default async function DashboardPage() {
 
       <main className="flex-1">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+          <h1 className="text-3xl font-bold mb-6">
+            Welcome back, {session.user?.name?.split(" ")[0] || "YNAB User"}!
+          </h1>
 
           <div className="grid gap-6 md:grid-cols-2">
             <YNABConnectionCard

@@ -10,15 +10,17 @@ export default function Header() {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center space-x-2">
-              <span className="text-xl font-bold">Splitwise for YNAB</span>
+              <span className="text-md md:text-xl font-bold">
+                Splitwise for YNAB
+              </span>
             </Link>
           </div>
           <nav className="flex items-center gap-4">
             <ThemeToggle />
-            <Link href="#how-it-works">
+            <Link href="#how-it-works" className="hidden md:inline-flex">
               <Button variant="ghost">How it works</Button>
             </Link>
-            <Link href="#faq">
+            <Link href="#faq" className="hidden md:inline-flex">
               <Button variant="ghost">FAQ</Button>
             </Link>
             <Link href="/auth/signin">
