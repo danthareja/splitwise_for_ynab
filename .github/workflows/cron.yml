@@ -83,7 +83,7 @@ jobs:
               "apiKey": "${{ secrets.SPLITWISE_API_KEY_MINE }}",
               "userId": "mine",
               "splitwiseUserId": ${{ secrets.SPLITWISE_USER_ID_MINE }},
-              "groupId": "${{ secrets.SPLITWISE_GROUP_ID_SHARED_MINE }}",
+              "groupId": "${{ secrets.SPLITWISE_GROUP_ID_SHARED }}",
               "knownEmoji": "🤴",
               "currencyCode": "CAD"
             }
