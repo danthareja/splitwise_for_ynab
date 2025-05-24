@@ -1,6 +1,6 @@
 # Splitwise for YNAB
 
-> Sync shared expenses with your partner between YNAB and Splitwise
+### [Try it out for free 🔗](https://splitwise-for-ynab.vercel.app/)
 
 ## Background
 
