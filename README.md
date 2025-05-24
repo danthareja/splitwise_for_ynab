@@ -81,8 +81,6 @@ cp .env.example .env.local
 vim .env.local # fill these out
 ```
 
-> NOTE: `YNAB_FLAG_COLOR` can be any YNAB color except `green`. This is hardcoded as the success value.
-
 Install dependencies
 
 ```bash
@@ -99,7 +97,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 To kick off a sync:
 
-1. In YNAB, flag a transaction with your defined `YNAB_FLAG_COLOR`
+1. In YNAB, flag a transaction as "blue"
 2. Enter your defined `API_SECRET_KEY` as the password, and press **Sync**
 
 It worked if you see the flagged transactions turn green, and a new entry into your Splitwise app and account.
