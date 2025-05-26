@@ -6,7 +6,7 @@ import { YNABConnectionCard } from "@/components/ynab-connection-card";
 import { prisma } from "@/db";
 import { getSplitwiseApiKey } from "@/app/actions/splitwise";
 import { getUserSettings } from "@/app/actions/settings";
-import { getYnabSettings } from "@/app/actions/ynab";
+import { getYNABSettings } from "@/app/actions/ynab";
 import { getSyncHistory } from "@/app/actions/sync";
 import { SyncHistory } from "@/components/sync-history";
 import { ManualSyncButton } from "@/components/manual-sync-button";
@@ -33,13 +33,13 @@ export default async function DashboardPage() {
   const hasSplitwiseConnected = user?.accounts.some(
     (account: Account) => account.provider === "splitwise",
   );
-  const hasYnabConnected = user?.accounts.some(
+  const hasYNABConnected = user?.accounts.some(
     (account: Account) => account.provider === "ynab",
   );
 
   const splitwiseApiKey = await getSplitwiseApiKey();
   const userSettings = await getUserSettings();
-  const ynabSettings = await getYnabSettings();
+  const ynabSettings = await getYNABSettings();
 
   // Get sync history
   const syncHistoryResult = await getSyncHistory(5);
@@ -49,7 +49,7 @@ export default async function DashboardPage() {
 
   // Check if user is fully configured
   const isFullyConfigured =
-    hasSplitwiseConnected && hasYnabConnected && userSettings && ynabSettings;
+    hasSplitwiseConnected && hasYNABConnected && userSettings && ynabSettings;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -86,7 +86,7 @@ export default async function DashboardPage() {
 
           <div className="grid gap-6 md:grid-cols-2">
             <YNABConnectionCard
-              isConnected={!!hasYnabConnected}
+              isConnected={!!hasYNABConnected}
               settings={ynabSettings}
             />
 

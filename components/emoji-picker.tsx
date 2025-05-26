@@ -75,7 +75,9 @@ export function EmojiPicker({
           required
         />
       </div>
-      {description && <p className="text-sm text-gray-500">{description}</p>}
+      {description && (
+        <p className="text-sm text-muted-foreground">{description}</p>
+      )}
     </div>
   );
 }

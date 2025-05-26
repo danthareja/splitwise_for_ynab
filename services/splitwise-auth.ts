@@ -1,4 +1,5 @@
 import axios, { AxiosError } from "axios";
+import * as Sentry from "@sentry/nextjs";
 import { addStackToAxios } from "./utils";
 import { SplitwiseUser, SplitwiseGroup } from "./splitwise-types";
 
@@ -19,6 +20,9 @@ export async function validateSplitwiseApiKey(apiKey: string) {
       error: null,
     };
   } catch (error) {
+    // Capture error in Sentry for monitoring
+    Sentry.captureException(error);
+
     if (error instanceof AxiosError && error.response?.status === 401) {
       return {
         success: false,
@@ -51,6 +55,9 @@ export async function getSplitwiseGroups(apiKey: string) {
       groups: response.data.groups as SplitwiseGroup[],
     };
   } catch (error) {
+    // Capture error in Sentry for monitoring
+    Sentry.captureException(error);
+
     if (error instanceof AxiosError && error.response?.status === 401) {
       return {
         success: false,

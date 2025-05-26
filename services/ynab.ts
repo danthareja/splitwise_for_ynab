@@ -1,22 +1,7 @@
-import axios, {
-  type AxiosInstance,
-  type InternalAxiosRequestConfig,
-  type AxiosError,
-} from "axios";
+import type { AxiosInstance } from "axios";
 import type { SyncState } from "./sync-state";
-import { addStackToAxios } from "./utils";
-import {
-  YNABTransaction,
-  YNABTransactionFlagColor,
-  YNABErrorResponse,
-} from "./ynab-types";
-
-// Extend the request config type to include our retry flag
-declare module "axios" {
-  interface InternalAxiosRequestConfig {
-    _retry?: boolean;
-  }
-}
+import { createYNABAxios } from "./ynab-axios";
+import { YNABTransaction, YNABTransactionFlagColor } from "./ynab-types";
 
 interface YNABServiceConstructorParams {
   userId: string;
@@ -51,89 +36,11 @@ export class YNABService {
     this.splitwiseAccountId = splitwiseAccountId;
     this.syncState = syncState;
 
-    this.axios = axios.create({
-      baseURL: `https://api.youneedabudget.com/v1/budgets/${budgetId}`,
+    // Create axios instance with token refresh interceptor already configured
+    this.axios = createYNABAxios({
+      accessToken: apiKey,
+      path: `/budgets/${budgetId}`,
     });
-
-    addStackToAxios(this.axios);
-
-    this.axios.interceptors.request.use(
-      (config: InternalAxiosRequestConfig) => {
-        config.url = (config.url || "") + "?access_token=" + apiKey;
-        return config;
-      },
-      (error: AxiosError) => {
-        return Promise.reject(error);
-      },
-    );
-
-    // Add response interceptor to handle token refresh
-    this.axios.interceptors.response.use(
-      (response) => response,
-      async (error: AxiosError<YNABErrorResponse>) => {
-        const originalRequest = error.config;
-
-        // Check if originalRequest exists and hasn't been retried yet
-        if (
-          originalRequest &&
-          error.response?.status === 401 &&
-          !originalRequest._retry
-        ) {
-          console.log(
-            "🚨 YNABService: Received 401 response, attempting token refresh",
-          );
-          console.log(
-            `📍 YNABService: Failed request URL: ${originalRequest.url}`,
-          );
-          console.log(`👤 YNABService: User ID: ${this.userId}`);
-
-          originalRequest._retry = true;
-
-          try {
-            console.log(
-              "🔄 YNABService: Attempting to refresh YNAB access token...",
-            );
-
-            // Import the refresh function from ynab-api
-            const { refreshYnabAccessToken } = await import("./ynab-api");
-            const newAccessToken = await refreshYnabAccessToken();
-
-            console.log(
-              "✅ YNABService: Token refresh successful, updating request URL",
-            );
-
-            // Update the URL with the new token
-            if (originalRequest.url) {
-              const url = new URL(
-                originalRequest.url,
-                this.axios.defaults.baseURL,
-              );
-              url.searchParams.set("access_token", newAccessToken);
-              originalRequest.url = url.pathname + url.search;
-
-              console.log(
-                `🔗 YNABService: Updated request URL with new token: ${originalRequest.url}`,
-              );
-            }
-
-            console.log(
-              "🔁 YNABService: Retrying original request with new token",
-            );
-
-            // Retry the original request
-            return this.axios(originalRequest);
-          } catch (refreshError) {
-            console.error(
-              "❌ YNABService: Token refresh failed:",
-              refreshError,
-            );
-            return Promise.reject(refreshError);
-          }
-        }
-
-        return Promise.reject(error);
-      },
-    );
   }
 
   async getUnprocessedTransactions(serverKnowledge?: number) {

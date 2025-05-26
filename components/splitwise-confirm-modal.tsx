@@ -50,7 +50,7 @@ export function SplitwiseConfirmModal({
         </DialogHeader>
 
         {showResetWarning && (
-          <Alert variant="warning">
+          <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
               Updating your API key will reset your Splitwise settings. You will

@@ -103,7 +103,7 @@ model SyncHistory {
 
 model SyncedItem {
   id                   String         @id @default(cuid())
-  externalId           String         // YNAB transaction ID or Splitwise expense ID
+  externalId           String         // Ynab transaction ID or Splitwise expense ID
   type                 String         // "ynab_transaction" or "splitwise_expense"
   amount               Float
   description          String?

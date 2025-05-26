@@ -99,7 +99,7 @@ export function SplitwiseConnectForm({
     <>
       <form onSubmit={handleSubmit} className="space-y-4">
         {isUpdate && (
-          <Alert variant="warning" className="mb-4">
+          <Alert className="mb-4">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
               Updating your API key will reset your Splitwise settings. You will

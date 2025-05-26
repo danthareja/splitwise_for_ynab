@@ -298,7 +298,7 @@ export function SplitwiseSettingsForm({
                         {group.members.slice(0, 2).map((member) => (
                           <div
                             key={member.user_id}
-                            className="relative h-6 w-6 overflow-hidden rounded-full border-1 border-primary"
+                            className="relative h-6 w-6 overflow-hidden rounded-full border-1 border-muted-foreground"
                           >
                             <Image
                               src={
@@ -314,7 +314,7 @@ export function SplitwiseSettingsForm({
                       </div>
                       <div className="flex flex-col">
                         <span className="font-medium">{group.name}</span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-muted-foreground">
                           {group.members.map((m) => m.first_name).join(" & ")}
                         </span>
                       </div>
@@ -324,7 +324,7 @@ export function SplitwiseSettingsForm({
               </SelectContent>
             </Select>
             {validGroups.length === 0 && (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 No valid groups found. You need a group with exactly 2 members.
               </p>
             )}
@@ -374,7 +374,7 @@ export function SplitwiseSettingsForm({
               </SelectContent>
             </Select>
             {partnerInfo?.currencyCode && (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Note: Currency will be synchronized with your partner. You both
                 need to use the same currency.
               </p>

@@ -17,7 +17,7 @@ export function GroupMembersDisplay({
   };
 
   const textSizeClasses = {
-    sm: "text-xs",
+    sm: "text-sm",
     md: "text-base",
     lg: "text-lg",
   };
@@ -28,7 +28,7 @@ export function GroupMembersDisplay({
         {members.slice(0, 2).map((member, index) => (
           <div
             key={`${member.user_id}-${index}`}
-            className={`relative ${sizeClasses[size]} overflow-hidden rounded-full border-1 border-primary`}
+            className={`relative ${sizeClasses[size]} overflow-hidden rounded-full border-1 border-muted-foreground`}
           >
             <Image
               src={member.picture?.medium || "https://placecats.com/50/50"}
@@ -39,7 +39,7 @@ export function GroupMembersDisplay({
           </div>
         ))}
       </div>
-      <span className={`${textSizeClasses[size]} text-gray-600`}>
+      <span className={`${textSizeClasses[size]} text-muted-foreground`}>
         {members.map((m) => m.first_name).join(" & ")}
       </span>
     </div>

@@ -206,10 +206,8 @@ export function SplitwiseConnectionCard({
                     </div>
                     <div>
                       <span className="text-sm font-medium">Sync Marker: </span>
-                      <span className="text-sm text-xl">
-                        {settings.emoji || "✅"}
-                      </span>
-                      <span className="text-xs text-gray-500 ml-2">
+                      <span className="text-xl">{settings.emoji || "✅"}</span>
+                      <span className="text-xs text-muted-foreground ml-2">
                         (Added to Splitwise expenses when synced)
                       </span>
                     </div>

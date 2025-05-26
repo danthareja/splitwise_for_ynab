@@ -35,11 +35,32 @@ export async function getSplitwiseGroupsForUser() {
     };
   }
 
+  // Filter groups by updated_at within last year and sort by descending updated_at
+  const oneYearAgo = new Date();
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+  const filteredGroups =
+    result.groups
+      ?.filter((group) => {
+        if (group.id == 0) {
+          return false; // default non-group-expenses
+        }
+
+        const updatedAt = new Date(group.updated_at);
+        return updatedAt >= oneYearAgo;
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+      ) ?? [];
+
   // Filter groups to only include those with exactly 2 members
-  const validGroups =
-    result.groups?.filter((group) => group.members.length === 2) ?? [];
-  const invalidGroups =
-    result.groups?.filter((group) => group.members.length !== 2) ?? [];
+  const validGroups = filteredGroups.filter(
+    (group) => group.members.length === 2,
+  );
+  const invalidGroups = filteredGroups.filter(
+    (group) => group.members.length !== 2,
+  );
 
   return {
     success: true,

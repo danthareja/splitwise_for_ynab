@@ -4,15 +4,15 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/db";
 import {
-  getYnabBudgets,
-  getYnabAccounts,
-  createYnabAccount,
+  getYNABBudgets,
+  getYNABAccounts,
+  createYNABAccount,
   type YNABBudgetsResult,
   type YNABAccountsResult,
   type YNABAccountResult,
 } from "@/services/ynab-api";
 
-export async function getYnabBudgetsForUser(): Promise<YNABBudgetsResult> {
+export async function getYNABBudgetsForUser(): Promise<YNABBudgetsResult> {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -22,10 +22,10 @@ export async function getYnabBudgetsForUser(): Promise<YNABBudgetsResult> {
     };
   }
 
-  return await getYnabBudgets();
+  return await getYNABBudgets();
 }
 
-export async function getYnabAccountsForBudget(
+export async function getYNABAccountsForBudget(
   budgetId: string,
 ): Promise<YNABAccountsResult> {
   const session = await auth();
@@ -37,10 +37,10 @@ export async function getYnabAccountsForBudget(
     };
   }
 
-  return await getYnabAccounts(budgetId);
+  return await getYNABAccounts(budgetId);
 }
 
-export async function createYnabAccountForUser(
+export async function createYNABAccountForUser(
   budgetId: string,
   name?: string,
 ): Promise<YNABAccountResult> {
@@ -53,10 +53,10 @@ export async function createYnabAccountForUser(
     };
   }
 
-  return await createYnabAccount(budgetId, name);
+  return await createYNABAccount(budgetId, name);
 }
 
-export async function saveYnabSettings(formData: FormData) {
+export async function saveYNABSettings(formData: FormData) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -125,7 +125,7 @@ export async function saveYnabSettings(formData: FormData) {
   }
 }
 
-export async function getYnabSettings() {
+export async function getYNABSettings() {
   const session = await auth();
 
   if (!session?.user?.id) {

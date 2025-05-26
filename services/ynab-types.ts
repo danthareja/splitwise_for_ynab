@@ -100,16 +100,3 @@ export interface YNABFlagColor {
   name: string;
   color: string;
 }
-
-// Return types for service functions
-export type YNABBudgetsResult =
-  | { success: true; budgets: YNABBudget[] }
-  | { success: false; error: string };
-
-export type YNABAccountsResult =
-  | { success: true; accounts: YNABAccount[] }
-  | { success: false; error: string };
-
-export type YNABAccountResult =
-  | { success: true; account: YNABAccount }
-  | { success: false; error: string };

@@ -30,10 +30,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  getYnabBudgetsForUser,
-  getYnabAccountsForBudget,
-  createYnabAccountForUser,
-  saveYnabSettings,
+  getYNABBudgetsForUser,
+  getYNABAccountsForBudget,
+  createYNABAccountForUser,
+  saveYNABSettings,
 } from "@/app/actions/ynab";
 import { FLAG_COLORS } from "@/services/ynab-api";
 import { type YNABBudget, type YNABAccount } from "@/services/ynab-types";
@@ -110,7 +110,7 @@ export function YNABSettingsForm({
     setError(null);
 
     try {
-      const result = await getYnabBudgetsForUser();
+      const result = await getYNABBudgetsForUser();
 
       if (result.success) {
         setBudgets(result.budgets);
@@ -131,7 +131,7 @@ export function YNABSettingsForm({
     setError(null);
 
     try {
-      const result = await getYnabAccountsForBudget(budgetId);
+      const result = await getYNABAccountsForBudget(budgetId);
 
       if (result.success) {
         setAccounts(result.accounts);
@@ -152,7 +152,7 @@ export function YNABSettingsForm({
     setError(null);
 
     try {
-      const result = await createYnabAccountForUser(
+      const result = await createYNABAccountForUser(
         selectedBudgetId,
         newAccountName,
       );
@@ -240,7 +240,7 @@ export function YNABSettingsForm({
       formData.set("budgetName", selectedBudgetName);
       formData.set("splitwiseAccountName", selectedAccountName);
 
-      const result = await saveYnabSettings(formData);
+      const result = await saveYNABSettings(formData);
 
       if (result.success) {
         setSuccessMessage("YNAB settings saved successfully!");
