@@ -241,19 +241,14 @@ export function SplitwiseConnectionCard({
             )}
           </>
         ) : (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-500">
-              Connect your Splitwise account to sync shared expenses with YNAB.
-            </p>
-            <Button
-              onClick={handleConnectSplitwise}
-              disabled={isLoading}
-              className="w-full"
-            >
-              <LogIn className="mr-2 h-4 w-4" />
-              {isLoading ? "Connecting..." : "Sign in with Splitwise"}
-            </Button>
-          </div>
+          <Button
+            onClick={handleConnectSplitwise}
+            disabled={isLoading}
+            className="w-full"
+          >
+            <LogIn className="mr-2 h-4 w-4" />
+            {isLoading ? "Connecting..." : "Sign in with Splitwise"}
+          </Button>
         )}
       </CardContent>
     </Card>
