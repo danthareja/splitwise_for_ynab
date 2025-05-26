@@ -6,6 +6,20 @@ import { processLatestTransactions } from "@/services/glue";
 import { validateSyncRequest } from "@/lib/validations/sync-request";
 
 export async function POST(req: Request) {
+  const authorizationHeader = req.headers.get("authorization");
+  const token = authorizationHeader?.split("Bearer ")?.[1];
+  const allowedToken = process.env.API_SECRET_KEY;
+
+  // Skip authorization for non-API routes or other specific paths if needed in the future
+  // For now, this middleware is only applied to paths defined in the matcher
+
+  if (!token || token !== allowedToken) {
+    return NextResponse.json(
+      { error: "You're not authorized", details: "Invalid token" },
+      { status: 401 },
+    );
+  }
+
   const body = await req.json();
 
   // Validate the request using shared validation
