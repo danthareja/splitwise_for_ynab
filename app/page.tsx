@@ -375,8 +375,7 @@ export default function LandingPage() {
             </h3>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
               Follow along as Dan and Eira handle their shared expenses
-              throughout the month. This is one continuous story showing how the
-              balance changes over time.
+              throughout the month. Dan uses YNAB, but Eira does not.
             </p>
           </div>
 
@@ -404,8 +403,8 @@ export default function LandingPage() {
                     </h5>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-                    Dan categorizes the $50 outflow in his Transportation
-                    category
+                    Dan categorizes the $50 <strong>outflow</strong> in his
+                    <i>Transportation</i> category
                   </p>
                   <div className="border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm overflow-hidden">
                     <img
@@ -428,8 +427,8 @@ export default function LandingPage() {
                     </h5>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-                    Dan adds a $50 &quot;split evenly&quot; expense to their
-                    shared group
+                    Dan adds a $50 <strong>split evenly</strong> expense to
+                    their shared group
                   </p>
                   <div className="border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm overflow-hidden">
                     <img
@@ -452,8 +451,8 @@ export default function LandingPage() {
                     </h5>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-                    Dan adds a $25 inflow to his Splitwise account, categorized
-                    back to Transportation
+                    Dan adds a $25 <strong>inflow</strong> to his Splitwise
+                    account, categorized back to <i>Transportation</i>
                   </p>
                   <div className="border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm overflow-hidden">
                     <img
@@ -474,10 +473,10 @@ export default function LandingPage() {
                 <div>
                   <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
                     <strong>Dan&apos;s YNAB shows:</strong> Only spent $25 on
-                    Transportation (his half)
+                    <i>Transportation</i> (his half)
                   </p>
                   <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <strong>Splitwise account balance:</strong>{" "}
+                    <strong>Dan&apos;s Splitwise shows:</strong>{" "}
                     <span className="text-green-600 font-bold">+$25</span> (Eira
                     owes Dan)
                   </p>
@@ -513,7 +512,7 @@ export default function LandingPage() {
                       1
                     </div>
                     <h5 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
-                      Splitwise Shows the Expense
+                      Splitwise Expense
                     </h5>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
@@ -536,12 +535,12 @@ export default function LandingPage() {
                       2
                     </div>
                     <h5 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
-                      Dan&apos;s YNAB Entry
+                      YNAB Transaction
                     </h5>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-                    Dan adds a $50 outflow to his Splitwise account, categorized
-                    to Utilities
+                    Dan adds a $50 <strong>outflow</strong> to his Splitwise
+                    account, categorized to <i>Utilities</i>
                   </p>
                   <div className="border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm overflow-hidden">
                     <img
@@ -565,7 +564,7 @@ export default function LandingPage() {
                     Utilities (his half)
                   </p>
                   <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <strong>Splitwise account balance:</strong>{" "}
+                    <strong>Dan&apos;s Splitwise shows:</strong>{" "}
                     <span className="text-red-600 font-bold">-$25</span> (Dan
                     owes Eira $25 net)
                   </p>
@@ -601,8 +600,8 @@ export default function LandingPage() {
                     Transfer: Checking → Splitwise
                   </h5>
                   <p className="text-base text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-                    Dan sends $25 to Eira and categorizes it as a transfer to
-                    his Splitwise account
+                    Dan sends $25 from his Checking account to Eira and
+                    categorizes it as a transfer to his Splitwise account
                   </p>
                   <div className="max-w-[300px] mx-auto border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm overflow-hidden">
                     <img
@@ -662,12 +661,11 @@ export default function LandingPage() {
               The Automation
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              Here&apos;s the cool part.{" "}
+              Here&apos;s the cool part:{" "}
               <strong className="text-green-600 dark:text-green-400">
                 We automate ALL the manual steps above.{" "}
               </strong>
-              All you have to do is flag transactions with a color.{" "}
-              <strong>Try it out!</strong>
+              All you have to do is flag transactions with a color.
             </p>
           </div>
 
@@ -772,12 +770,12 @@ export default function LandingPage() {
             <Card className="border-0 shadow-md overflow-hidden bg-white dark:bg-gray-800">
               <CardContent className="p-8">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
-                  What if my partner doesn&apos;t use YNAB?
+                  What if my partner already uses YNAB?
                 </h3>
                 <p className="text-base text-gray-600 dark:text-gray-300 leading-relaxed">
-                  This still works perfectly! As long as your partner enters
-                  expenses into the configured shared group in their Splitwise
-                  app, our system will sync everything to your YNAB.
+                  This still works perfectly! You and your partner can both
+                  connect to the same Splitwise group, and we&apos;ll sync your
+                  transactions automatically.
                 </p>
               </CardContent>
             </Card>

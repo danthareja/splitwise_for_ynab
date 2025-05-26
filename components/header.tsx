@@ -15,9 +15,9 @@ export function Header() {
               alt="YNAB Logo"
               width={32}
               height={32}
-              className="mr-2"
+              className="mr-1 sm:mr-2 w-5 h-5 sm:w-8 sm:h-8"
             />
-            <span className="text-lg font-bold text-gray-900 dark:text-white">
+            <span className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
               Splitwise For YNAB
             </span>
             <Image
@@ -25,7 +25,7 @@ export function Header() {
               alt="Splitwise Logo"
               width={32}
               height={32}
-              className="ml-2"
+              className="ml-1 sm:ml-2 w-5 h-5 sm:w-8 sm:h-8"
             />
           </div>
           <div className="flex items-center space-x-3">
@@ -52,9 +52,9 @@ export function AppHeader() {
               alt="YNAB Logo"
               width={32}
               height={32}
-              className="mr-2"
+              className="mr-1 sm:mr-2 w-5 h-5 sm:w-8 sm:h-8"
             />
-            <span className="text-lg font-bold text-gray-900 dark:text-white">
+            <span className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
               Splitwise For YNAB
             </span>
             <Image
@@ -62,7 +62,7 @@ export function AppHeader() {
               alt="Splitwise Logo"
               width={32}
               height={32}
-              className="ml-2"
+              className="ml-1 sm:ml-2 w-5 h-5 sm:w-8 sm:h-8"
             />
           </div>
           <div className="flex items-center space-x-3">
