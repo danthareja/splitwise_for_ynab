@@ -20,13 +20,13 @@ export function Footer() {
               <Github className="h-5 w-5" />
             </Link>
             <Link
-              href="#"
+              href="/terms"
               className="text-sm text-gray-500 hover:underline dark:text-gray-400"
             >
               Terms
             </Link>
             <Link
-              href="#"
+              href="/privacy"
               className="text-sm text-gray-500 hover:underline dark:text-gray-400"
             >
               Privacy

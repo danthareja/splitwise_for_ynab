@@ -2,14 +2,19 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { signOut } from "@/auth";
+import { signOut, auth } from "@/auth";
 
-export function Header() {
+export async function Header() {
+  const session = await auth();
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex justify-between items-center">
-          <div className="flex items-center">
+          <Link
+            href="/"
+            className="flex items-center hover:opacity-80 transition-opacity"
+          >
             <Image
               src="/images/ynab-logo.png"
               alt="YNAB Logo"
@@ -27,11 +32,12 @@ export function Header() {
               height={32}
               className="ml-1 sm:ml-2 w-5 h-5 sm:w-8 sm:h-8"
             />
-          </div>
+          </Link>
           <div className="flex items-center space-x-3">
-            <Link href="/auth/signin">
+            <Link href={session ? "/dashboard" : "/auth/signin"}>
               <Button className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-medium">
-                Sign In <ArrowRight className="ml-2" />
+                {session ? "Dashboard" : "Sign In"}{" "}
+                <ArrowRight className="ml-2" />
               </Button>
             </Link>
           </div>
@@ -46,7 +52,10 @@ export function AppHeader() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex justify-between items-center">
-          <div className="flex items-center">
+          <Link
+            href="/"
+            className="flex items-center hover:opacity-80 transition-opacity"
+          >
             <Image
               src="/images/ynab-logo.png"
               alt="YNAB Logo"
@@ -64,7 +73,7 @@ export function AppHeader() {
               height={32}
               className="ml-1 sm:ml-2 w-5 h-5 sm:w-8 sm:h-8"
             />
-          </div>
+          </Link>
           <div className="flex items-center space-x-3">
             <form
               action={async () => {

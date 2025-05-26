@@ -1,6 +1,6 @@
 # Splitwise for YNAB
 
-### [Try it out for free 🔗](https://splitwise-for-ynab.vercel.app/)
+### [Try it out for free 🔗](https://splitwiseforynab.com/)
 
 ## Background
 
