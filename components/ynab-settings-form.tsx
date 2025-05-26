@@ -36,6 +36,7 @@ import {
   saveYNABSettings,
 } from "@/app/actions/ynab";
 import { FLAG_COLORS } from "@/services/ynab-api";
+import { YNABFlag } from "@/components/ynab-flag";
 import { type YNABBudget, type YNABAccount } from "@/services/ynab-types";
 import { AlertCircle, Loader2, Plus, Check } from "lucide-react";
 
@@ -369,14 +370,7 @@ export function YNABSettingsForm({
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a color">
                   <div className="flex items-center gap-2">
-                    <div
-                      className="h-4 w-4 rounded-full"
-                      style={{
-                        backgroundColor:
-                          FLAG_COLORS.find((c) => c.id === manualFlagColor)
-                            ?.color || "#cccccc",
-                      }}
-                    />
+                    <YNABFlag colorId={manualFlagColor} size="sm" />
                     <span>
                       {FLAG_COLORS.find((c) => c.id === manualFlagColor)
                         ?.name || "Select a color"}
@@ -388,10 +382,7 @@ export function YNABSettingsForm({
                 {FLAG_COLORS.map((flag) => (
                   <SelectItem key={flag.id} value={flag.id}>
                     <div className="flex items-center gap-2">
-                      <div
-                        className="h-4 w-4 rounded-full"
-                        style={{ backgroundColor: flag.color }}
-                      />
+                      <YNABFlag colorId={flag.id} size="sm" />
                       <span>{flag.name}</span>
                     </div>
                   </SelectItem>
@@ -414,14 +405,7 @@ export function YNABSettingsForm({
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a color">
                   <div className="flex items-center gap-2">
-                    <div
-                      className="h-4 w-4 rounded-full"
-                      style={{
-                        backgroundColor:
-                          FLAG_COLORS.find((c) => c.id === syncedFlagColor)
-                            ?.color || "#cccccc",
-                      }}
-                    />
+                    <YNABFlag colorId={syncedFlagColor} size="sm" />
                     <span>
                       {FLAG_COLORS.find((c) => c.id === syncedFlagColor)
                         ?.name || "Select a color"}
@@ -438,10 +422,7 @@ export function YNABSettingsForm({
                     className={flag.id === manualFlagColor ? "opacity-50" : ""}
                   >
                     <div className="flex items-center gap-2">
-                      <div
-                        className="h-4 w-4 rounded-full"
-                        style={{ backgroundColor: flag.color }}
-                      />
+                      <YNABFlag colorId={flag.id} size="sm" />
                       <span>{flag.name}</span>
                       {flag.id === manualFlagColor && (
                         <span className="text-xs">(Used for manual flag)</span>

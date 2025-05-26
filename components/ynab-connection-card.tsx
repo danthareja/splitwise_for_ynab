@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { AlertCircle, Check, X, AlertTriangle, Settings } from "lucide-react";
 import { FLAG_COLORS } from "@/services/ynab-api";
+import { YNABFlag } from "@/components/ynab-flag";
 import {
   Alert,
   AlertDescription as UiAlertDescription,
@@ -41,13 +42,6 @@ export function YNABConnectionCard({
 
   const getColorName = (colorId: string) => {
     return FLAG_COLORS.find((c) => c.id === colorId)?.name || colorId;
-  };
-
-  const getColorStyle = (colorId: string) => {
-    return {
-      backgroundColor:
-        FLAG_COLORS.find((c) => c.id === colorId)?.color || "#cccccc",
-    };
   };
 
   const handleSettingsSaveSuccess = () => {
@@ -166,11 +160,10 @@ export function YNABConnectionCard({
                     </div>
                     <div className="flex items-center gap-1">
                       <span className="text-sm font-medium">Manual Flag: </span>
-                      <div
-                        className="h-3 w-3 rounded-full inline-block mr-1"
-                        style={getColorStyle(
-                          settings.manualFlagColor || "blue",
-                        )}
+                      <YNABFlag
+                        colorId={settings.manualFlagColor || "blue"}
+                        size="sm"
+                        className="mr-1"
                       />
                       <span className="text-sm">
                         {getColorName(settings.manualFlagColor || "blue")}
@@ -178,11 +171,10 @@ export function YNABConnectionCard({
                     </div>
                     <div className="flex items-center gap-1">
                       <span className="text-sm font-medium">Synced Flag: </span>
-                      <div
-                        className="h-3 w-3 rounded-full inline-block mr-1"
-                        style={getColorStyle(
-                          settings.syncedFlagColor || "green",
-                        )}
+                      <YNABFlag
+                        colorId={settings.syncedFlagColor || "green"}
+                        size="sm"
+                        className="mr-1"
                       />
                       <span className="text-sm">
                         {getColorName(settings.syncedFlagColor || "green")}

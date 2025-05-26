@@ -22,10 +22,10 @@ import {
 } from "@/components/ui/card";
 import {
   getSplitwiseGroupsForUser,
-  saveUserSettings,
+  saveSplitwiseSettings,
   getPartnerEmoji,
   checkCurrencySyncStatus,
-} from "@/app/actions/settings";
+} from "@/app/actions/splitwise";
 import type { SplitwiseGroup } from "@/services/splitwise-types";
 import { AlertCircle, Loader2, AlertTriangle, Info, Check } from "lucide-react";
 import { EmojiPicker } from "@/components/emoji-picker";
@@ -203,7 +203,7 @@ export function SplitwiseSettingsForm({
         formData.set("groupName", selectedGroup.name);
       }
 
-      const result = await saveUserSettings(formData);
+      const result = await saveSplitwiseSettings(formData);
 
       if (result.success) {
         // If currency was synced with partners, show a success message

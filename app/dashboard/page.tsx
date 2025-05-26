@@ -4,14 +4,17 @@ import { Button } from "@/components/ui/button";
 import { SplitwiseConnectionCard } from "@/components/splitwise-connection-card";
 import { YNABConnectionCard } from "@/components/ynab-connection-card";
 import { prisma } from "@/db";
-import { getSplitwiseApiKey } from "@/app/actions/splitwise";
-import { getUserSettings } from "@/app/actions/settings";
+import {
+  getSplitwiseSettings,
+  getSplitwiseApiKey,
+} from "@/app/actions/splitwise";
 import { getYNABSettings } from "@/app/actions/ynab";
 import { getSyncHistory } from "@/app/actions/sync";
 import { SyncHistory } from "@/components/sync-history";
 import { ManualSyncButton } from "@/components/manual-sync-button";
 import { RefreshCw } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { YNABFlag } from "@/components/ynab-flag";
 import type { Account } from "@prisma/client";
 
 export default async function DashboardPage() {
@@ -38,7 +41,7 @@ export default async function DashboardPage() {
   );
 
   const splitwiseApiKey = await getSplitwiseApiKey();
-  const userSettings = await getUserSettings();
+  const splitwiseSettings = await getSplitwiseSettings();
   const ynabSettings = await getYNABSettings();
 
   // Get sync history
@@ -49,7 +52,10 @@ export default async function DashboardPage() {
 
   // Check if user is fully configured
   const isFullyConfigured =
-    hasSplitwiseConnected && hasYNABConnected && userSettings && ynabSettings;
+    hasSplitwiseConnected &&
+    hasYNABConnected &&
+    splitwiseSettings &&
+    ynabSettings;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -93,7 +99,7 @@ export default async function DashboardPage() {
             <SplitwiseConnectionCard
               isConnected={!!hasSplitwiseConnected}
               apiKey={splitwiseApiKey}
-              settings={userSettings}
+              settings={splitwiseSettings}
             />
           </div>
 
@@ -108,16 +114,24 @@ export default async function DashboardPage() {
             ) : (
               <div className="text-center py-8">
                 <RefreshCw className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                <p className="text-sm text-gray-500 mb-2">
+                <p className="text-sm text-muted-foreground mb-2">
                   No sync history yet
                 </p>
                 {isFullyConfigured ? (
-                  <p className="text-sm text-gray-400">
-                    Flag a transaction in YNAB or click the sync button to get
-                    started
-                  </p>
+                  <div className="text-md">
+                    To start, flag a transaction in your{" "}
+                    <span className="font-semibold">
+                      {ynabSettings.budgetName}
+                    </span>{" "}
+                    plan with{" "}
+                    <YNABFlag
+                      colorId={ynabSettings.manualFlagColor}
+                      size="sm"
+                    />{" "}
+                    and press <span className="font-semibold">Sync Now</span>
+                  </div>
                 ) : (
-                  <p className="text-sm text-gray-400">
+                  <p className="text-md">
                     Complete your configuration to start syncing
                   </p>
                 )}

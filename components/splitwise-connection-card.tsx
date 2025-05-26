@@ -6,7 +6,7 @@ import { SplitwiseConnectForm } from "@/components/splitwise-connect-form";
 import { SplitwiseDisconnectModal } from "@/components/splitwise-disconnect-modal";
 import { SplitwiseSettingsForm } from "@/components/splitwise-settings-form";
 import { GroupMembersDisplay } from "@/components/group-members-display";
-import { getSplitwiseGroupsForUser } from "@/app/actions/settings";
+import { getSplitwiseGroupsForUser } from "@/app/actions/splitwise";
 import type { SplitwiseGroup } from "@/services/splitwise-types";
 import {
   Pencil,
