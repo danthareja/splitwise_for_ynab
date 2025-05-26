@@ -12,6 +12,7 @@ import { RefreshCw } from "lucide-react";
 import { YNABFlag } from "@/components/ynab-flag";
 import type { Account } from "@prisma/client";
 import { AppHeader } from "@/components/header";
+import { Footer } from "@/components/footer";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -57,7 +58,7 @@ export default async function DashboardPage() {
       <AppHeader />
 
       <main className="flex-1">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold mb-6">
             Welcome back, {session.user?.name?.split(" ")[0] || "You"}!
           </h1>
@@ -111,6 +112,8 @@ export default async function DashboardPage() {
           </div>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }
