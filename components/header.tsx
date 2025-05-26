@@ -16,8 +16,8 @@ export async function Header() {
             className="flex items-center hover:opacity-80 transition-opacity"
           >
             <Image
-              src="/images/ynab-logo.png"
-              alt="YNAB Logo"
+              src="/images/splitwise-logo.png"
+              alt="Splitwise Logo"
               width={32}
               height={32}
               className="mr-1 sm:mr-2 w-5 h-5 sm:w-8 sm:h-8"
@@ -26,8 +26,8 @@ export async function Header() {
               Splitwise For YNAB
             </span>
             <Image
-              src="/images/splitwise-logo.png"
-              alt="Splitwise Logo"
+              src="/images/ynab-logo.png"
+              alt="YNAB Logo"
               width={32}
               height={32}
               className="ml-1 sm:ml-2 w-5 h-5 sm:w-8 sm:h-8"
@@ -57,8 +57,8 @@ export function AppHeader() {
             className="flex items-center hover:opacity-80 transition-opacity"
           >
             <Image
-              src="/images/ynab-logo.png"
-              alt="YNAB Logo"
+              src="/images/splitwise-logo.png"
+              alt="Splitwise Logo"
               width={32}
               height={32}
               className="mr-1 sm:mr-2 w-5 h-5 sm:w-8 sm:h-8"
@@ -67,8 +67,8 @@ export function AppHeader() {
               Splitwise For YNAB
             </span>
             <Image
-              src="/images/splitwise-logo.png"
-              alt="Splitwise Logo"
+              src="/images/ynab-logo.png"
+              alt="YNAB Logo"
               width={32}
               height={32}
               className="ml-1 sm:ml-2 w-5 h-5 sm:w-8 sm:h-8"

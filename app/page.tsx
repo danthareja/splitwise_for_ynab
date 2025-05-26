@@ -18,8 +18,8 @@ export default function LandingPage() {
         <div className="text-center">
           <div className="flex justify-center items-center space-x-6 mb-8">
             <Image
-              src="/images/ynab-logo.png"
-              alt="YNAB Logo"
+              src="/images/splitwise-logo.png"
+              alt="Splitwise Logo"
               width={64}
               height={64}
             />
@@ -27,8 +27,8 @@ export default function LandingPage() {
               +
             </span>
             <Image
-              src="/images/splitwise-logo.png"
-              alt="Splitwise Logo"
+              src="/images/ynab-logo.png"
+              alt="YNAB Logo"
               width={64}
               height={64}
             />
