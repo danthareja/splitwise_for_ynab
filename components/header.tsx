@@ -35,7 +35,7 @@ export async function Header() {
           </Link>
           <div className="flex items-center space-x-3">
             <Link href={session ? "/dashboard" : "/auth/signin"}>
-              <Button className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-blue-700 hover:to-green-700 text-white font-medium">
+              <Button className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium">
                 {session ? "Dashboard" : "Sign In"}{" "}
                 <ArrowRight className="ml-2" />
               </Button>

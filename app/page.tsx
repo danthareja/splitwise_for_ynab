@@ -50,7 +50,7 @@ export default function LandingPage() {
           <div className="flex justify-center">
             <Button
               size="lg"
-              className="text-base px-6 py-4 h-auto bg-gradient-to-r from-green-600 to-blue-600 hover:from-blue-700 hover:to-green-700 text-white font-medium"
+              className="text-base px-6 py-4 h-auto bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium"
               asChild
             >
               <Link href="/auth/signin">

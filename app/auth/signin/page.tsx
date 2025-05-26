@@ -47,7 +47,7 @@ export default async function SignInPage() {
               }}
             >
               <Button
-                className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-blue-700 hover:to-green-700 text-white font-medium"
+                className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium"
                 size="lg"
                 type="submit"
               >
