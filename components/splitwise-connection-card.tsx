@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { SplitwiseSettingsForm } from "@/components/splitwise-settings-form";
 import { GroupMembersDisplay } from "@/components/group-members-display";
 import { getSplitwiseGroupsForUser } from "@/app/actions/splitwise";
-import type { SplitwiseGroup } from "@/services/splitwise-auth";
+import type { SplitwiseGroup } from "@/services/splitwise-types";
 import {
   Trash2,
   Settings,
