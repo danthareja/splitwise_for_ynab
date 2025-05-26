@@ -1,5 +1,6 @@
 import type React from "react";
 import { SessionProvider } from "next-auth/react";
+import { Analytics } from "@vercel/analytics/next";
 
 import "./globals.css";
 
@@ -12,6 +13,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body>
         <SessionProvider>{children}</SessionProvider>
+        <Analytics />
       </body>
     </html>
   );
