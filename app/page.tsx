@@ -50,7 +50,7 @@ export default function LandingPage() {
           <div className="flex justify-center">
             <Button
               size="lg"
-              className="text-base px-6 py-4 h-auto bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-medium"
+              className="text-base px-6 py-4 h-auto bg-gradient-to-r from-green-600 to-blue-600 hover:from-blue-700 hover:to-green-700 text-white font-medium"
               asChild
             >
               <Link href="/auth/signin">
@@ -305,7 +305,7 @@ export default function LandingPage() {
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
               Our solution uses a{" "}
-              <strong className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+              <strong className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
                 Splitwise cash account
               </strong>{" "}
               in YNAB to track the balance owed in the Splitwise app. Let me

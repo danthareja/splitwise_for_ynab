@@ -244,7 +244,7 @@ export function SplitwiseConnectionCard({
           <Button
             onClick={handleConnectSplitwise}
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-medium"
+            className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-blue-700 hover:to-green-700 text-white font-medium"
           >
             <LogIn className="mr-2 h-4 w-4" />
             {isLoading ? "Connecting..." : "Sign in with Splitwise"}
