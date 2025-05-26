@@ -448,7 +448,13 @@ export function SplitwiseSettingsForm({
 
           <Button
             type="submit"
-            disabled={isSaving || validGroups.length === 0 || isEmojiConflict}
+            disabled={
+              isSaving ||
+              validGroups.length === 0 ||
+              isEmojiConflict ||
+              !selectedGroupId ||
+              !selectedCurrency
+            }
           >
             {isSaving ? (
               <>

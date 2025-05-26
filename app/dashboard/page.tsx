@@ -4,10 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SplitwiseConnectionCard } from "@/components/splitwise-connection-card";
 import { YNABConnectionCard } from "@/components/ynab-connection-card";
 import { prisma } from "@/db";
-import {
-  getSplitwiseSettings,
-  getSplitwiseApiKey,
-} from "@/app/actions/splitwise";
+import { getSplitwiseSettings } from "@/app/actions/splitwise";
 import { getYNABSettings } from "@/app/actions/ynab";
 import { getSyncHistory } from "@/app/actions/sync";
 import { SyncHistory } from "@/components/sync-history";
@@ -40,7 +37,6 @@ export default async function DashboardPage() {
     (account: Account) => account.provider === "ynab",
   );
 
-  const splitwiseApiKey = await getSplitwiseApiKey();
   const splitwiseSettings = await getSplitwiseSettings();
   const ynabSettings = await getYNABSettings();
 
@@ -98,7 +94,6 @@ export default async function DashboardPage() {
 
             <SplitwiseConnectionCard
               isConnected={!!hasSplitwiseConnected}
-              apiKey={splitwiseApiKey}
               settings={splitwiseSettings}
             />
           </div>

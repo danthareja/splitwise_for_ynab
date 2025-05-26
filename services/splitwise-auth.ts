@@ -1,10 +1,9 @@
-import axios, { AxiosError } from "axios";
 import * as Sentry from "@sentry/nextjs";
+import axios, { AxiosError } from "axios";
+import type { SplitwiseGroup, SplitwiseUser } from "./splitwise-types";
 import { addStackToAxios } from "./utils";
-import { SplitwiseUser, SplitwiseGroup } from "./splitwise-types";
 
 export async function validateSplitwiseApiKey(apiKey: string) {
-  console.log("validateSplitwiseApiKey", apiKey);
   try {
     const axiosInstance = axios.create({
       baseURL: "https://secure.splitwise.com/api/v3.0",
@@ -20,7 +19,6 @@ export async function validateSplitwiseApiKey(apiKey: string) {
       error: null,
     };
   } catch (error) {
-    // Capture error in Sentry for monitoring
     Sentry.captureException(error);
 
     if (error instanceof AxiosError && error.response?.status === 401) {
@@ -40,11 +38,11 @@ export async function validateSplitwiseApiKey(apiKey: string) {
   }
 }
 
-export async function getSplitwiseGroups(apiKey: string) {
+export async function getSplitwiseGroups(accessToken: string) {
   try {
     const axiosInstance = axios.create({
       baseURL: "https://secure.splitwise.com/api/v3.0",
-      headers: { Authorization: `Bearer ${apiKey}` },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
 
     addStackToAxios(axiosInstance);
@@ -55,13 +53,12 @@ export async function getSplitwiseGroups(apiKey: string) {
       groups: response.data.groups as SplitwiseGroup[],
     };
   } catch (error) {
-    // Capture error in Sentry for monitoring
     Sentry.captureException(error);
 
     if (error instanceof AxiosError && error.response?.status === 401) {
       return {
         success: false,
-        error: "Invalid API key. Please verify your connection.",
+        error: "Invalid access token. Please verify your connection.",
       };
     }
 

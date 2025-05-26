@@ -1,6 +1,7 @@
+import * as Sentry from "@sentry/nextjs";
 import { auth } from "@/auth";
-import { createYNABAxios } from "./ynab-axios";
 import { prisma } from "@/db";
+import { createYNABAxios } from "./ynab-axios";
 import { YNABBudget, YNABAccount, YNABFlagColor } from "./ynab-types";
 
 // Return types for service functions
@@ -37,6 +38,7 @@ export async function getYNABBudgets(): Promise<YNABBudgetsResult> {
     };
   } catch (error) {
     console.error("Error fetching YNAB budgets:", error);
+    Sentry.captureException(error);
     return {
       success: false,
       error:
@@ -65,6 +67,7 @@ export async function getYNABAccounts(
     };
   } catch (error) {
     console.error("Error fetching YNAB accounts:", error);
+    Sentry.captureException(error);
     return {
       success: false,
       error:
@@ -96,6 +99,7 @@ export async function createYNABAccount(
     };
   } catch (error) {
     console.error("Error creating YNAB account:", error);
+    Sentry.captureException(error);
     return {
       success: false,
       error:
