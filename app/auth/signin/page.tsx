@@ -46,7 +46,11 @@ export default async function SignInPage() {
                 await signIn("ynab", { redirectTo: "/dashboard" });
               }}
             >
-              <Button className="w-full" size="lg" type="submit">
+              <Button
+                className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-medium"
+                size="lg"
+                type="submit"
+              >
                 Sign in with YNAB
               </Button>
             </form>

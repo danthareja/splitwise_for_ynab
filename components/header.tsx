@@ -1,34 +1,68 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { signOut } from "@/auth";
 
-export default function Header() {
+export function Header() {
+  return (
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center">
+            <Image
+              src="/images/ynab-logo.png"
+              alt="YNAB Logo"
+              width={32}
+              height={32}
+              className="mr-2"
+            />
+            <span className="text-lg font-bold text-gray-900 dark:text-white">
+              Splitwise For YNAB
+            </span>
+            <Image
+              src="/images/splitwise-logo.png"
+              alt="Splitwise Logo"
+              width={32}
+              height={32}
+              className="ml-2"
+            />
+          </div>
+          <div className="flex items-center space-x-3">
+            <Link href="/auth/signin">
+              <Button className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-medium">
+                Sign In <ArrowRight className="ml-2" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+export function AppHeader() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center space-x-2">
-              <span className="text-md md:text-xl font-bold">
-                Splitwise for YNAB
-              </span>
-            </Link>
+            <span className="text-md md:text-xl font-bold">
+              Splitwise for YNAB
+            </span>
           </div>
-          <nav className="flex items-center gap-4">
-            <ThemeToggle />
-            <Link href="#how-it-works" className="hidden md:inline-flex">
-              <Button variant="ghost">How it works</Button>
-            </Link>
-            <Link href="#faq" className="hidden md:inline-flex">
-              <Button variant="ghost">FAQ</Button>
-            </Link>
-            <Link href="/auth/signin">
-              <Button className="gap-1">
-                Sign in <ArrowRight className="h-4 w-4" />
+          <div className="flex items-center gap-4">
+            <form
+              action={async () => {
+                "use server";
+                await signOut({ redirectTo: "/" });
+              }}
+            >
+              <Button variant="outline" size="sm" type="submit">
+                Sign out
               </Button>
-            </Link>
-          </nav>
+            </form>
+          </div>
         </div>
       </div>
     </header>

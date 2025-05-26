@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { Github } from "lucide-react";
 
-export default function Footer() {
+export function Footer() {
   return (
     <footer className="w-full border-t py-6 md:py-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -10,6 +11,14 @@ export default function Footer() {
             reserved.
           </p>
           <div className="flex items-center gap-4">
+            <Link
+              target="_blank"
+              rel="noopener"
+              href="https://www.github.com/danthareja/splitwise_for_ynab"
+              className="text-sm text-gray-500 hover:underline dark:text-gray-400"
+            >
+              <Github className="h-5 w-5" />
+            </Link>
             <Link
               href="#"
               className="text-sm text-gray-500 hover:underline dark:text-gray-400"

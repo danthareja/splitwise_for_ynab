@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth, signOut } from "@/auth";
-import { Button } from "@/components/ui/button";
+import { auth } from "@/auth";
 import { SplitwiseConnectionCard } from "@/components/splitwise-connection-card";
 import { YNABConnectionCard } from "@/components/ynab-connection-card";
 import { prisma } from "@/db";
@@ -10,9 +9,9 @@ import { getSyncHistory } from "@/app/actions/sync";
 import { SyncHistory } from "@/components/sync-history";
 import { ManualSyncButton } from "@/components/manual-sync-button";
 import { RefreshCw } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { YNABFlag } from "@/components/ynab-flag";
 import type { Account } from "@prisma/client";
+import { AppHeader } from "@/components/header";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -55,30 +54,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-md md:text-xl font-bold">
-                Splitwise for YNAB
-              </span>
-            </div>
-            <div className="flex items-center gap-4">
-              <ThemeToggle />
-              <form
-                action={async () => {
-                  "use server";
-                  await signOut({ redirectTo: "/" });
-                }}
-              >
-                <Button variant="outline" size="sm" type="submit">
-                  Sign out
-                </Button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="flex-1">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
