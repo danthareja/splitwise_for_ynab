@@ -3,10 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/db";
-import {
-  validateSplitwiseApiKey,
-  getSplitwiseGroups,
-} from "@/services/splitwise-auth";
+import { getSplitwiseGroups } from "@/services/splitwise-auth";
 import type { SplitwiseUser } from "@/services/splitwise-types";
 
 export async function validateApiKey(formData: FormData) {
