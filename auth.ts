@@ -35,9 +35,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       type: "oauth",
       authorization: {
         url: "https://secure.splitwise.com/oauth/authorize",
-        params: { scope: "", grant_type: "authorization_code" },
+        params: { scope: "" },
       },
-      token: "https://secure.splitwise.com/oauth/token",
+      token: {
+        url: "https://secure.splitwise.com/oauth/token",
+        params: {
+          grant_type: "authorization_code",
+        },
+      },
       userinfo: {
         url: "https://secure.splitwise.com/api/v3.0/get_current_user",
       },
