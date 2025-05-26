@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import * as Sentry from "@sentry/nextjs";
 import { auth } from "@/auth";
 import { prisma } from "@/db";
 import {
@@ -104,6 +105,7 @@ export async function saveSplitwiseUser(
     };
   } catch (error) {
     console.error("Error saving Splitwise user:", error);
+    Sentry.captureException(error);
     return {
       success: false,
       error: "Failed to save your Splitwise information",
@@ -144,6 +146,7 @@ export async function disconnectSplitwiseAccount() {
     };
   } catch (error) {
     console.error("Error disconnecting Splitwise account:", error);
+    Sentry.captureException(error);
     return {
       success: false,
       error: "Failed to disconnect your Splitwise account",
@@ -169,6 +172,7 @@ export async function getSplitwiseApiKey() {
     return account?.access_token || null;
   } catch (error) {
     console.error("Error getting Splitwise API key:", error);
+    Sentry.captureException(error);
     return null;
   }
 }
@@ -410,6 +414,7 @@ export async function saveSplitwiseSettings(formData: FormData) {
     };
   } catch (error) {
     console.error("Error saving settings:", error);
+    Sentry.captureException(error);
     return {
       success: false,
       error: "Failed to save settings",
@@ -456,6 +461,7 @@ export async function getPartnerEmoji(groupId: string) {
     return null;
   } catch (error) {
     console.error("Error getting partner emoji:", error);
+    Sentry.captureException(error);
     return null;
   }
 }
@@ -494,6 +500,7 @@ export async function checkCurrencySyncStatus() {
     return { recentlyUpdated: false };
   } catch (error) {
     console.error("Error checking currency sync status:", error);
+    Sentry.captureException(error);
     return null;
   }
 }
@@ -513,6 +520,7 @@ export async function getSplitwiseSettings() {
     return settings;
   } catch (error) {
     console.error("Error getting user settings:", error);
+    Sentry.captureException(error);
     return null;
   }
 }

@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import type { SyncedItem } from "@prisma/client";
 import { prisma } from "@/db";
 import { SyncStateFactory } from "./sync-state";
@@ -170,6 +171,7 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
     };
   } catch (error) {
     console.error("Sync error:", error);
+    Sentry.captureException(error);
 
     // Update sync history with error
     await prisma.syncHistory.update({
@@ -238,6 +240,7 @@ export async function syncAllUsers(): Promise<{
       }
     } catch (error) {
       console.error(`Error syncing user ${user.email || user.id}:`, error);
+      Sentry.captureException(error);
       results[user.id] = {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",

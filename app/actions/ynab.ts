@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import * as Sentry from "@sentry/nextjs";
 import { auth } from "@/auth";
 import { prisma } from "@/db";
 import {
@@ -118,6 +119,7 @@ export async function saveYNABSettings(formData: FormData) {
     };
   } catch (error) {
     console.error("Error saving YNAB settings:", error);
+    Sentry.captureException(error);
     return {
       success: false,
       error: "Failed to save YNAB settings",
@@ -140,6 +142,7 @@ export async function getYNABSettings() {
     return settings;
   } catch (error) {
     console.error("Error getting YNAB settings:", error);
+    Sentry.captureException(error);
     return null;
   }
 }

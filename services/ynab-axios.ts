@@ -136,60 +136,46 @@ export async function refreshYNABAccessToken() {
     `🔑 Refresh token available (length: ${account.refresh_token.length})`,
   );
 
-  try {
-    console.log("📡 Making request to YNAB OAuth refresh endpoint");
+  console.log("📡 Making request to YNAB OAuth refresh endpoint");
 
-    // Use YNAB's OAuth refresh endpoint
-    const response = await axios.post(
-      "https://app.youneedabudget.com/oauth/token",
-      {
-        grant_type: "refresh_token",
-        refresh_token: account.refresh_token,
-        client_id: process.env.AUTH_YNAB_ID,
-        client_secret: process.env.AUTH_YNAB_SECRET,
-      },
-    );
+  // Use YNAB's OAuth refresh endpoint
+  const response = await axios.post(
+    "https://app.youneedabudget.com/oauth/token",
+    {
+      grant_type: "refresh_token",
+      refresh_token: account.refresh_token,
+      client_id: process.env.AUTH_YNAB_ID,
+      client_secret: process.env.AUTH_YNAB_SECRET,
+    },
+  );
 
-    console.log("✅ Successfully received response from YNAB OAuth endpoint");
+  console.log("✅ Successfully received response from YNAB OAuth endpoint");
 
-    const { access_token, refresh_token } = response.data;
+  const { access_token, refresh_token } = response.data;
 
-    if (!access_token) {
-      console.error("❌ Token refresh failed: No access token in response");
-      throw new Error("No access token received from YNAB");
-    }
-
-    console.log(
-      `🔑 New access token received (length: ${access_token.length})`,
-    );
-    console.log(
-      `🔑 New refresh token ${refresh_token ? `received (length: ${refresh_token.length})` : "not provided - keeping existing"}`,
-    );
-
-    console.log("💾 Updating database with new tokens");
-
-    // Update the database with new tokens
-    await prisma.account.update({
-      where: { id: account.id },
-      data: {
-        access_token,
-        refresh_token: refresh_token || account.refresh_token, // Keep old refresh token if new one not provided
-      },
-    });
-
-    console.log("✅ Successfully updated database with new tokens");
-    console.log("🎉 YNAB access token refresh completed successfully");
-
-    return access_token;
-  } catch (error) {
-    console.error("❌ Error during YNAB access token refresh:", error);
-
-    if (axios.isAxiosError(error)) {
-      console.error("📡 HTTP Status:", error.response?.status);
-      console.error("📡 Response Data:", error.response?.data);
-      console.error("📡 Request URL:", error.config?.url);
-    }
-
-    throw new Error("Failed to refresh YNAB access token");
+  if (!access_token) {
+    console.error("❌ Token refresh failed: No access token in response");
+    throw new Error("No access token received from YNAB");
   }
+
+  console.log(`🔑 New access token received (length: ${access_token.length})`);
+  console.log(
+    `🔑 New refresh token ${refresh_token ? `received (length: ${refresh_token.length})` : "not provided - keeping existing"}`,
+  );
+
+  console.log("💾 Updating database with new tokens");
+
+  // Update the database with new tokens
+  await prisma.account.update({
+    where: { id: account.id },
+    data: {
+      access_token,
+      refresh_token: refresh_token || account.refresh_token, // Keep old refresh token if new one not provided
+    },
+  });
+
+  console.log("✅ Successfully updated database with new tokens");
+  console.log("🎉 YNAB access token refresh completed successfully");
+
+  return access_token;
 }

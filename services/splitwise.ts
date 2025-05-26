@@ -1,5 +1,6 @@
 import axios, { type AxiosInstance } from "axios";
 import axiosRetry, { isNetworkOrIdempotentRequestError } from "axios-retry";
+import * as Sentry from "@sentry/nextjs";
 import type { SyncState } from "./sync-state";
 import { addStackToAxios } from "./utils";
 import { SplitwiseExpense } from "./splitwise-types";
@@ -71,6 +72,7 @@ export class SplitwiseService {
         user: response.data.user,
       };
     } catch (error) {
+      Sentry.captureException(error);
       return {
         success: false,
         error:

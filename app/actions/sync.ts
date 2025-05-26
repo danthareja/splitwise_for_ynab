@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import * as Sentry from "@sentry/nextjs";
 import { syncUserData } from "@/services/sync";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/db"; // Declare the prisma variable
@@ -24,6 +25,7 @@ export async function syncUserDataAction() {
     return result;
   } catch (error) {
     console.error("Sync action error:", error);
+    Sentry.captureException(error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -61,6 +63,7 @@ export async function getSyncHistory(limit = 5) {
     };
   } catch (error) {
     console.error("Get sync history error:", error);
+    Sentry.captureException(error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
