@@ -54,7 +54,7 @@ export default function LandingPage() {
               asChild
             >
               <Link href="/auth/signin">
-                Try for free
+                Sign in with YNAB
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
@@ -818,7 +818,7 @@ export default function LandingPage() {
             asChild
           >
             <Link href="/auth/signin">
-              Try for free
+              Sign in with YNAB
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
