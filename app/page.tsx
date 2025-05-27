@@ -403,7 +403,7 @@ export default function LandingPage() {
                     </h5>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-                    Dan categorizes the $50 <strong>outflow</strong> in his
+                    Dan categorizes the $50 <strong>outflow</strong> in his{" "}
                     <i>Transportation</i> category
                   </p>
                   <div className="border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm overflow-hidden">
@@ -472,7 +472,7 @@ export default function LandingPage() {
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
                   <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                    <strong>Dan&apos;s YNAB shows:</strong> Only spent $25 on
+                    <strong>Dan&apos;s YNAB shows:</strong> Only spent $25 on{" "}
                     <i>Transportation</i> (his half)
                   </p>
                   <p className="text-sm text-gray-700 dark:text-gray-300">
