@@ -13,6 +13,7 @@ import { ManualSyncButton } from "@/components/manual-sync-button";
 import { RefreshCw, HelpCircle, Mail } from "lucide-react";
 import { YNABFlag } from "@/components/ynab-flag";
 import { Button } from "@/components/ui/button";
+import { ScheduledSyncInfo } from "@/components/scheduled-sync-info";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -118,6 +119,9 @@ export default async function DashboardPage() {
               <h2 className="text-xl font-semibold">Recent Activity</h2>
               {isFullyConfigured && <ManualSyncButton />}
             </div>
+
+            {/* Scheduled Sync Info for fully configured users */}
+            {isFullyConfigured && <ScheduledSyncInfo />}
 
             {syncHistory && syncHistory.length > 0 ? (
               <SyncHistory syncHistory={syncHistory} />

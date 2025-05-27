@@ -48,6 +48,7 @@ export function SplitwiseConnectionCard({
     null,
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingGroup, setIsLoadingGroup] = useState(!!settings?.groupId);
   const router = useRouter();
 
   const isConfigured = settings?.groupId && settings?.currencyCode;
@@ -56,8 +57,12 @@ export function SplitwiseConnectionCard({
   useEffect(() => {
     // Load the selected group details if we have settings
     async function loadSelectedGroup() {
-      if (!settings?.groupId) return;
+      if (!settings?.groupId) {
+        setIsLoadingGroup(false);
+        return;
+      }
 
+      setIsLoadingGroup(true);
       try {
         const result = await getSplitwiseGroupsForUser();
         if (result.success && "validGroups" in result && result.validGroups) {
@@ -70,12 +75,12 @@ export function SplitwiseConnectionCard({
         }
       } catch (error) {
         console.error("Error loading selected group:", error);
+      } finally {
+        setIsLoadingGroup(false);
       }
     }
 
-    if (settings?.groupId) {
-      loadSelectedGroup();
-    }
+    loadSelectedGroup();
   }, [settings?.groupId]);
 
   const handleSettingsSaveSuccess = () => {
@@ -191,12 +196,18 @@ export function SplitwiseConnectionCard({
                       <span className="text-sm font-medium">Group: </span>
                       <span className="text-sm">{settings.groupName}</span>
                     </div>
-                    {selectedGroup && (
+                    {selectedGroup ? (
                       <GroupMembersDisplay
                         members={selectedGroup.members}
                         size="sm"
                       />
-                    )}
+                    ) : settings?.groupId ? (
+                      <GroupMembersDisplay
+                        members={[]}
+                        size="sm"
+                        isLoading={isLoadingGroup}
+                      />
+                    ) : null}
                     <div>
                       <span className="text-sm font-medium">Currency: </span>
                       <span className="text-sm">{settings.currencyCode}</span>
