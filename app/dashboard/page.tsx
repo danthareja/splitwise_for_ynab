@@ -10,8 +10,9 @@ import { getYNABSettings } from "@/app/actions/ynab";
 import { getSyncHistory } from "@/app/actions/sync";
 import { SyncHistory } from "@/components/sync-history";
 import { ManualSyncButton } from "@/components/manual-sync-button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, HelpCircle, Mail } from "lucide-react";
 import { YNABFlag } from "@/components/ynab-flag";
+import { Button } from "@/components/ui/button";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -65,6 +66,40 @@ export default async function DashboardPage() {
               ? `Welcome back, ${user.name.split(" ")[0]}!`
               : "Welcome!"}
           </h1>
+
+          {/* Need Help Banner */}
+          <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex items-center gap-3 flex-1">
+                <HelpCircle className="h-5 w-5 text-gray-600 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-medium text-gray-900">
+                    Having trouble?
+                  </h3>
+                  <p className="text-sm text-gray-700 mt-1">
+                    We&apos;re here to help! Email us at{" "}
+                    <a
+                      href="mailto:support@splitwiseforynab.com?subject=Help!"
+                      className="text-gray-900 underline hover:text-gray-700"
+                    >
+                      support@splitwiseforynab.com
+                    </a>
+                  </p>
+                </div>
+              </div>
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="sm:flex-shrink-0"
+              >
+                <a href="mailto:support@splitwiseforynab.com?subject=Help!">
+                  <Mail className="h-4 w-4" />
+                  Contact Support
+                </a>
+              </Button>
+            </div>
+          </div>
 
           <div className="grid gap-6 md:grid-cols-2">
             <YNABConnectionCard
