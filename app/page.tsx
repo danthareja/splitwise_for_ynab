@@ -600,8 +600,8 @@ export default function LandingPage() {
                     Transfer: Checking → Splitwise
                   </h5>
                   <p className="text-base text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-                    Dan sends $25 from his Checking account to Eira and
-                    categorizes it as a transfer to his Splitwise account
+                    Dan categorizes the $25 <strong>outflow</strong> as a
+                    transfer from his Checking account to his Splitwise account.
                   </p>
                   <div className="max-w-[300px] mx-auto border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm overflow-hidden">
                     <img
@@ -612,9 +612,10 @@ export default function LandingPage() {
                   </div>
                   <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mt-6">
                     <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
-                      <strong>Important:</strong> Settle-up transactions
-                      don&apos;t affect spending plan categories! Dan still
-                      shows $25 spent on Transportation and $50 on Utilities.
+                      <strong>Important:</strong> Because its&apos; a transfer,
+                      settling up doesn&apos;t affect spending plan balances!
+                      Dan still shows $25 spent on <i>Transportation</i> and $50
+                      on <i>Utilities</i>.
                     </p>
                   </div>
                 </CardContent>
