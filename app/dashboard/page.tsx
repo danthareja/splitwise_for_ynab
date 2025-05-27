@@ -61,7 +61,9 @@ export default async function DashboardPage() {
       <main className="flex-1">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold mb-6">
-            Welcome back, {user.name?.split(" ")[0] || "You"}!
+            {user.name
+              ? `Welcome back, ${user.name.split(" ")[0]}!`
+              : "Welcome!"}
           </h1>
 
           <div className="grid gap-6 md:grid-cols-2">
