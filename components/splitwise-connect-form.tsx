@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SplitwiseConfirmModal } from "@/components/splitwise-confirm-modal";
-import type { SplitwiseUser } from "@/services/splitwise-types";
+import type { SplitwiseUser } from "@/types/splitwise";
 import {
   AlertCircle,
   Eye,
@@ -25,6 +25,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { useRouter } from "next/navigation";
 
 interface SplitwiseConnectFormProps {
   isUpdate?: boolean;
@@ -42,6 +43,7 @@ export function SplitwiseConnectForm({
   const [showApiKey, setShowApiKey] = useState(false);
   const [user, setUser] = useState<SplitwiseUser | null>(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const router = useRouter();
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -79,8 +81,7 @@ export function SplitwiseConnectForm({
 
       if (result.success) {
         setShowModal(false);
-        // Force a page refresh to show updated user data
-        window.location.href = "/dashboard";
+        router.refresh();
       } else {
         setError(result.error || "Failed to save your Splitwise information");
         setShowModal(false);

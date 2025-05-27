@@ -8,7 +8,7 @@ import {
   getSplitwiseGroups,
   validateSplitwiseApiKey,
 } from "@/services/splitwise-auth";
-import type { SplitwiseUser } from "@/services/splitwise-types";
+import type { SplitwiseUser } from "@/types/splitwise";
 
 export async function validateApiKey(formData: FormData) {
   const apiKey = formData.get("apiKey") as string;

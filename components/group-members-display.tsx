@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { SplitwiseMember } from "@/services/splitwise-types";
+import type { SplitwiseMember } from "@/types/splitwise";
 
 interface GroupMembersDisplayProps {
   members: SplitwiseMember[];

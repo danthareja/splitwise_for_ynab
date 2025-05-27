@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { disconnectSplitwiseAccount } from "@/app/actions/splitwise";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface SplitwiseDisconnectModalProps {
   isOpen: boolean;
@@ -24,13 +25,14 @@ export function SplitwiseDisconnectModal({
   onClose,
 }: SplitwiseDisconnectModalProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   async function handleDisconnect() {
     setIsLoading(true);
     try {
       await disconnectSplitwiseAccount();
       // Force a page refresh to show updated user data
-      window.location.href = "/dashboard";
+      router.refresh();
     } catch (error) {
       console.error("Error disconnecting account:", error);
     } finally {

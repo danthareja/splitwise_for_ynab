@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { YNABSettingsForm } from "@/components/ynab-settings-form";
 import {
@@ -11,8 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AlertCircle, Check, X, AlertTriangle, Settings } from "lucide-react";
-import { FLAG_COLORS } from "@/services/ynab-api";
-import { YNABFlag } from "@/components/ynab-flag";
+import { YNABFlag, FLAG_COLORS } from "@/components/ynab-flag";
 import {
   Alert,
   AlertDescription as UiAlertDescription,
@@ -36,6 +36,7 @@ export function YNABConnectionCard({
   settings,
 }: YNABConnectionCardProps) {
   const [showSettings, setShowSettings] = useState(false);
+  const router = useRouter();
 
   const isConfigured = settings?.budgetId && settings?.splitwiseAccountId;
   const needsConfiguration = isConnected && !isConfigured;
@@ -46,8 +47,7 @@ export function YNABConnectionCard({
 
   const handleSettingsSaveSuccess = () => {
     setShowSettings(false);
-    // Trigger a page reload to refresh the data
-    window.location.reload();
+    router.refresh();
   };
 
   // Helper function to get status text

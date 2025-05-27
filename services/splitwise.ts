@@ -3,7 +3,7 @@ import axiosRetry, { isNetworkOrIdempotentRequestError } from "axios-retry";
 import * as Sentry from "@sentry/nextjs";
 import type { SyncState } from "./sync-state";
 import { addStackToAxios } from "./utils";
-import { SplitwiseExpense } from "./splitwise-types";
+import { SplitwiseExpense } from "../types/splitwise";
 
 export const FIRST_KNOWN_DATE = "2025-05-23T08:49:26.012Z";
 

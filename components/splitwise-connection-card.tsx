@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { SplitwiseSettingsForm } from "@/components/splitwise-settings-form";
 import { GroupMembersDisplay } from "@/components/group-members-display";
 import { getSplitwiseGroupsForUser } from "@/app/actions/splitwise";
-import type { SplitwiseGroup } from "@/services/splitwise-types";
+import type { SplitwiseGroup } from "@/types/splitwise";
 import {
   Trash2,
   Settings,
@@ -47,6 +48,7 @@ export function SplitwiseConnectionCard({
     null,
   );
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const isConfigured = settings?.groupId && settings?.currencyCode;
   const needsConfiguration = isConnected && !isConfigured;
@@ -79,7 +81,7 @@ export function SplitwiseConnectionCard({
   const handleSettingsSaveSuccess = () => {
     setShowSettings(false);
     // Trigger a page reload to refresh the data
-    window.location.reload();
+    router.refresh();
   };
 
   const handleConnectSplitwise = async () => {

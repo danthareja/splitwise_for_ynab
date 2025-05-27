@@ -35,9 +35,8 @@ import {
   createYNABAccountForUser,
   saveYNABSettings,
 } from "@/app/actions/ynab";
-import { FLAG_COLORS } from "@/services/ynab-api";
-import { YNABFlag } from "@/components/ynab-flag";
-import { type YNABBudget, type YNABAccount } from "@/services/ynab-types";
+import { YNABFlag, FLAG_COLORS } from "@/components/ynab-flag";
+import { type YNABBudget, type YNABAccount } from "@/types/ynab";
 import { AlertCircle, Loader2, Plus, Check } from "lucide-react";
 
 interface YNABSettingsFormProps {

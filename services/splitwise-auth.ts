@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import axios, { AxiosError } from "axios";
-import type { SplitwiseGroup, SplitwiseUser } from "./splitwise-types";
+import type { SplitwiseGroup, SplitwiseUser } from "../types/splitwise";
 import { addStackToAxios } from "./utils";
 
 export async function validateSplitwiseApiKey(apiKey: string) {

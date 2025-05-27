@@ -1,7 +1,7 @@
 import type { AxiosInstance } from "axios";
+import type { YNABTransaction, YNABTransactionFlagColor } from "@/types/ynab";
 import type { SyncState } from "./sync-state";
 import { createYNABAxios } from "./ynab-axios";
-import { YNABTransaction, YNABTransactionFlagColor } from "./ynab-types";
 
 interface YNABServiceConstructorParams {
   userId: string;

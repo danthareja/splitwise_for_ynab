@@ -2,7 +2,7 @@ import * as Sentry from "@sentry/nextjs";
 import { auth } from "@/auth";
 import { prisma } from "@/db";
 import { createYNABAxios } from "./ynab-axios";
-import { YNABBudget, YNABAccount, YNABFlagColor } from "./ynab-types";
+import { YNABBudget, YNABAccount, YNABFlagColor } from "../types/ynab";
 
 // Return types for service functions
 export type YNABBudgetsResult =
