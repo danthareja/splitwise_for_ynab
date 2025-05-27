@@ -2,11 +2,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { signOut, auth } from "@/auth";
+import { signOut } from "@/auth";
 
 export async function Header() {
-  const session = await auth();
-
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -34,10 +32,9 @@ export async function Header() {
             />
           </Link>
           <div className="flex items-center space-x-3">
-            <Link href={session ? "/dashboard" : "/auth/signin"}>
+            <Link href={"/auth/signin"}>
               <Button className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium">
-                {session ? "Dashboard" : "Sign In"}{" "}
-                <ArrowRight className="ml-2" />
+                Sign In <ArrowRight className="ml-2" />
               </Button>
             </Link>
           </div>
