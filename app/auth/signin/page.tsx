@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -11,8 +12,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { signIn } from "@/auth";
+import { auth } from "@/auth";
 
 export default async function SignInPage() {
+  const session = await auth();
+
+  // If the user is already signed in, redirect to the dashboard
+  if (session) {
+    redirect("/dashboard");
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       <div className="flex flex-1 flex-col items-center justify-center p-4">
@@ -38,7 +47,7 @@ export default async function SignInPage() {
               }}
             >
               <Button
-                className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium"
+                className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-blue-700 hover:to-green-700 text-white font-medium"
                 size="lg"
                 type="submit"
               >
