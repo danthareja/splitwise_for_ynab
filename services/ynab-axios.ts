@@ -1,6 +1,5 @@
 import axios, { type AxiosInstance, type AxiosError } from "axios";
 import { addStackToAxios } from "./utils";
-import { auth } from "@/auth";
 import { prisma } from "@/db";
 
 // Extend the request config type to include our retry flag
@@ -73,8 +72,17 @@ function createYNABTokenRefreshInterceptor({
           `🔄 ${logPrefix}Attempting to refresh YNAB access token...`,
         );
 
+        const originalAccessToken =
+          originalRequest.headers.Authorization?.toString().split(" ")[1];
+
+        if (!originalAccessToken) {
+          console.error("❌ Token refresh failed: No access token in request");
+          throw new Error("No access token received from YNAB");
+        }
+
         // Use the local refresh function
-        const newAccessToken = await refreshYNABAccessToken();
+        const newAccessToken =
+          await refreshYNABAccessToken(originalAccessToken);
 
         console.log(
           `✅ ${logPrefix}Token refresh successful, updating headers`,
@@ -104,22 +112,17 @@ function createYNABTokenRefreshInterceptor({
   };
 }
 
-export async function refreshYNABAccessToken() {
+export async function refreshYNABAccessToken(originalAccessToken: string) {
   console.log("🔄 Starting YNAB access token refresh process");
 
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    console.error("❌ Token refresh failed: User not authenticated");
-    throw new Error("User not authenticated");
-  }
-
-  console.log(`🔍 Looking up YNAB account for user: ${session.user.id}`);
+  console.log(
+    `🔍 Looking up YNAB account for user with access token: ${originalAccessToken}`,
+  );
 
   // Get the YNAB account from the database
   const account = await prisma.account.findFirst({
     where: {
-      userId: session.user.id,
+      access_token: originalAccessToken,
       provider: "ynab",
     },
   });
