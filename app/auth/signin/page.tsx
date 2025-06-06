@@ -13,13 +13,31 @@ import {
 } from "@/components/ui/card";
 import { signIn } from "@/auth";
 import { auth } from "@/auth";
+import type { Metadata } from "next";
 
-export default async function SignInPage() {
+export const metadata: Metadata = {
+  title: "Sign In - Connect Your YNAB Account",
+  description:
+    "Sign in to Splitwise for YNAB by connecting your YNAB account to start automating your shared expense tracking.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
+
+interface SignInPageProps {
+  searchParams: {
+    callbackUrl?: string;
+  };
+}
+
+export default async function SignInPage({ searchParams }: SignInPageProps) {
   const session = await auth();
+  const callbackUrl = searchParams.callbackUrl || "/dashboard";
 
-  // If the user is already signed in, redirect to the dashboard
+  // If the user is already signed in, redirect to the callback URL or dashboard
   if (session) {
-    redirect("/dashboard");
+    redirect(callbackUrl);
   }
 
   return (
@@ -43,7 +61,7 @@ export default async function SignInPage() {
             <form
               action={async () => {
                 "use server";
-                await signIn("ynab", { redirectTo: "/dashboard" });
+                await signIn("ynab", { redirectTo: callbackUrl });
               }}
             >
               <Button

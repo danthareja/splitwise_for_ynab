@@ -14,14 +14,25 @@ import { RefreshCw, HelpCircle, Mail } from "lucide-react";
 import { YNABFlag } from "@/components/ynab-flag";
 import { Button } from "@/components/ui/button";
 import { ScheduledSyncInfo } from "@/components/scheduled-sync-info";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Dashboard - Manage Your YNAB & Splitwise Integration",
+  description:
+    "Manage your YNAB and Splitwise connections, view sync history, and control your automated expense sharing workflow.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default async function DashboardPage() {
   const session = await auth();
 
+  // Middleware handles authentication redirect, so session should always exist here
   if (!session?.user) {
-    // This should not happen if middleware is set up correctly redirecting unauthenticated users
-    // Or handle this case as appropriate for your application
-    return <p>Unauthorized</p>;
+    // This should not happen due to middleware protection
+    throw new Error("Authentication required");
   }
 
   // Call the server action to get user data

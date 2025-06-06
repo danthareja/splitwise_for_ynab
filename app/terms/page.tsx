@@ -3,6 +3,31 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Scale, AlertTriangle, Shield, Users } from "lucide-react";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Terms of Service - Legal Agreement & User Responsibilities",
+  description:
+    "Read the terms of service for Splitwise for YNAB, including user responsibilities, API usage limitations, and legal disclaimers.",
+  keywords: [
+    "terms of service",
+    "legal agreement",
+    "user responsibilities",
+    "YNAB terms",
+    "Splitwise terms",
+    "API usage",
+    "service agreement",
+    "user agreement",
+  ],
+  openGraph: {
+    title: "Terms of Service - Splitwise for YNAB",
+    description:
+      "Legal terms and user responsibilities for using Splitwise for YNAB integration service.",
+  },
+  alternates: {
+    canonical: "/terms",
+  },
+};
 
 export default function TermsOfServicePage() {
   return (

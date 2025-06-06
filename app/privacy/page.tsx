@@ -3,6 +3,31 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Shield, Lock, Eye, AlertTriangle } from "lucide-react";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy - Data Protection & Security",
+  description:
+    "Learn how Splitwise for YNAB protects your data, handles YNAB and Splitwise API information, and maintains your privacy and security.",
+  keywords: [
+    "privacy policy",
+    "data protection",
+    "YNAB privacy",
+    "Splitwise privacy",
+    "data security",
+    "financial data protection",
+    "API data handling",
+    "user privacy",
+  ],
+  openGraph: {
+    title: "Privacy Policy - Splitwise for YNAB",
+    description:
+      "Learn how we protect your YNAB and Splitwise data with enterprise-grade security and privacy controls.",
+  },
+  alternates: {
+    canonical: "/privacy",
+  },
+};
 
 export default function PrivacyPolicyPage() {
   return (
