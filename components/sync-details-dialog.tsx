@@ -119,7 +119,16 @@ export function SyncDetailsDialog({
                           {transaction.description}
                         </td>
                         <td className="px-4 py-3">
-                          ${Math.abs(transaction.amount).toFixed(2)}
+                          <div
+                            className={`font-medium ${transaction.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+                          >
+                            ${transaction.amount.toFixed(2)}
+                          </div>
+                          {transaction.amount < 0 && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                              you paid
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           {format(new Date(transaction.date), "MMM d, yyyy")}
@@ -170,7 +179,14 @@ export function SyncDetailsDialog({
                           {expense.description}
                         </td>
                         <td className="px-4 py-3">
-                          ${Math.abs(expense.amount).toFixed(2)}
+                          <div
+                            className={`font-medium ${expense.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+                          >
+                            ${expense.amount.toFixed(2)}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            {expense.amount < 0 ? "you owe" : "you get back"}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           {format(new Date(expense.date), "MMM d, yyyy")}
