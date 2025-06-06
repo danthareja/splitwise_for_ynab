@@ -54,7 +54,6 @@ export async function GET(request: NextRequest) {
   }
 
   const tokenData = await response.json();
-  console.log("Token data received:", tokenData);
 
   // Fetch user information from Splitwise
   const userResponse = await fetch(
