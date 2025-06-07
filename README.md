@@ -131,9 +131,12 @@ If you want to change flag colors, emojis, or currenct, you can edit `./github/w
 
 ### How It Works
 
-The GitHub Actions workflow runs every 6 hours and calls your deployed API endpoints with all the necessary configuration. This bypasses the need for manual OAuth flows and web interface interactions.
+The GitHub Actions workflow can be triggered manually and calls your deployed API endpoints with all the necessary configuration. This bypasses the need for manual OAuth flows and web interface interactions.
 
 The sync uses Upstash Redis to store sync state, ensuring transactions aren't processed multiple times and maintaining consistency across runs.
+
+> [!NOTE]
+> The automatic 6-hour schedule is currently disabled. You can manually trigger the workflow from the Actions tab in your GitHub repository, or re-enable the schedule by uncommenting the `schedule` section in `.github/workflows/cron.yml`.
 
 ## Development
 

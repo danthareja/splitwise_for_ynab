@@ -46,7 +46,7 @@ export default function NotFound() {
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
               Popular Pages
             </h2>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-3xl mx-auto">
+            <div className="grid grid-cols-3 gap-4 max-w-3xl mx-auto">
               <Link
                 href="/"
                 className="p-4 rounded-lg border hover:border-blue-200 dark:hover:border-blue-800 transition-colors"
