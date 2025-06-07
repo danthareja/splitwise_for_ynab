@@ -26,14 +26,15 @@ export const metadata: Metadata = {
 };
 
 interface SignInPageProps {
-  searchParams: {
+  searchParams: Promise<{
     callbackUrl?: string;
-  };
+  }>;
 }
 
 export default async function SignInPage({ searchParams }: SignInPageProps) {
   const session = await auth();
-  const callbackUrl = searchParams.callbackUrl || "/dashboard";
+  const resolvedSearchParams = await searchParams;
+  const callbackUrl = resolvedSearchParams.callbackUrl || "/dashboard";
 
   // If the user is already signed in, redirect to the callback URL or dashboard
   if (session) {

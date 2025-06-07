@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
-import { Home, Search } from "lucide-react";
+import { Home } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
