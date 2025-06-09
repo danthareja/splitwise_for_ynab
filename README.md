@@ -1,5 +1,7 @@
 # Splitwise for YNAB
 
+![Works with YNAB](https://api.ynab.com/papi/works_with_ynab.svg)
+
 ### [Try it out for free 🔗](https://splitwiseforynab.com/)
 
 ## Background

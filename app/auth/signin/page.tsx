@@ -44,12 +44,16 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   return (
     <div className="flex min-h-screen flex-col">
       <div className="flex flex-1 flex-col items-center justify-center p-4">
-        <Link href="/" className="absolute left-4 top-4 md:left-8 md:top-8">
-          <Button variant="ghost" className="gap-1">
+        <Button
+          asChild
+          variant="ghost"
+          className="absolute left-4 top-4 md:left-8 md:top-8 gap-1"
+        >
+          <Link href="/">
             <ArrowLeft className="h-4 w-4" />
             Back
-          </Button>
-        </Link>
+          </Link>
+        </Button>
 
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
@@ -66,7 +70,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
               }}
             >
               <Button
-                className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium"
+                className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium cursor-pointer"
                 size="lg"
                 type="submit"
               >

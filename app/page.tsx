@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,23 +15,6 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center">
-          <div className="flex justify-center items-center space-x-6 mb-8">
-            <Image
-              src="/images/splitwise-logo.png"
-              alt="Splitwise Logo"
-              width={64}
-              height={64}
-            />
-            <span className="text-3xl font-bold text-gray-400 dark:text-gray-500">
-              +
-            </span>
-            <Image
-              src="/images/ynab-logo.png"
-              alt="YNAB Logo"
-              width={64}
-              height={64}
-            />
-          </div>
           <Badge
             variant="secondary"
             className="mb-6 px-3 py-1 text-sm font-medium bg-gradient-to-r from-blue-100 to-green-100 dark:from-blue-900/50 dark:to-green-900/50 text-blue-800 dark:text-blue-200 hover:from-blue-200 hover:to-green-200 dark:hover:from-blue-800/50 dark:hover:to-green-800/50 border-0"
@@ -115,16 +97,6 @@ export default function LandingPage() {
             <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-blue-500 rounded-2xl transform rotate-1"></div>
             <Card className="relative bg-white dark:bg-gray-800 border-0 shadow-xl overflow-hidden transform -rotate-1 hover:rotate-0 transition-transform duration-300">
               <CardContent className="p-10 text-center">
-                <div className="flex justify-center mb-6">
-                  <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                    <Image
-                      src="/images/splitwise-logo.png"
-                      alt="Splitwise Logo"
-                      width={32}
-                      height={32}
-                    />
-                  </div>
-                </div>
                 <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
                   Enter: Splitwise
                 </h3>
@@ -684,14 +656,6 @@ export default function LandingPage() {
                 </h3>
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="flex items-start">
-                    <div className="w-12 h-12 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-                      <Image
-                        src="/images/splitwise-logo.png"
-                        alt="Splitwise"
-                        width={24}
-                        height={24}
-                      />
-                    </div>
                     <div>
                       <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                         Splitwise Integration
@@ -703,14 +667,6 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <div className="flex items-start">
-                    <div className="w-12 h-12 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-                      <Image
-                        src="/images/ynab-logo.png"
-                        alt="YNAB"
-                        width={24}
-                        height={24}
-                      />
-                    </div>
                     <div>
                       <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                         YNAB Transaction
