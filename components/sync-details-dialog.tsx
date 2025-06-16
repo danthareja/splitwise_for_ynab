@@ -1,6 +1,6 @@
 "use client";
 
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -131,7 +131,7 @@ export function SyncDetailsDialog({
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          {format(new Date(transaction.date), "MMM d, yyyy")}
+                          {format(parseISO(transaction.date), "MMM d, yyyy")}
                         </td>
                         <td className="px-4 py-3">
                           <span className="flex items-center text-green-600 dark:text-green-400">
@@ -189,7 +189,7 @@ export function SyncDetailsDialog({
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          {format(new Date(expense.date), "MMM d, yyyy")}
+                          {format(parseISO(expense.date), "MMM d, yyyy")}
                         </td>
                         <td className="px-4 py-3">
                           <span className="flex items-center text-green-600 dark:text-green-400">

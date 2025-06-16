@@ -5,6 +5,8 @@ import { SyncStateFactory } from "./sync-state";
 import { YNABService } from "./ynab";
 import { SplitwiseService } from "./splitwise";
 import { processLatestExpenses, processLatestTransactions } from "./glue";
+import type { YNABTransaction } from "@/types/ynab";
+import type { SplitwiseExpense } from "@/types/splitwise";
 
 interface SyncResult {
   success: boolean;
@@ -308,13 +310,11 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
     });
 
     // Process transactions from YNAB to Splitwise
-    const syncedTransactions = await processLatestTransactions(
-      ynabService,
-      splitwiseService,
-    );
+    const syncedTransactions: YNABTransaction[] =
+      await processLatestTransactions(ynabService, splitwiseService);
 
     // Process expenses from Splitwise to YNAB
-    const syncedExpenses = await processLatestExpenses(
+    const syncedExpenses: SplitwiseExpense[] = await processLatestExpenses(
       ynabService,
       splitwiseService,
     );
@@ -323,8 +323,8 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
     const createdTransactionItems =
       syncedTransactions.length > 0
         ? await Promise.all(
-            syncedTransactions.map((transaction) =>
-              prisma.syncedItem.create({
+            syncedTransactions.map((transaction) => {
+              return prisma.syncedItem.create({
                 data: {
                   syncHistoryId: syncHistory.id,
                   externalId: transaction.id,
@@ -334,11 +334,11 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
                     transaction.payee_name ||
                     transaction.memo ||
                     "Unknown transaction",
-                  date: new Date(transaction.date),
+                  date: transaction.date!.split("T")[0] || transaction.date!,
                   direction: "ynab_to_splitwise",
                 },
-              }),
-            ),
+              });
+            }),
           )
         : [];
 
@@ -346,19 +346,19 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
     const createdExpenseItems =
       syncedExpenses.length > 0
         ? await Promise.all(
-            syncedExpenses.map((expense) =>
-              prisma.syncedItem.create({
+            syncedExpenses.map((expense) => {
+              return prisma.syncedItem.create({
                 data: {
                   syncHistoryId: syncHistory.id,
                   externalId: expense.id.toString(),
                   type: "splitwise_expense",
                   amount: splitwiseService.toYNABAmount(expense) / 1000,
                   description: expense.description || "Unknown expense",
-                  date: new Date(expense.date),
+                  date: expense.date!.split("T")[0] || expense.date!,
                   direction: "splitwise_to_ynab",
                 },
-              }),
-            ),
+              });
+            }),
           )
         : [];
 
@@ -697,8 +697,8 @@ async function syncUserPhase(
       syncState,
     });
 
-    let syncedTransactions: any[] = [];
-    let syncedExpenses: any[] = [];
+    let syncedTransactions = [] as YNABTransaction[];
+    let syncedExpenses = [] as SplitwiseExpense[];
     let createdTransactionItems: SyncedItem[] = [];
     let createdExpenseItems: SyncedItem[] = [];
 
@@ -753,7 +753,7 @@ async function syncUserPhase(
                       transaction.payee_name ||
                       transaction.memo ||
                       "Unknown transaction",
-                    date: new Date(transaction.date),
+                    date: transaction.date!.split("T")[0] || transaction.date!,
                     direction: "ynab_to_splitwise",
                   },
                 }),
@@ -798,19 +798,19 @@ async function syncUserPhase(
       createdExpenseItems =
         syncedExpenses.length > 0
           ? await Promise.all(
-              syncedExpenses.map((expense) =>
-                prisma.syncedItem.create({
+              syncedExpenses.map((expense) => {
+                return prisma.syncedItem.create({
                   data: {
                     syncHistoryId: syncHistory.id,
                     externalId: expense.id.toString(),
                     type: "splitwise_expense",
                     amount: splitwiseService.toYNABAmount(expense) / 1000,
                     description: expense.description || "Unknown expense",
-                    date: new Date(expense.date),
+                    date: expense.date!.split("T")[0] || expense.date!,
                     direction: "splitwise_to_ynab",
                   },
-                }),
-              ),
+                });
+              }),
             )
           : [];
 

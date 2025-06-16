@@ -1,10 +1,12 @@
 import { YNABService } from "@/services/ynab";
 import { SplitwiseService } from "@/services/splitwise";
+import type { YNABTransaction } from "@/types/ynab";
+import type { SplitwiseExpense } from "@/types/splitwise";
 
 export async function processLatestExpenses(
   ynab: YNABService,
   splitwise: SplitwiseService,
-) {
+): Promise<SplitwiseExpense[]> {
   console.log(
     `🔍 [processLatestExpenses] Getting last processed date from Splitwise...`,
   );
@@ -79,7 +81,7 @@ export async function processLatestExpenses(
 export async function processLatestTransactions(
   ynab: YNABService,
   splitwise: SplitwiseService,
-) {
+): Promise<YNABTransaction[]> {
   console.log(
     `🔍 [processLatestTransactions] Getting YNAB server knowledge...`,
   );

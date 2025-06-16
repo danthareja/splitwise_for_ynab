@@ -43,7 +43,10 @@ export class YNABService {
     });
   }
 
-  async getUnprocessedTransactions(serverKnowledge?: number) {
+  async getUnprocessedTransactions(serverKnowledge?: number): Promise<{
+    transactions: YNABTransaction[];
+    serverKnowledge: number;
+  }> {
     if (serverKnowledge === undefined) {
       serverKnowledge = await this.getServerKnowledge();
     }
@@ -53,10 +56,10 @@ export class YNABService {
     });
 
     return {
-      transactions: (data.transactions as YNABTransaction[]).filter(
-        (transaction) => this.isTransactionUnprocessed(transaction),
+      transactions: data.transactions.filter((transaction) =>
+        this.isTransactionUnprocessed(transaction),
       ),
-      serverKnowledge: data.server_knowledge as number,
+      serverKnowledge: data.server_knowledge,
     };
   }
 
@@ -88,7 +91,12 @@ export class YNABService {
 
   async getTransactions(params?: {
     last_knowledge_of_server?: number | undefined;
-  }) {
+  }): Promise<{
+    data: {
+      transactions: YNABTransaction[];
+      server_knowledge: number;
+    };
+  }> {
     const res = await this.axios.get(`/transactions`, {
       params,
     });
@@ -117,7 +125,7 @@ export class YNABService {
       cost: this.outflowToSplitwiseCost(transaction.amount),
       description: transaction.payee_name || "Unknown expense",
       details: transaction.memo || undefined,
-      date: transaction.date,
+      date: transaction.date.split("T")[0],
     };
   }
 

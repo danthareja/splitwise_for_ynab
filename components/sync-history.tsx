@@ -25,7 +25,7 @@ export type SyncHistoryItem = {
     externalId: string;
     amount: number;
     description: string | null;
-    date: Date;
+    date: string;
     direction: string;
   }[];
 };

@@ -11,7 +11,7 @@ export type YNABTransactionFlagColor =
   | "blue"
   | "purple";
 
-export interface YNABSubTransaction {
+export type YNABSubTransaction = {
   id: string;
   transaction_id: string;
   amount: number; // in milliunits format
@@ -23,9 +23,9 @@ export interface YNABSubTransaction {
   transfer_account_id?: string | null;
   transfer_transaction_id?: string | null;
   deleted: boolean;
-}
+};
 
-export interface YNABTransaction {
+export type YNABTransaction = {
   id: string;
   date: string; // ISO format (e.g. 2016-12-01)
   amount: number; // in milliunits format
@@ -49,19 +49,19 @@ export interface YNABTransaction {
   payee_name?: string | null;
   category_name?: string | null;
   subtransactions: YNABSubTransaction[];
-}
+};
 
-export interface YNABErrorDetail {
+export type YNABErrorDetail = {
   id: string;
   name: string;
   detail: string;
-}
+};
 
-export interface YNABErrorResponse {
+export type YNABErrorResponse = {
   error: YNABErrorDetail;
-}
+};
 
-export interface YNABBudget {
+export type YNABBudget = {
   id: string;
   name: string;
   last_modified_on: string;
@@ -77,9 +77,9 @@ export interface YNABBudget {
     currency_symbol: string;
     display_symbol: boolean;
   };
-}
+};
 
-export interface YNABAccount {
+export type YNABAccount = {
   id: string;
   name: string;
   type: string;
@@ -93,10 +93,10 @@ export interface YNABAccount {
   direct_import_linked: boolean;
   direct_import_in_error: boolean;
   deleted: boolean;
-}
+};
 
-export interface YNABFlagColor {
+export type YNABFlagColor = {
   id: string;
   name: string;
   color: string;
-}
+};

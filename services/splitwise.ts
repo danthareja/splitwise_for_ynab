@@ -154,7 +154,7 @@ export class SplitwiseService {
       amount: this.toYNABAmount(expense),
       payee_name: this.stripEmojis(expense.description),
       memo: expense.details,
-      date: expense.date,
+      date: this.stripTimestamp(expense.date),
     };
   }
 
@@ -163,7 +163,7 @@ export class SplitwiseService {
       amount: this.toYNABAmount(expense),
       payee_name: `Splitwise from ${expense.created_by.first_name}`,
       memo: this.stripEmojis(expense.description),
-      date: expense.date,
+      date: this.stripTimestamp(expense.date),
     };
   }
 
@@ -192,5 +192,9 @@ export class SplitwiseService {
 
   stripEmojis(string: string) {
     return string.replace(/\p{Extended_Pictographic}/gu, "");
+  }
+
+  stripTimestamp(string: string) {
+    return string.split("T")[0];
   }
 }

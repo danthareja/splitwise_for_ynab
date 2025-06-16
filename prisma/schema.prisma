@@ -124,7 +124,7 @@ model SyncedItem {
   type          String // "ynab_transaction" or "splitwise_expense"
   amount        Float
   description   String?
-  date          DateTime
+  date          String // ISO date string (YYYY-MM-DD)
   syncHistoryId String
   direction     String // "ynab_to_splitwise" or "splitwise_to_ynab"
 
