@@ -26,6 +26,8 @@ export const metadata: Metadata = {
   },
 };
 
+const MAX_SYNC_HISTORY_ITEMS = 7; // A week of automatic syncs
+
 export default async function DashboardPage() {
   const session = await auth();
 
@@ -55,7 +57,7 @@ export default async function DashboardPage() {
   const ynabSettings = await getYNABSettings();
 
   // Get sync history
-  const syncHistoryResult = await getSyncHistory(5);
+  const syncHistoryResult = await getSyncHistory(MAX_SYNC_HISTORY_ITEMS);
   const syncHistory = syncHistoryResult.success
     ? syncHistoryResult.syncHistory || []
     : [];

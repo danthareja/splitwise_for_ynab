@@ -33,7 +33,7 @@ export async function syncUserDataAction() {
   }
 }
 
-export async function getSyncHistory(limit = 5) {
+export async function getSyncHistory(limit = 7) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -55,6 +55,13 @@ export async function getSyncHistory(limit = 5) {
         startedAt: "desc",
       },
       take: limit,
+    });
+
+    // sort syncedItems by date
+    syncHistory.forEach((sync) => {
+      sync.syncedItems.sort((a, b) => {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      });
     });
 
     return {

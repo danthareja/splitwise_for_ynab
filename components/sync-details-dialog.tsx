@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import type { SyncHistoryItem } from "@/components/sync-history";
 
 interface SyncDetailsDialogProps {
@@ -100,13 +100,10 @@ export function SyncDetailsDialog({
                       <th className="px-4 py-2 text-left font-medium">
                         Description
                       </th>
-                      <th className="px-4 py-2 text-left font-medium">
+                      <th className="px-4 py-2 text-left font-medium w-32">
                         Amount
                       </th>
                       <th className="px-4 py-2 text-left font-medium">Date</th>
-                      <th className="px-4 py-2 text-left font-medium">
-                        Status
-                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -124,20 +121,12 @@ export function SyncDetailsDialog({
                           >
                             ${transaction.amount.toFixed(2)}
                           </div>
-                          {transaction.amount < 0 && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                              you paid
-                            </div>
-                          )}
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 h-4">
+                            {transaction.amount < 0 ? "you paid" : ""}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           {format(parseISO(transaction.date), "MMM d, yyyy")}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="flex items-center text-green-600 dark:text-green-400">
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Success
-                          </span>
                         </td>
                       </tr>
                     ))}
@@ -160,13 +149,10 @@ export function SyncDetailsDialog({
                       <th className="px-4 py-2 text-left font-medium">
                         Description
                       </th>
-                      <th className="px-4 py-2 text-left font-medium">
+                      <th className="px-4 py-2 text-left font-medium w-32">
                         Amount
                       </th>
                       <th className="px-4 py-2 text-left font-medium">Date</th>
-                      <th className="px-4 py-2 text-left font-medium">
-                        Status
-                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -184,18 +170,12 @@ export function SyncDetailsDialog({
                           >
                             ${expense.amount.toFixed(2)}
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 h-4">
                             {expense.amount < 0 ? "you owe" : "you get back"}
                           </div>
                         </td>
                         <td className="px-4 py-3">
                           {format(parseISO(expense.date), "MMM d, yyyy")}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="flex items-center text-green-600 dark:text-green-400">
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Success
-                          </span>
                         </td>
                       </tr>
                     ))}
