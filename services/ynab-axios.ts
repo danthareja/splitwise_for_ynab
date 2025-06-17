@@ -2,10 +2,11 @@ import axios, { type AxiosInstance, type AxiosError } from "axios";
 import { addStackToAxios } from "./utils";
 import { prisma } from "@/db";
 
-// Extend the request config type to include our retry flag
+// Extend the request config type to include our retry flag and operation context
 declare module "axios" {
   interface AxiosRequestConfig {
     _retry?: boolean;
+    _operation?: string;
   }
 }
 
@@ -28,10 +29,16 @@ export function createYNABAxios({
 
   addStackToAxios(axiosInstance);
 
+  // Add response interceptor to log 400 errors
+  axiosInstance.interceptors.response.use(
+    (response) => response,
+    createErrorInterceptor({ logPrefix: "" }),
+  );
+
   // Add response interceptor to handle token refresh
   axiosInstance.interceptors.response.use(
     (response) => response,
-    createYNABTokenRefreshInterceptor({
+    createTokenRefreshInterceptor({
       axiosInstance,
       onRefreshFailure,
     }),
@@ -46,7 +53,39 @@ interface TokenRefreshInterceptorOptions {
   axiosInstance: AxiosInstance;
 }
 
-function createYNABTokenRefreshInterceptor({
+interface ErrorLoggerInterceptorOptions {
+  logPrefix?: string;
+}
+
+function createErrorInterceptor({
+  logPrefix = "",
+}: ErrorLoggerInterceptorOptions) {
+  return async (error: AxiosError) => {
+    // Log detailed information for 400 errors
+    if (error.response?.status === 400) {
+      // Parse YNAB error response format and throw more helpful error
+      const responseData = error.response.data as any;
+      if (responseData?.error) {
+        const { id, name, detail } = responseData.error;
+        const originalRequest = error.config;
+        const operation = originalRequest?._operation || "Unknown operation";
+        const helpfulMessage = `YNAB API Error during ${operation} (${id} - ${name}): ${detail}`;
+        console.error(`🎯 ${logPrefix}Parsed YNAB Error: ${helpfulMessage}`);
+
+        // Create a new error with the helpful message while preserving the original error
+        const helpfulError = new Error(helpfulMessage);
+        (helpfulError as any).originalError = error;
+        (helpfulError as any).ynabError = responseData.error;
+        (helpfulError as any).operation = operation;
+        return Promise.reject(helpfulError);
+      }
+    }
+
+    return Promise.reject(error);
+  };
+}
+
+function createTokenRefreshInterceptor({
   logPrefix = "",
   onRefreshFailure,
   axiosInstance,

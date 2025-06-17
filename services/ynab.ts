@@ -71,20 +71,32 @@ export class YNABService {
   }
 
   async createTransaction(data: Partial<YNABTransaction>) {
-    const res = await this.axios.post(`/transactions`, {
-      transaction: {
-        account_id: this.splitwiseAccountId,
-        ...data,
+    const res = await this.axios.post(
+      `/transactions`,
+      {
+        transaction: {
+          account_id: this.splitwiseAccountId,
+          ...data,
+        },
       },
-    });
+      {
+        _operation: "create transaction",
+      },
+    );
 
     return res.data;
   }
 
   async updateTransaction(id: string, data: Partial<YNABTransaction>) {
-    const res = await this.axios.put(`/transactions/${id}`, {
-      transaction: data,
-    });
+    const res = await this.axios.put(
+      `/transactions/${id}`,
+      {
+        transaction: data,
+      },
+      {
+        _operation: "update transaction",
+      },
+    );
 
     return res.data;
   }
@@ -99,6 +111,7 @@ export class YNABService {
   }> {
     const res = await this.axios.get(`/transactions`, {
       params,
+      _operation: "get transactions",
     });
 
     return res.data;

@@ -31,7 +31,9 @@ export async function getYNABBudgets(): Promise<YNABBudgetsResult> {
   try {
     const axiosInstance = await getYNABAxiosInstance();
 
-    const response = await axiosInstance.get("/budgets");
+    const response = await axiosInstance.get("/budgets", {
+      _operation: "fetching YNAB budgets",
+    });
     return {
       success: true,
       budgets: response.data.data.budgets as YNABBudget[],
@@ -53,7 +55,9 @@ export async function getYNABAccounts(
   try {
     const axiosInstance = await getYNABAxiosInstance();
 
-    const response = await axiosInstance.get(`/budgets/${budgetId}/accounts`);
+    const response = await axiosInstance.get(`/budgets/${budgetId}/accounts`, {
+      _operation: "fetching YNAB accounts",
+    });
 
     // Filter to only include on-budget and non-deleted accounts
     const accounts = response.data.data.accounts.filter(
@@ -85,13 +89,19 @@ export async function createYNABAccount(
   try {
     const axiosInstance = await getYNABAxiosInstance();
 
-    const response = await axiosInstance.post(`/budgets/${budgetId}/accounts`, {
-      account: {
-        name,
-        type: "cash", // Splitwise is a cash account
-        balance: 0, // Start with zero balance
+    const response = await axiosInstance.post(
+      `/budgets/${budgetId}/accounts`,
+      {
+        account: {
+          name,
+          type: "cash", // Splitwise is a cash account
+          balance: 0, // Start with zero balance
+        },
       },
-    });
+      {
+        _operation: "create account",
+      },
+    );
 
     return {
       success: true,
