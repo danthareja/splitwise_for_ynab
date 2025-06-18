@@ -1,4 +1,5 @@
 import axios, { type AxiosInstance, type AxiosError } from "axios";
+import axiosRetry, { isNetworkOrIdempotentRequestError } from "axios-retry";
 import { addStackToAxios } from "./utils";
 import { prisma } from "@/db";
 
@@ -29,13 +30,17 @@ export function createYNABAxios({
 
   addStackToAxios(axiosInstance);
 
-  // Add response interceptor to log 400 errors
-  axiosInstance.interceptors.response.use(
-    (response) => response,
-    createErrorInterceptor({ logPrefix: "" }),
-  );
+  axiosRetry(axiosInstance, {
+    retries: 2,
+    shouldResetTimeout: true,
+    retryCondition: (e) =>
+      e?.code === "ECONNABORTED" ||
+      e instanceof YNABServerError ||
+      isNetworkOrIdempotentRequestError(e),
+  });
 
   // Add response interceptor to handle token refresh
+  // This MUST be done before the error interceptor
   axiosInstance.interceptors.response.use(
     (response) => response,
     createTokenRefreshInterceptor({
@@ -44,17 +49,21 @@ export function createYNABAxios({
     }),
   );
 
+  // Add response interceptor to log 400 errors
+  axiosInstance.interceptors.response.use(
+    (response) => response,
+    createErrorInterceptor(),
+  );
+
   return axiosInstance;
 }
 
 interface TokenRefreshInterceptorOptions {
-  logPrefix?: string;
   onRefreshFailure?: () => void;
   axiosInstance: AxiosInstance;
 }
 
 function createTokenRefreshInterceptor({
-  logPrefix = "",
   onRefreshFailure,
   axiosInstance,
 }: TokenRefreshInterceptorOptions) {
@@ -67,18 +76,11 @@ function createTokenRefreshInterceptor({
       error.response?.status === 401 &&
       !originalRequest._retry
     ) {
-      console.log(
-        `🚨 ${logPrefix}Received 401 response, attempting token refresh`,
-      );
-      console.log(`📍 ${logPrefix}Failed request URL: ${originalRequest.url}`);
+      console.log(`🚨 Received 401 response, attempting token refresh`);
 
       originalRequest._retry = true;
 
       try {
-        console.log(
-          `🔄 ${logPrefix}Attempting to refresh YNAB access token...`,
-        );
-
         const originalAccessToken =
           originalRequest.headers.Authorization?.toString().split(" ")[1];
 
@@ -91,20 +93,16 @@ function createTokenRefreshInterceptor({
         const newAccessToken =
           await refreshYNABAccessToken(originalAccessToken);
 
-        console.log(
-          `✅ ${logPrefix}Token refresh successful, updating headers`,
-        );
-
         // Update the authorization header
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         axiosInstance.defaults.headers.Authorization = `Bearer ${newAccessToken}`;
 
-        console.log(`🔁 ${logPrefix}Retrying original request with new token`);
+        console.log(`🔁 Retrying original request with new token`);
 
         // Retry the original request
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        console.error(`❌ ${logPrefix}Token refresh failed:`, refreshError);
+        console.error(`❌ Token refresh failed:`, refreshError);
 
         // Call optional cleanup callback
         if (onRefreshFailure) {
@@ -135,18 +133,8 @@ export async function refreshYNABAccessToken(originalAccessToken: string) {
   });
 
   if (!account?.refresh_token) {
-    console.error(
-      "❌ Token refresh failed: YNAB refresh token not found in database",
-    );
     throw new Error("YNAB refresh token not found");
   }
-
-  console.log(`✅ Found YNAB account with ID: ${account.id}`);
-  console.log(
-    `🔑 Refresh token available (length: ${account.refresh_token.length})`,
-  );
-
-  console.log("📡 Making request to YNAB OAuth refresh endpoint");
 
   // Use YNAB's OAuth refresh endpoint
   const response = await axios.post(
@@ -168,13 +156,6 @@ export async function refreshYNABAccessToken(originalAccessToken: string) {
     throw new Error("No access token received from YNAB");
   }
 
-  console.log(`🔑 New access token received (length: ${access_token.length})`);
-  console.log(
-    `🔑 New refresh token ${refresh_token ? `received (length: ${refresh_token.length})` : "not provided - keeping existing"}`,
-  );
-
-  console.log("💾 Updating database with new tokens");
-
   // Update the database with new tokens
   await prisma.account.update({
     where: { id: account.id },
@@ -184,19 +165,12 @@ export async function refreshYNABAccessToken(originalAccessToken: string) {
     },
   });
 
-  console.log("✅ Successfully updated database with new tokens");
-  console.log("🎉 YNAB access token refresh completed successfully");
+  console.log("🔑 YNAB access token refresh completed successfully");
 
   return access_token;
 }
 
-interface ErrorLoggerInterceptorOptions {
-  logPrefix?: string;
-}
-
-function createErrorInterceptor({
-  logPrefix = "",
-}: ErrorLoggerInterceptorOptions) {
+function createErrorInterceptor() {
   return async (error: AxiosError) => {
     const statusCode = error.response?.status;
 
@@ -208,7 +182,7 @@ function createErrorInterceptor({
         const operation = originalRequest?._operation || "do operation";
 
         const ynabError = createYNABError(error, operation);
-        console.error(`🎯 ${logPrefix} ${ynabError.message}`);
+        console.error(`🎯 ${ynabError.message}`);
 
         return Promise.reject(ynabError);
       }
