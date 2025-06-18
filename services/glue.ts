@@ -48,16 +48,13 @@ export async function processLatestExpenses(
       );
       successful.push(expense);
     } catch (error) {
+      console.error(
+        `❌ [processLatestExpenses] Error processing expense ${expense.id}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+
       if (error instanceof YNABBadRequestError) {
-        await splitwise.markExpenseError(expense);
-        console.log(
-          `⚠️ [processLatestExpenses] Marked Splitwise expense ${expense.id} as error`,
-        );
         failed.push({ expense, error });
       } else {
-        console.error(
-          `❌ [processLatestExpenses] Error processing expense ${expense.id}: ${error instanceof Error ? error.message : String(error)}`,
-        );
         throw error;
       }
     }

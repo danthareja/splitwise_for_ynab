@@ -210,7 +210,7 @@ export abstract class YNABError extends Error {
     const ynabError = (originalError.response?.data as YNABErrorResponse)
       ?.error;
     const helpfulMessage = ynabError
-      ? `YNAB can't ${operation}: ${ynabError.detail}`
+      ? `YNAB can't ${operation}: ${ynabError.detail} (${ynabError.id})`
       : `YNAB can't ${operation}`;
 
     super(helpfulMessage, { cause: originalError });

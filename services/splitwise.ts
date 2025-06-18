@@ -25,7 +25,6 @@ export class SplitwiseService {
   private currencyCode: string;
   private axios: AxiosInstance;
   private syncState: SyncState;
-  private errorEmoji: string;
   private backupPayeeName: string;
 
   constructor({
@@ -44,7 +43,6 @@ export class SplitwiseService {
     this.groupId = groupId;
     this.currencyCode = currencyCode;
     this.syncState = syncState;
-    this.errorEmoji = "⚠️"; // TODO: Make this configurable
     this.backupPayeeName = backupPayeeName || "Splitwise for YNAB";
 
     this.axios = createSplitwiseAxios({ accessToken: apiKey });
@@ -108,17 +106,6 @@ export class SplitwiseService {
 
     const hasKnownEmoji = expense.description.includes(this.knownEmoji);
     return !hasKnownEmoji;
-  }
-
-  async markExpenseError(expense: SplitwiseExpense) {
-    await this.axios.post(`/update_expense/${expense.id}`, {
-      description: `${this.errorEmoji}${this.knownEmoji}${expense.description}`,
-    });
-  }
-
-  isExpenseError(expense: SplitwiseExpense) {
-    const hasErrorEmoji = expense.description.includes(this.errorEmoji);
-    return hasErrorEmoji;
   }
 
   async getLastProcessedDate() {
