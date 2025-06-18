@@ -25,6 +25,7 @@ export class SplitwiseService {
   private currencyCode: string;
   private axios: AxiosInstance;
   private syncState: SyncState;
+  private errorEmoji: string;
 
   constructor({
     userId,
@@ -41,6 +42,7 @@ export class SplitwiseService {
     this.groupId = groupId;
     this.currencyCode = currencyCode;
     this.syncState = syncState;
+    this.errorEmoji = "⚠️"; // TODO: Make this configurable
 
     this.axios = axios.create({
       baseURL: "https://secure.splitwise.com/api/v3.0",
@@ -122,6 +124,17 @@ export class SplitwiseService {
     return !hasKnownEmoji;
   }
 
+  async markExpenseError(expense: SplitwiseExpense) {
+    await this.axios.post(`/update_expense/${expense.id}`, {
+      description: `${this.errorEmoji}${this.knownEmoji}${expense.description}`,
+    });
+  }
+
+  isExpenseError(expense: SplitwiseExpense) {
+    const hasErrorEmoji = expense.description.includes(this.errorEmoji);
+    return hasErrorEmoji;
+  }
+
   async getLastProcessedDate() {
     const dbDate = await this.syncState.getSplitwiseLastProcessed(this.userId);
 
@@ -140,29 +153,10 @@ export class SplitwiseService {
   }
 
   toYNABTransaction(expense: SplitwiseExpense) {
-    return this.hasKnownPayee()
-      ? this.toYNABTransactionWithKnownPayee(expense)
-      : this.toYNABTranstionWithUnknownPayee(expense);
-  }
-
-  hasKnownPayee() {
-    return true;
-  }
-
-  toYNABTransactionWithKnownPayee(expense: SplitwiseExpense) {
     return {
       amount: this.toYNABAmount(expense),
       payee_name: this.stripEmojis(expense.description),
       memo: expense.details,
-      date: this.stripTimestamp(expense.date),
-    };
-  }
-
-  toYNABTranstionWithUnknownPayee(expense: SplitwiseExpense) {
-    return {
-      amount: this.toYNABAmount(expense),
-      payee_name: `Splitwise from ${expense.created_by.first_name}`,
-      memo: this.stripEmojis(expense.description),
       date: this.stripTimestamp(expense.date),
     };
   }

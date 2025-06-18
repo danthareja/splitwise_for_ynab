@@ -2,38 +2,33 @@ import { YNABService } from "@/services/ynab";
 import { SplitwiseService } from "@/services/splitwise";
 import type { YNABTransaction } from "@/types/ynab";
 import type { SplitwiseExpense } from "@/types/splitwise";
+import { YNABBadRequestError } from "./ynab-axios";
 
 export async function processLatestExpenses(
   ynab: YNABService,
   splitwise: SplitwiseService,
-): Promise<SplitwiseExpense[]> {
-  console.log(
-    `🔍 [processLatestExpenses] Getting last processed date from Splitwise...`,
-  );
+): Promise<{
+  successful: SplitwiseExpense[];
+  failed: {
+    expense: SplitwiseExpense;
+    error: Error;
+  }[];
+}> {
   const lastProcessedDate = await splitwise.getLastProcessedDate();
   console.log(
     `📅 [processLatestExpenses] Last processed date: ${lastProcessedDate || "Never"}`,
   );
 
-  console.log(
-    `🔍 [processLatestExpenses] Fetching unprocessed Splitwise expenses...`,
-  );
   const expenses = await splitwise.getUnprocessedExpenses({
     updated_after: lastProcessedDate,
   });
 
+  const successful = [];
+  const failed = [];
+
   console.log(
     `📋 [processLatestExpenses] Found ${expenses.length} unprocessed Splitwise expenses`,
   );
-
-  if (expenses.length > 0) {
-    console.log(`💰 [processLatestExpenses] Processing Splitwise expenses:`);
-    expenses.forEach((expense, idx) => {
-      console.log(
-        `   ${idx + 1}. ${expense.description || "No description"} - ID: ${expense.id}, Date: ${expense.date}`,
-      );
-    });
-  }
 
   for (const [index, expense] of expenses.entries()) {
     console.log(
@@ -42,15 +37,6 @@ export async function processLatestExpenses(
 
     try {
       const ynabTransaction = splitwise.toYNABTransaction(expense);
-      console.log(
-        `📝 [processLatestExpenses] Converting to YNAB transaction:`,
-        {
-          amount: ynabTransaction.amount,
-          payee: ynabTransaction.payee_name,
-          memo: ynabTransaction.memo,
-        },
-      );
-
       await ynab.createTransaction(ynabTransaction);
       console.log(
         `✅ [processLatestExpenses] Created YNAB transaction for expense ${expense.id}`,
@@ -60,60 +46,55 @@ export async function processLatestExpenses(
       console.log(
         `✅ [processLatestExpenses] Marked Splitwise expense ${expense.id} as processed`,
       );
+      successful.push(expense);
     } catch (error) {
-      console.error(
-        `❌ [processLatestExpenses] Error processing expense ${expense.id}:`,
-        error,
-      );
-      throw error;
+      if (error instanceof YNABBadRequestError) {
+        await splitwise.markExpenseError(expense);
+        console.log(
+          `⚠️ [processLatestExpenses] Marked Splitwise expense ${expense.id} as error`,
+        );
+        failed.push({ expense, error });
+      } else {
+        console.error(
+          `❌ [processLatestExpenses] Error processing expense ${expense.id}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        throw error;
+      }
     }
   }
 
-  console.log(`💾 [processLatestExpenses] Updating last processed date...`);
   await splitwise.setLastProcessedDate();
   console.log(
-    `✅ [processLatestExpenses] Complete! Processed ${expenses.length} expenses`,
+    `✅ [processLatestExpenses] Complete! Processed ${expenses.length} expenses. ${successful.length} successful, ${failed.length} failed`,
   );
 
-  return expenses;
+  return { successful, failed };
 }
 
 export async function processLatestTransactions(
   ynab: YNABService,
   splitwise: SplitwiseService,
-): Promise<YNABTransaction[]> {
-  console.log(
-    `🔍 [processLatestTransactions] Getting YNAB server knowledge...`,
-  );
+): Promise<{
+  successful: YNABTransaction[];
+  failed: {
+    transaction: YNABTransaction;
+    error: Error;
+  }[];
+}> {
   const lastServerKnowledge = await ynab.getServerKnowledge();
   console.log(
     `📊 [processLatestTransactions] Last server knowledge: ${lastServerKnowledge || "None"}`,
   );
 
-  console.log(
-    `🔍 [processLatestTransactions] Fetching unprocessed YNAB transactions...`,
-  );
   const { serverKnowledge, transactions } =
     await ynab.getUnprocessedTransactions(lastServerKnowledge);
 
   console.log(
     `📋 [processLatestTransactions] Found ${transactions.length} unprocessed YNAB transactions`,
   );
-  console.log(
-    `📊 [processLatestTransactions] New server knowledge: ${serverKnowledge}`,
-  );
 
-  if (transactions.length > 0) {
-    console.log(`💰 [processLatestTransactions] Processing YNAB transactions:`);
-    transactions.forEach((transaction, idx) => {
-      const amount = transaction.amount / 1000; // Convert from milliunits
-      const description =
-        transaction.payee_name || transaction.memo || "No description";
-      console.log(
-        `   ${idx + 1}. ${description} - $${amount} (ID: ${transaction.id}, Date: ${transaction.date})`,
-      );
-    });
-  }
+  const successful = [];
+  const failed = []; // TODO: Implement failed transactions from Splitwise API
 
   for (const [index, transaction] of transactions.entries()) {
     console.log(
@@ -122,16 +103,6 @@ export async function processLatestTransactions(
 
     try {
       const splitwiseExpense = ynab.toSplitwiseExpense(transaction);
-      console.log(
-        `📝 [processLatestTransactions] Converting to Splitwise expense:`,
-        {
-          description: splitwiseExpense.description,
-          cost: splitwiseExpense.cost,
-          details: splitwiseExpense.details,
-          date: splitwiseExpense.date,
-        },
-      );
-
       await splitwise.createExpense(splitwiseExpense);
       console.log(
         `✅ [processLatestTransactions] Created Splitwise expense for transaction ${transaction.id}`,
@@ -141,22 +112,19 @@ export async function processLatestTransactions(
       console.log(
         `✅ [processLatestTransactions] Marked YNAB transaction ${transaction.id} as processed`,
       );
+      successful.push(transaction);
     } catch (error) {
       console.error(
-        `❌ [processLatestTransactions] Error processing transaction ${transaction.id}:`,
-        error,
+        `❌ [processLatestTransactions] Error processing transaction ${transaction.id}: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
     }
   }
 
-  console.log(
-    `💾 [processLatestTransactions] Updating YNAB server knowledge to: ${serverKnowledge}`,
-  );
   await ynab.setServerKnowledge(serverKnowledge);
   console.log(
-    `✅ [processLatestTransactions] Complete! Processed ${transactions.length} transactions`,
+    `✅ [processLatestTransactions] Complete! Processed ${transactions.length} transactions. ${successful.length} successful, ${failed.length} failed`,
   );
 
-  return transactions;
+  return { successful, failed: [] }; // TODO: Implement failed transactions from YNAB API
 }

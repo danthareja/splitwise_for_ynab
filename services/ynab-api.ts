@@ -32,7 +32,7 @@ export async function getYNABBudgets(): Promise<YNABBudgetsResult> {
     const axiosInstance = await getYNABAxiosInstance();
 
     const response = await axiosInstance.get("/budgets", {
-      _operation: "fetching YNAB budgets",
+      _operation: "get budgets",
     });
     return {
       success: true,
@@ -56,7 +56,7 @@ export async function getYNABAccounts(
     const axiosInstance = await getYNABAxiosInstance();
 
     const response = await axiosInstance.get(`/budgets/${budgetId}/accounts`, {
-      _operation: "fetching YNAB accounts",
+      _operation: "get accounts",
     });
 
     // Filter to only include on-budget and non-deleted accounts

@@ -127,6 +127,8 @@ model SyncedItem {
   date          String // ISO date string (YYYY-MM-DD)
   syncHistoryId String
   direction     String // "ynab_to_splitwise" or "splitwise_to_ynab"
+  status        String  @default("success") // "success", "error"
+  errorMessage  String? // when status is "error"
 
   syncHistory SyncHistory @relation(fields: [syncHistoryId], references: [id], onDelete: Cascade)
 }

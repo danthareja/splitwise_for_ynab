@@ -11,6 +11,7 @@ import {
   Clock,
   RefreshCw,
   ChevronRight,
+  AlertTriangle,
 } from "lucide-react";
 
 export type SyncHistoryItem = {
@@ -27,6 +28,8 @@ export type SyncHistoryItem = {
     description: string | null;
     date: string;
     direction: string;
+    status: string;
+    errorMessage: string | null;
   }[];
 };
 
@@ -51,6 +54,8 @@ export function SyncHistory({ syncHistory }: SyncHistoryProps) {
                 <CheckCircle className="h-6 w-6 text-green-500" />
               ) : sync.status === "error" ? (
                 <XCircle className="h-6 w-6 text-red-500" />
+              ) : sync.status === "partial" ? (
+                <AlertTriangle className="h-6 w-6 text-yellow-500" />
               ) : (
                 <Clock className="h-6 w-6 text-blue-500 animate-pulse" />
               )}
@@ -68,14 +73,18 @@ export function SyncHistory({ syncHistory }: SyncHistoryProps) {
                         ? "success"
                         : sync.status === "error"
                           ? "destructive"
-                          : "default"
+                          : sync.status === "partial"
+                            ? "secondary"
+                            : "default"
                     }
                   >
                     {sync.status === "success"
                       ? "Success"
                       : sync.status === "error"
                         ? "Failed"
-                        : "In Progress"}
+                        : sync.status === "partial"
+                          ? "Partial"
+                          : "In Progress"}
                   </Badge>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -138,6 +147,30 @@ export function SyncHistory({ syncHistory }: SyncHistoryProps) {
               <div className="mt-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-xs">
                 <p className="font-medium">Error:</p>
                 <p>{sync.errorMessage}</p>
+              </div>
+            )}
+
+            {sync.status === "partial" && (
+              <div className="mt-2 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 text-xs">
+                <p className="font-medium">Partial sync - Some items failed:</p>
+                <div className="mt-1 space-y-1">
+                  {sync.syncedItems
+                    .filter((item) => item.status === "error")
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className="pl-2 border-l-2 border-yellow-200 dark:border-yellow-800"
+                      >
+                        <p className="font-medium">
+                          {item.description ||
+                            `${item.type} ${item.externalId}`}
+                        </p>
+                        <p className="text-xs opacity-75">
+                          {item.errorMessage}
+                        </p>
+                      </div>
+                    ))}
+                </div>
               </div>
             )}
           </div>

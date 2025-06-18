@@ -310,78 +310,115 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
     });
 
     // Process transactions from YNAB to Splitwise
-    const syncedTransactions: YNABTransaction[] =
+    const { successful: successfulTransactions, failed: failedTransactions } =
       await processLatestTransactions(ynabService, splitwiseService);
 
     // Process expenses from Splitwise to YNAB
-    const syncedExpenses: SplitwiseExpense[] = await processLatestExpenses(
-      ynabService,
-      splitwiseService,
-    );
+    const { successful: successfulExpenses, failed: failedExpenses } =
+      await processLatestExpenses(ynabService, splitwiseService);
 
-    // Record synced transactions
+    // Record successful transactions
     const createdTransactionItems =
-      syncedTransactions.length > 0
+      successfulTransactions.length > 0
         ? await Promise.all(
-            syncedTransactions.map((transaction) => {
+            successfulTransactions.map((transaction) => {
               return prisma.syncedItem.create({
-                data: {
-                  syncHistoryId: syncHistory.id,
-                  externalId: transaction.id,
-                  type: "ynab_transaction",
-                  amount: transaction.amount / 1000, // Convert from milliunits
-                  description:
-                    transaction.payee_name ||
-                    transaction.memo ||
-                    "Unknown transaction",
-                  date: transaction.date!.split("T")[0] || transaction.date!,
-                  direction: "ynab_to_splitwise",
-                },
+                data: createSyncItemData(
+                  syncHistory.id,
+                  transaction,
+                  "ynab_transaction",
+                  "ynab_to_splitwise",
+                  undefined,
+                  "success",
+                ),
               });
             }),
           )
         : [];
 
-    // Record synced expenses
-    const createdExpenseItems =
-      syncedExpenses.length > 0
+    // Record failed transactions
+    const createdFailedTransactionItems =
+      failedTransactions.length > 0
         ? await Promise.all(
-            syncedExpenses.map((expense) => {
+            failedTransactions.map(({ transaction, error }) => {
               return prisma.syncedItem.create({
-                data: {
-                  syncHistoryId: syncHistory.id,
-                  externalId: expense.id.toString(),
-                  type: "splitwise_expense",
-                  amount: splitwiseService.toYNABAmount(expense) / 1000,
-                  description: expense.description || "Unknown expense",
-                  date: expense.date!.split("T")[0] || expense.date!,
-                  direction: "splitwise_to_ynab",
-                },
+                data: createSyncItemData(
+                  syncHistory.id,
+                  transaction,
+                  "ynab_transaction",
+                  "ynab_to_splitwise",
+                  undefined,
+                  "error",
+                  error.message,
+                ),
               });
             }),
           )
         : [];
+
+    // Record successful expenses
+    const createdExpenseItems =
+      successfulExpenses.length > 0
+        ? await Promise.all(
+            successfulExpenses.map((expense) => {
+              return prisma.syncedItem.create({
+                data: createSyncItemData(
+                  syncHistory.id,
+                  expense,
+                  "splitwise_expense",
+                  "splitwise_to_ynab",
+                  splitwiseService,
+                  "success",
+                ),
+              });
+            }),
+          )
+        : [];
+
+    // Record failed expenses
+    const createdFailedExpenseItems =
+      failedExpenses.length > 0
+        ? await Promise.all(
+            failedExpenses.map(({ expense, error }) => {
+              return prisma.syncedItem.create({
+                data: createSyncItemData(
+                  syncHistory.id,
+                  expense,
+                  "splitwise_expense",
+                  "splitwise_to_ynab",
+                  splitwiseService,
+                  "error",
+                  error.message,
+                ),
+              });
+            }),
+          )
+        : [];
+
+    // Determine sync status
+    const hasFailures =
+      failedTransactions.length > 0 || failedExpenses.length > 0;
+    const syncStatus = hasFailures ? "partial" : "success";
 
     // Update sync history
     await prisma.syncHistory.update({
       where: { id: syncHistory.id },
       data: {
-        status: "success",
+        status: syncStatus,
         completedAt: new Date(),
       },
     });
 
-    const txnCount = createdTransactionItems.length;
-    const expenseCount = createdExpenseItems.length;
     console.log(`🏆 Single user sync complete for ${user.email || user.id}:`);
-    console.log(`📊 YNAB transactions processed: ${txnCount}`);
-    console.log(`📊 Splitwise expenses processed: ${expenseCount}`);
 
     return {
       success: true,
       syncHistoryId: syncHistory.id,
-      syncedTransactions: createdTransactionItems,
-      syncedExpenses: createdExpenseItems,
+      syncedTransactions: [
+        ...createdTransactionItems,
+        ...createdFailedTransactionItems,
+      ],
+      syncedExpenses: [...createdExpenseItems, ...createdFailedExpenseItems],
     };
   } catch (error) {
     console.error("Sync error:", error);
@@ -423,7 +460,6 @@ async function syncPairedGroup(group: PairedGroup): Promise<{
     console.log(
       `\n🟡 === PHASE 1: YNAB → Splitwise for group ${group.groupId} ===`,
     );
-    console.log(`📤 Processing YNAB transactions to create Splitwise expenses`);
 
     for (const user of group.users) {
       console.log(`\n👤 Phase 1 - Processing user: ${user.email || user.id}`);
@@ -435,19 +471,6 @@ async function syncPairedGroup(group: PairedGroup): Promise<{
         console.log(
           `✅ Phase 1 complete for ${user.email || user.id}: ${txnCount} YNAB transactions processed`,
         );
-
-        if (txnCount > 0) {
-          console.log(`📝 Transactions created in Splitwise:`);
-          result.syncedTransactions?.forEach((txn, idx) => {
-            console.log(
-              `   ${idx + 1}. ${txn.description} - $${txn.amount} (${txn.externalId})`,
-            );
-          });
-        } else {
-          console.log(
-            `ℹ️ No new YNAB transactions to sync for ${user.email || user.id}`,
-          );
-        }
       } catch (error) {
         console.error(
           `❌ Phase 1 error for user ${user.email || user.id}:`,
@@ -474,7 +497,6 @@ async function syncPairedGroup(group: PairedGroup): Promise<{
     console.log(
       `\n🟢 === PHASE 2: Splitwise → YNAB for group ${group.groupId} ===`,
     );
-    console.log(`📥 Processing Splitwise expenses to create YNAB transactions`);
 
     for (const user of group.users) {
       console.log(`\n👤 Phase 2 - Processing user: ${user.email || user.id}`);
@@ -491,19 +513,6 @@ async function syncPairedGroup(group: PairedGroup): Promise<{
           console.log(
             `✅ Phase 2 complete for ${user.email || user.id}: ${expenseCount} Splitwise expenses processed`,
           );
-
-          if (expenseCount > 0) {
-            console.log(`📝 Expenses created in YNAB:`);
-            phase2Result.syncedExpenses?.forEach((exp, idx) => {
-              console.log(
-                `   ${idx + 1}. ${exp.description} - $${exp.amount} (${exp.externalId})`,
-              );
-            });
-          } else {
-            console.log(
-              `ℹ️ No new Splitwise expenses to sync for ${user.email || user.id}`,
-            );
-          }
 
           // Merge results
           results[user.id] = {
@@ -697,8 +706,6 @@ async function syncUserPhase(
       syncState,
     });
 
-    let syncedTransactions = [] as YNABTransaction[];
-    let syncedExpenses = [] as SplitwiseExpense[];
     let createdTransactionItems: SyncedItem[] = [];
     let createdExpenseItems: SyncedItem[] = [];
 
@@ -709,123 +716,128 @@ async function syncUserPhase(
 
     if (phase === "ynab_to_splitwise") {
       console.log(`📤 Phase: YNAB → Splitwise`);
-      console.log(`🔍 Checking for new YNAB transactions to sync...`);
 
       // Process transactions from YNAB to Splitwise
-      syncedTransactions = await processLatestTransactions(
-        ynabService,
-        splitwiseService,
-      );
+      const { successful: successfulTransactions, failed: failedTransactions } =
+        await processLatestTransactions(ynabService, splitwiseService);
 
       console.log(
-        `📋 Found ${syncedTransactions.length} YNAB transactions to process`,
+        `📋 Found ${successfulTransactions.length + failedTransactions.length} YNAB transactions to process (${successfulTransactions.length} successful, ${failedTransactions.length} failed)`,
       );
 
-      if (syncedTransactions.length > 0) {
-        console.log(`💰 YNAB transactions being created in Splitwise:`);
-        syncedTransactions.forEach((txn, idx) => {
-          const amount = txn.amount / 1000; // Convert from milliunits
-          const description =
-            txn.payee_name || txn.memo || "Unknown transaction";
-          console.log(
-            `   ${idx + 1}. ${description} - $${amount} (ID: ${txn.id}, Date: ${txn.date})`,
-          );
-        });
-      } else {
-        console.log(`ℹ️ No new YNAB transactions found to sync`);
-      }
-
-      // Record synced transactions
-      console.log(
-        `💾 Recording ${syncedTransactions.length} synced transactions in database...`,
-      );
-      createdTransactionItems =
-        syncedTransactions.length > 0
+      // Record successful transactions
+      const successfulTransactionItems =
+        successfulTransactions.length > 0
           ? await Promise.all(
-              syncedTransactions.map((transaction) =>
+              successfulTransactions.map((transaction) =>
                 prisma.syncedItem.create({
-                  data: {
-                    syncHistoryId: syncHistory.id,
-                    externalId: transaction.id,
-                    type: "ynab_transaction",
-                    amount: transaction.amount / 1000, // Convert from milliunits
-                    description:
-                      transaction.payee_name ||
-                      transaction.memo ||
-                      "Unknown transaction",
-                    date: transaction.date!.split("T")[0] || transaction.date!,
-                    direction: "ynab_to_splitwise",
-                  },
+                  data: createSyncItemData(
+                    syncHistory.id,
+                    transaction,
+                    "ynab_transaction",
+                    "ynab_to_splitwise",
+                    undefined,
+                    "success",
+                  ),
                 }),
               ),
             )
           : [];
 
-      console.log(
-        `✅ YNAB → Splitwise phase complete: ${createdTransactionItems.length} items recorded`,
-      );
-    } else {
-      console.log(`📥 Phase: Splitwise → YNAB`);
-      console.log(`🔍 Checking for new Splitwise expenses to sync...`);
-
-      // Process expenses from Splitwise to YNAB
-      syncedExpenses = await processLatestExpenses(
-        ynabService,
-        splitwiseService,
-      );
-
-      console.log(
-        `📋 Found ${syncedExpenses.length} Splitwise expenses to process`,
-      );
-
-      if (syncedExpenses.length > 0) {
-        console.log(`💰 Splitwise expenses being created in YNAB:`);
-        syncedExpenses.forEach((exp, idx) => {
-          const amount = splitwiseService.toYNABAmount(exp) / 1000;
-          const description = exp.description || "Unknown expense";
-          console.log(
-            `   ${idx + 1}. ${description} - $${amount} (ID: ${exp.id}, Date: ${exp.date})`,
-          );
-        });
-      } else {
-        console.log(`ℹ️ No new Splitwise expenses found to sync`);
-      }
-
-      // Record synced expenses
-      console.log(
-        `💾 Recording ${syncedExpenses.length} synced expenses in database...`,
-      );
-      createdExpenseItems =
-        syncedExpenses.length > 0
+      // Record failed transactions
+      const failedTransactionItems =
+        failedTransactions.length > 0
           ? await Promise.all(
-              syncedExpenses.map((expense) => {
-                return prisma.syncedItem.create({
-                  data: {
-                    syncHistoryId: syncHistory.id,
-                    externalId: expense.id.toString(),
-                    type: "splitwise_expense",
-                    amount: splitwiseService.toYNABAmount(expense) / 1000,
-                    description: expense.description || "Unknown expense",
-                    date: expense.date!.split("T")[0] || expense.date!,
-                    direction: "splitwise_to_ynab",
-                  },
-                });
-              }),
+              failedTransactions.map(({ transaction, error }) =>
+                prisma.syncedItem.create({
+                  data: createSyncItemData(
+                    syncHistory.id,
+                    transaction,
+                    "ynab_transaction",
+                    "ynab_to_splitwise",
+                    undefined,
+                    "error",
+                    error.message,
+                  ),
+                }),
+              ),
             )
           : [];
 
+      createdTransactionItems = [
+        ...successfulTransactionItems,
+        ...failedTransactionItems,
+      ];
+
       console.log(
-        `✅ Splitwise → YNAB phase complete: ${createdExpenseItems.length} items recorded`,
+        `✅ YNAB → Splitwise phase complete: ${createdTransactionItems.length} items recorded (${successfulTransactionItems.length} successful, ${failedTransactionItems.length} failed)`,
+      );
+    } else {
+      console.log(`📥 Phase: Splitwise → YNAB`);
+
+      // Process expenses from Splitwise to YNAB
+      const { successful: successfulExpenses, failed: failedExpenses } =
+        await processLatestExpenses(ynabService, splitwiseService);
+
+      console.log(
+        `📋 Found ${successfulExpenses.length + failedExpenses.length} Splitwise expenses to process (${successfulExpenses.length} successful, ${failedExpenses.length} failed)`,
       );
 
-      // Update sync history to completed only after the final phase
+      // Record successful expenses
+      const successfulExpenseItems =
+        successfulExpenses.length > 0
+          ? await Promise.all(
+              successfulExpenses.map((expense) =>
+                prisma.syncedItem.create({
+                  data: createSyncItemData(
+                    syncHistory.id,
+                    expense,
+                    "splitwise_expense",
+                    "splitwise_to_ynab",
+                    splitwiseService,
+                    "success",
+                  ),
+                }),
+              ),
+            )
+          : [];
+
+      // Record failed expenses
+      const failedExpenseItems =
+        failedExpenses.length > 0
+          ? await Promise.all(
+              failedExpenses.map(({ expense, error }) =>
+                prisma.syncedItem.create({
+                  data: createSyncItemData(
+                    syncHistory.id,
+                    expense,
+                    "splitwise_expense",
+                    "splitwise_to_ynab",
+                    splitwiseService,
+                    "error",
+                    error.message,
+                  ),
+                }),
+              ),
+            )
+          : [];
+
+      createdExpenseItems = [...successfulExpenseItems, ...failedExpenseItems];
+
       console.log(
-        `🏁 Marking sync as completed for user ${user.email || user.id}`,
+        `✅ Splitwise → YNAB phase complete: ${createdExpenseItems.length} items recorded (${successfulExpenseItems.length} successful, ${failedExpenseItems.length} failed)`,
       );
+
+      // Determine sync status for the final phase
+      const hasFailures = failedExpenses.length > 0;
+      const hasSuccesses = successfulExpenses.length > 0;
+      const syncStatus = hasFailures && hasSuccesses ? "partial" : "success";
+
+      // Update sync history to completed only after the final phase
       await prisma.syncHistory.update({
         where: { id: syncHistory.id },
         data: {
-          status: "success",
+          status: syncStatus,
           completedAt: new Date(),
         },
       });
@@ -857,4 +869,37 @@ async function syncUserPhase(
       error: error instanceof Error ? error.message : "Unknown error",
     };
   }
+}
+
+// Helper function to create sync item data
+function createSyncItemData(
+  syncHistoryId: string,
+  item: YNABTransaction | SplitwiseExpense,
+  type: "ynab_transaction" | "splitwise_expense",
+  direction: "ynab_to_splitwise" | "splitwise_to_ynab",
+  splitwiseService?: SplitwiseService,
+  status: "success" | "error" = "success",
+  errorMessage?: string,
+) {
+  const isTransaction = type === "ynab_transaction";
+  const transaction = item as YNABTransaction;
+  const expense = item as SplitwiseExpense;
+
+  return {
+    syncHistoryId,
+    externalId: isTransaction ? transaction.id : expense.id.toString(),
+    type,
+    amount: isTransaction
+      ? transaction.amount / 1000
+      : splitwiseService!.toYNABAmount(expense) / 1000,
+    description: isTransaction
+      ? transaction.payee_name || transaction.memo || "Unknown transaction"
+      : expense.description || "Unknown expense",
+    date: isTransaction
+      ? transaction.date!.split("T")[0] || transaction.date!
+      : expense.date!.split("T")[0] || expense.date!,
+    direction,
+    status,
+    errorMessage,
+  };
 }
