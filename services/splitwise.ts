@@ -15,6 +15,7 @@ interface SplitwiseServiceConstructorParams {
   groupId: string;
   currencyCode: string;
   syncState: SyncState;
+  backupPayeeName?: string;
 }
 
 export class SplitwiseService {
@@ -26,6 +27,7 @@ export class SplitwiseService {
   private axios: AxiosInstance;
   private syncState: SyncState;
   private errorEmoji: string;
+  private backupPayeeName: string;
 
   constructor({
     userId,
@@ -35,6 +37,7 @@ export class SplitwiseService {
     syncState,
     groupId,
     currencyCode,
+    backupPayeeName,
   }: SplitwiseServiceConstructorParams) {
     this.userId = userId;
     this.knownEmoji = knownEmoji;
@@ -43,6 +46,7 @@ export class SplitwiseService {
     this.currencyCode = currencyCode;
     this.syncState = syncState;
     this.errorEmoji = "⚠️"; // TODO: Make this configurable
+    this.backupPayeeName = backupPayeeName || "Splitwise for YNAB";
 
     this.axios = axios.create({
       baseURL: "https://secure.splitwise.com/api/v3.0",
@@ -153,10 +157,46 @@ export class SplitwiseService {
   }
 
   toYNABTransaction(expense: SplitwiseExpense) {
+    return this.hasInvalidPayee(expense)
+      ? this.toYNABTransactionWithInvalidPayee(expense)
+      : this.toYNABTransactionWithValidPayee(expense);
+  }
+
+  hasInvalidPayee(expense: SplitwiseExpense) {
+    // Starting with an internal payee name will throw a 400 error
+    // when creating a transaction in YNAB
+    const internalPayeeNames = [
+      "Transfer : ",
+      "Starting Balance",
+      "Manual Balance Adjustment",
+      "Reconciliation Balance Adjustment",
+    ];
+
+    return internalPayeeNames.some((payeeName) =>
+      expense.description.startsWith(payeeName),
+    );
+  }
+
+  toYNABTransactionWithValidPayee(expense: SplitwiseExpense) {
     return {
       amount: this.toYNABAmount(expense),
       payee_name: this.stripEmojis(expense.description),
       memo: expense.details,
+      date: this.stripTimestamp(expense.date),
+    };
+  }
+
+  toYNABTransactionWithInvalidPayee(expense: SplitwiseExpense) {
+    let memo = this.stripEmojis(expense.description);
+
+    if (expense.details) {
+      memo += `: ${expense.details}`;
+    }
+
+    return {
+      amount: this.toYNABAmount(expense),
+      payee_name: this.backupPayeeName,
+      memo,
       date: this.stripTimestamp(expense.date),
     };
   }

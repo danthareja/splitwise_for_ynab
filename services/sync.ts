@@ -307,6 +307,9 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
       currencyCode: user.splitwiseSettings.currencyCode,
       apiKey: splitwiseAccount.access_token,
       syncState,
+      backupPayeeName:
+        `Splitwise: ${user.splitwiseSettings.groupName}` ||
+        "Splitwise for YNAB",
     });
 
     // Process transactions from YNAB to Splitwise
