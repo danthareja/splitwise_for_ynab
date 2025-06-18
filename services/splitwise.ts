@@ -1,9 +1,8 @@
-import axios, { type AxiosInstance } from "axios";
-import axiosRetry, { isNetworkOrIdempotentRequestError } from "axios-retry";
+import { type AxiosInstance } from "axios";
 import * as Sentry from "@sentry/nextjs";
 import type { SyncState } from "./sync-state";
-import { addStackToAxios } from "./utils";
 import { SplitwiseExpense } from "../types/splitwise";
+import { createSplitwiseAxios } from "./splitwise-axios";
 
 export const FIRST_KNOWN_DATE = "2025-05-23T08:49:26.012Z";
 
@@ -48,29 +47,12 @@ export class SplitwiseService {
     this.errorEmoji = "⚠️"; // TODO: Make this configurable
     this.backupPayeeName = backupPayeeName || "Splitwise for YNAB";
 
-    this.axios = axios.create({
-      baseURL: "https://secure.splitwise.com/api/v3.0",
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
-
-    addStackToAxios(this.axios);
-
-    axiosRetry(this.axios, {
-      retries: 3,
-      shouldResetTimeout: true,
-      retryCondition: (e) =>
-        e?.code === "ECONNABORTED" || isNetworkOrIdempotentRequestError(e),
-    });
+    this.axios = createSplitwiseAxios({ accessToken: apiKey });
   }
 
   static async validateApiKey(apiKey: string) {
     try {
-      const axiosInstance = axios.create({
-        baseURL: "https://secure.splitwise.com/api/v3.0",
-        headers: { Authorization: `Bearer ${apiKey}` },
-      });
-
-      addStackToAxios(axiosInstance);
+      const axiosInstance = createSplitwiseAxios({ accessToken: apiKey });
 
       const response = await axiosInstance.get("/get_current_user");
       return {

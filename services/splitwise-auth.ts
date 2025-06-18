@@ -1,16 +1,11 @@
 import * as Sentry from "@sentry/nextjs";
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import type { SplitwiseGroup, SplitwiseUser } from "../types/splitwise";
-import { addStackToAxios } from "./utils";
+import { createSplitwiseAxios } from "./splitwise-axios";
 
 export async function validateSplitwiseApiKey(apiKey: string) {
   try {
-    const axiosInstance = axios.create({
-      baseURL: "https://secure.splitwise.com/api/v3.0",
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
-
-    addStackToAxios(axiosInstance);
+    const axiosInstance = createSplitwiseAxios({ accessToken: apiKey });
 
     const response = await axiosInstance.get("/get_current_user");
     return {
@@ -40,12 +35,7 @@ export async function validateSplitwiseApiKey(apiKey: string) {
 
 export async function getSplitwiseGroups(accessToken: string) {
   try {
-    const axiosInstance = axios.create({
-      baseURL: "https://secure.splitwise.com/api/v3.0",
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-
-    addStackToAxios(axiosInstance);
+    const axiosInstance = createSplitwiseAxios({ accessToken });
 
     const response = await axiosInstance.get("/get_groups");
     return {
