@@ -1,6 +1,5 @@
 import axios, { type AxiosInstance } from "axios";
 import axiosRetry, { isNetworkOrIdempotentRequestError } from "axios-retry";
-import { addStackToAxios } from "./utils";
 
 interface CreateSplitwiseAxiosOptions {
   accessToken: string;
@@ -16,8 +15,6 @@ export function createSplitwiseAxios({
     baseURL,
     headers: { Authorization: `Bearer ${accessToken}` },
   });
-
-  addStackToAxios(axiosInstance);
 
   axiosRetry(axiosInstance, {
     retries: 2,

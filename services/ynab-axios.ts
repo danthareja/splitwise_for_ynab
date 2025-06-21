@@ -1,6 +1,5 @@
 import axios, { type AxiosInstance, type AxiosError } from "axios";
 import axiosRetry, { isNetworkOrIdempotentRequestError } from "axios-retry";
-import { addStackToAxios } from "./utils";
 import { prisma } from "@/db";
 
 // Extend the request config type to include our retry flag and operation context
@@ -27,8 +26,6 @@ export function createYNABAxios({
     baseURL,
     headers: { Authorization: `Bearer ${accessToken}` },
   });
-
-  addStackToAxios(axiosInstance);
 
   axiosRetry(axiosInstance, {
     retries: 2,
@@ -192,70 +189,6 @@ function createErrorInterceptor() {
   };
 }
 
-interface YNABErrorResponse {
-  error: YNABErrorDetail;
-}
-
-interface YNABErrorDetail {
-  id: string;
-  name: string;
-  detail: string;
-}
-
-export abstract class YNABError extends Error {
-  public readonly operation: string;
-  public readonly statusCode: number;
-
-  constructor(originalError: AxiosError, operation: string) {
-    const ynabError = (originalError.response?.data as YNABErrorResponse)
-      ?.error;
-    const helpfulMessage = ynabError
-      ? `YNAB can't ${operation}: ${ynabError.detail} (${ynabError.id})`
-      : `YNAB can't ${operation}`;
-
-    super(helpfulMessage, { cause: originalError });
-    this.name = this.constructor.name;
-    this.operation = operation;
-    this.statusCode = originalError.response?.status || 0;
-  }
-
-  get originalError(): AxiosError {
-    return (this as Error & { cause: AxiosError }).cause;
-  }
-
-  get ynabError(): YNABErrorDetail | undefined {
-    const responseData = this.originalError.response?.data as YNABErrorResponse;
-    return responseData?.error;
-  }
-}
-
-// Client Error Classes (4xx)
-export class YNABClientError extends YNABError {}
-
-export class YNABBadRequestError extends YNABClientError {}
-
-export class YNABUnauthorizedError extends YNABClientError {}
-
-export class YNABForbiddenError extends YNABClientError {}
-export class YNABSubscriptionLapsedError extends YNABForbiddenError {}
-export class YNABTrialExpiredError extends YNABForbiddenError {}
-export class YNABUnauthorizedScopeError extends YNABForbiddenError {}
-export class YNABDataLimitReachedError extends YNABForbiddenError {}
-
-export class YNABNotFoundError extends YNABClientError {}
-export class YNABResourceNotFoundError extends YNABNotFoundError {}
-
-export class YNABConflictError extends YNABClientError {}
-
-export class YNABRateLimitError extends YNABClientError {}
-
-// Server Error Classes (5xx)
-export class YNABServerError extends YNABError {}
-
-export class YNABInternalServerError extends YNABServerError {}
-
-export class YNABServiceUnavailableError extends YNABServerError {}
-
 // Factory function to create appropriate error type
 export function createYNABError(
   originalError: AxiosError,
@@ -313,5 +246,149 @@ export function createYNABError(
       } else {
         return new YNABServerError(originalError, operation);
       }
+  }
+}
+
+interface YNABErrorResponse {
+  error: YNABErrorDetail;
+}
+
+interface YNABErrorDetail {
+  id: string;
+  name: string;
+  detail: string;
+}
+
+export abstract class YNABError extends Error {
+  public readonly operation: string;
+  public readonly statusCode: number;
+
+  constructor(originalError: AxiosError, operation: string) {
+    const ynabError = (originalError.response?.data as YNABErrorResponse)
+      ?.error;
+    const helpfulMessage = ynabError
+      ? `YNAB can't ${operation}: ${ynabError.detail} (${ynabError.id})`
+      : `YNAB can't ${operation}`;
+
+    super(helpfulMessage, { cause: originalError });
+    this.name = "YNABError";
+    this.operation = operation;
+    this.statusCode = originalError.response?.status || 0;
+  }
+
+  get originalError(): AxiosError {
+    return (this as Error & { cause: AxiosError }).cause;
+  }
+
+  get ynabError(): YNABErrorDetail | undefined {
+    const responseData = this.originalError.response?.data as YNABErrorResponse;
+    return responseData?.error;
+  }
+}
+
+// Client Error Classes (4xx)
+export class YNABClientError extends YNABError {
+  constructor(originalError: AxiosError, operation: string) {
+    super(originalError, operation);
+    this.name = "YNABClientError";
+  }
+}
+
+export class YNABBadRequestError extends YNABClientError {
+  constructor(originalError: AxiosError, operation: string) {
+    super(originalError, operation);
+    this.name = "YNABBadRequestError";
+  }
+}
+
+export class YNABUnauthorizedError extends YNABClientError {
+  constructor(originalError: AxiosError, operation: string) {
+    super(originalError, operation);
+    this.name = "YNABUnauthorizedError";
+  }
+}
+
+export class YNABForbiddenError extends YNABClientError {
+  constructor(originalError: AxiosError, operation: string) {
+    super(originalError, operation);
+    this.name = "YNABForbiddenError";
+  }
+}
+
+export class YNABSubscriptionLapsedError extends YNABForbiddenError {
+  constructor(originalError: AxiosError, operation: string) {
+    super(originalError, operation);
+    this.name = "YNABSubscriptionLapsedError";
+  }
+}
+
+export class YNABTrialExpiredError extends YNABForbiddenError {
+  constructor(originalError: AxiosError, operation: string) {
+    super(originalError, operation);
+    this.name = "YNABTrialExpiredError";
+  }
+}
+
+export class YNABUnauthorizedScopeError extends YNABForbiddenError {
+  constructor(originalError: AxiosError, operation: string) {
+    super(originalError, operation);
+    this.name = "YNABUnauthorizedScopeError";
+  }
+}
+
+export class YNABDataLimitReachedError extends YNABForbiddenError {
+  constructor(originalError: AxiosError, operation: string) {
+    super(originalError, operation);
+    this.name = "YNABDataLimitReachedError";
+  }
+}
+
+export class YNABNotFoundError extends YNABClientError {
+  constructor(originalError: AxiosError, operation: string) {
+    super(originalError, operation);
+    this.name = "YNABNotFoundError";
+  }
+}
+
+export class YNABResourceNotFoundError extends YNABNotFoundError {
+  constructor(originalError: AxiosError, operation: string) {
+    super(originalError, operation);
+    this.name = "YNABResourceNotFoundError";
+  }
+}
+
+export class YNABConflictError extends YNABClientError {
+  constructor(originalError: AxiosError, operation: string) {
+    super(originalError, operation);
+    this.name = "YNABConflictError";
+  }
+}
+
+export class YNABRateLimitError extends YNABClientError {
+  constructor(originalError: AxiosError, operation: string) {
+    super(originalError, operation);
+    this.name = "YNABRateLimitError";
+  }
+}
+
+// Server Error Classes (5xx)
+export class YNABServerError extends YNABError {
+  constructor(originalError: AxiosError, operation: string) {
+    super(originalError, operation);
+    this.name = "YNABServerError";
+  }
+}
+
+export class YNABInternalServerError extends YNABServerError {
+  constructor(originalError: AxiosError, operation: string) {
+    super(originalError, operation);
+    this.name = "YNABInternalServerError";
+  }
+}
+
+export class YNABServiceUnavailableError extends YNABServerError {
+  constructor(originalError: AxiosError, operation: string) {
+    super(originalError, operation);
+    this.name = "YNABServiceUnavailableError";
   }
 }

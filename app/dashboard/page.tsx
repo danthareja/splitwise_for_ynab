@@ -31,9 +31,7 @@ const MAX_SYNC_HISTORY_ITEMS = 7; // A week of automatic syncs
 export default async function DashboardPage() {
   const session = await auth();
 
-  // Middleware handles authentication redirect, so session should always exist here
   if (!session?.user) {
-    // This should not happen due to middleware protection
     throw new Error("Authentication required");
   }
 
