@@ -31,14 +31,17 @@ export interface SplitwiseGroupReminders {
 }
 
 export interface SplitwiseMember {
-  user_id: number;
+  id: number;
   first_name: string;
   last_name: string;
   picture: {
+    small: string;
     medium: string;
+    large: string;
   };
   email: string;
   registration_status: string;
+  custom_picture: boolean;
   balance: SplitwiseBalance[];
 }
 

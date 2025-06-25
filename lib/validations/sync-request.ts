@@ -37,6 +37,11 @@ export const SplitwiseRequestSchema = z.object({
   currencyCode: z
     .string()
     .length(3, "Currency code must be 3 characters (e.g., USD, EUR)"),
+  defaultSplitRatio: z
+    .string()
+    .regex(/^\d+:\d+$/, "Split ratio must be in format 'X:Y' (e.g., '2:1')")
+    .optional()
+    .default("1:1"),
 });
 
 export const SyncStateSchema = z.object({

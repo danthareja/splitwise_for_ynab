@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -24,7 +24,7 @@ import {
   getSplitwiseGroupsForUser,
   saveSplitwiseSettings,
   getPartnerEmoji,
-  checkCurrencySyncStatus,
+  checkPartnerSyncStatus,
 } from "@/app/actions/splitwise";
 import type { SplitwiseGroup } from "@/types/splitwise";
 import { AlertCircle, Loader2, AlertTriangle, Info, Check } from "lucide-react";
@@ -36,6 +36,7 @@ interface SplitwiseSettingsFormProps {
   initialGroupName?: string | null;
   initialCurrencyCode?: string | null;
   initialEmoji?: string | null;
+  initialSplitRatio?: string | null;
   onSaveSuccess?: () => void;
 }
 
@@ -47,18 +48,26 @@ const CURRENCY_OPTIONS = [
   { value: "AUD", label: "AUD - Australian Dollar" },
   { value: "JPY", label: "JPY - Japanese Yen" },
   { value: "CHF", label: "CHF - Swiss Franc" },
-  { value: "SEK", label: "SEK - Swedish Krona" },
-  { value: "NOK", label: "NOK - Norwegian Krone" },
-  { value: "DKK", label: "DKK - Danish Krone" },
 ];
 
 // Suggested emojis that are visually distinct
-const SUGGESTED_EMOJIS = ["🤴", "👸", "👨", "💰", "💸", "📊", "📝", "🔄"];
+const SUGGESTED_EMOJIS = ["🤴", "👸", "🤑", "😸", "💰", "💸", "🌚", "🌞"];
+
+// Common split ratios for easy selection
+const SPLIT_RATIO_PRESETS = [
+  { value: "1:1", label: "Equal Split (1:1)" },
+  { value: "2:1", label: "You Pay More (2:1)" },
+  { value: "1:2", label: "Partner Pays More (1:2)" },
+  { value: "3:1", label: "You Pay Most (3:1)" },
+  { value: "1:3", label: "Partner Pays Most (1:3)" },
+  { value: "custom", label: "Custom Split..." },
+];
 
 export function SplitwiseSettingsForm({
   initialGroupId,
   initialCurrencyCode,
   initialEmoji = "✅",
+  initialSplitRatio = "1:1",
   onSaveSuccess,
 }: SplitwiseSettingsFormProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -72,18 +81,41 @@ export function SplitwiseSettingsForm({
     initialCurrencyCode || "",
   );
   const [selectedEmoji, setSelectedEmoji] = useState(initialEmoji || "✅");
+  const [selectedSplitRatio, setSelectedSplitRatio] = useState(
+    initialSplitRatio || "1:1",
+  );
+  const [customSplitRatio, setCustomSplitRatio] = useState("");
+  const [showCustomSplit, setShowCustomSplit] = useState(false);
+
   const [partnerInfo, setPartnerInfo] = useState<{
     emoji: string | null;
     currencyCode: string | null;
     partnerName: string;
   } | null>(null);
   const [isEmojiConflict, setIsEmojiConflict] = useState(false);
-  const [currencySynced, setCurrencySynced] = useState(false);
+  const [partnerSynced, setPartnerSynced] = useState(false);
+
+  // Track if groups have been loaded to avoid unnecessary reloading
+  const groupsLoadedRef = useRef(false);
 
   useEffect(() => {
-    loadGroups();
-    checkCurrencySync();
-  }, []);
+    // Only load groups once when component first mounts
+    if (!groupsLoadedRef.current) {
+      loadGroups();
+      groupsLoadedRef.current = true;
+    }
+
+    checkPartnerSync();
+    // Check if current split ratio is custom
+    if (
+      initialSplitRatio &&
+      !SPLIT_RATIO_PRESETS.find((p) => p.value === initialSplitRatio)
+    ) {
+      setShowCustomSplit(true);
+      setCustomSplitRatio(initialSplitRatio);
+      setSelectedSplitRatio("custom");
+    }
+  }, [initialSplitRatio]);
 
   useEffect(() => {
     async function checkPartnerEmoji(groupId: string) {
@@ -119,15 +151,15 @@ export function SplitwiseSettingsForm({
     }
   }, [selectedGroupId, selectedEmoji, selectedCurrency]);
 
-  // Check if currency was recently synced by partner
-  async function checkCurrencySync() {
+  // Check if settings were recently synced by partner
+  async function checkPartnerSync() {
     try {
-      const syncStatus = await checkCurrencySyncStatus();
+      const syncStatus = await checkPartnerSyncStatus();
       if (syncStatus?.recentlyUpdated) {
-        setCurrencySynced(true);
+        setPartnerSynced(true);
       }
     } catch (error) {
-      console.error("Error checking currency sync:", error);
+      console.error("Error checking partner sync:", error);
     }
   }
 
@@ -184,6 +216,17 @@ export function SplitwiseSettingsForm({
     setIsEmojiConflict(false);
   }
 
+  // Handle split ratio changes
+  function handleSplitRatioChange(value: string) {
+    setSelectedSplitRatio(value);
+    if (value === "custom") {
+      setShowCustomSplit(true);
+    } else {
+      setShowCustomSplit(false);
+      setCustomSplitRatio("");
+    }
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSaving(true);
@@ -196,8 +239,13 @@ export function SplitwiseSettingsForm({
         (group) => group.id.toString() === selectedGroupId,
       );
 
-      // Ensure the form data has the current emoji value
+      // Ensure the form data has the current emoji and split ratio values
       formData.set("emoji", selectedEmoji);
+
+      // Set the split ratio - use custom value if "custom" is selected
+      const finalSplitRatio =
+        selectedSplitRatio === "custom" ? customSplitRatio : selectedSplitRatio;
+      formData.set("splitRatio", finalSplitRatio);
 
       if (selectedGroup) {
         formData.set("groupName", selectedGroup.name);
@@ -206,17 +254,34 @@ export function SplitwiseSettingsForm({
       const result = await saveSplitwiseSettings(formData);
 
       if (result.success) {
-        // If currency was synced with partners, show a success message
+        // Check if we need to show sync notifications
+        const syncMessages = [];
         if (result.currencySynced && result.updatedPartners?.length > 0) {
+          syncMessages.push("Currency synchronized");
+        }
+        if (result.splitRatioSynced && result.updatedPartners?.length > 0) {
+          syncMessages.push("Split ratio synchronized");
+        }
+
+        if (
+          syncMessages.length > 0 &&
+          result.updatedPartners &&
+          result.updatedPartners.length > 0
+        ) {
+          // Show success message for sync events
           setSuccessMessage(
-            `Settings saved! Currency synchronized with ${result.updatedPartners.join(", ")}.`,
+            `Settings saved! ${syncMessages.join(" and ")} with ${result.updatedPartners.join(", ")}.`,
           );
-          // Wait a moment before closing the form
+          // Clear the message and close form after showing it briefly
           setTimeout(() => {
+            setSuccessMessage(null);
+            setError(null);
             onSaveSuccess?.();
-          }, 3000);
+          }, 2000); // Reduced from 3000ms
         } else {
-          // Call the success callback to close the form
+          // No sync occurred, close immediately
+          setSuccessMessage(null);
+          setError(null);
           onSaveSuccess?.();
         }
       } else {
@@ -268,12 +333,11 @@ export function SplitwiseSettingsForm({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {currencySynced && (
+        {partnerSynced && (
           <Alert className="mb-4" variant="success">
             <Check className="h-4 w-4" />
             <AlertDescription>
-              Your currency settings were recently updated to match your
-              partner&apos;s settings.
+              Your settings were recently synchronized with your partner.
             </AlertDescription>
           </Alert>
         )}
@@ -297,7 +361,7 @@ export function SplitwiseSettingsForm({
                       <div className="flex -space-x-2">
                         {group.members.slice(0, 2).map((member) => (
                           <div
-                            key={member.user_id}
+                            key={member.id}
                             className="relative h-6 w-6 overflow-hidden rounded-full border-1 border-muted-foreground"
                           >
                             <Image
@@ -375,8 +439,8 @@ export function SplitwiseSettingsForm({
             </Select>
             {partnerInfo?.currencyCode && (
               <p className="text-sm text-muted-foreground">
-                Note: Currency will be synchronized with your partner. You both
-                need to use the same currency.
+                <strong>Note:</strong> If your partner also uses this app, their
+                currency will be synchronized with yours.
               </p>
             )}
           </div>
@@ -386,7 +450,7 @@ export function SplitwiseSettingsForm({
               label="Sync Marker Emoji"
               value={selectedEmoji}
               onChange={handleEmojiChange}
-              description="This emoji will be added to expense descriptions in Splitwise to mark them as synced."
+              description="We use an emoji to mark synced expenses in Splitwise."
             />
 
             {partnerInfo && (
@@ -431,6 +495,77 @@ export function SplitwiseSettingsForm({
                 ))}
             </div>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="splitRatio">Split Ratio</Label>
+            <Select
+              name="splitRatio"
+              value={selectedSplitRatio}
+              onValueChange={handleSplitRatioChange}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select split ratio" />
+              </SelectTrigger>
+              <SelectContent>
+                {SPLIT_RATIO_PRESETS.map((ratio) => (
+                  <SelectItem key={ratio.value} value={ratio.value}>
+                    {ratio.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {showCustomSplit ? (
+            <div className="space-y-2">
+              <Label htmlFor="customSplitRatio">Custom Split Ratio</Label>
+              <input
+                type="text"
+                name="customSplitRatio"
+                value={customSplitRatio}
+                onChange={(e) => setCustomSplitRatio(e.target.value)}
+                placeholder="Enter ratio like 2:3 or 5:2"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                pattern="^\d+:\d+$"
+                title="Please enter a ratio in the format X:Y (e.g., 2:1)"
+                required
+              />
+              <p className="text-sm text-gray-500">
+                Enter your custom split ratio (e.g., &quot;2:3&quot; means you
+                pay 2 parts, partner pays 3 parts)
+              </p>
+            </div>
+          ) : (
+            <Alert className="mt-2">
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                <div className="space-y-2">
+                  <p className="font-medium">Split Ratio Explanation:</p>
+                  <ul className="text-sm space-y-1">
+                    <li>
+                      • <strong>Equal Split (1:1):</strong> You and your partner
+                      each pay 50%
+                    </li>
+                    <li>
+                      • <strong>You Pay More (2:1):</strong> You pay 67%,
+                      partner pays 33%
+                    </li>
+                    <li>
+                      • <strong>Partner Pays More (1:2):</strong> You pay 33%,
+                      partner pays 67%
+                    </li>
+                  </ul>
+                  <p className="text-sm text-muted-foreground mt-3">
+                    <strong>Note:</strong> If your partner also uses this app,
+                    your split ratios will automatically synchronize. When you
+                    set a 2:1 ratio, your partner will automatically get a 1:2
+                    ratio to ensure consistent expense tracking.
+                  </p>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
 
           {error && (
             <Alert variant="destructive">

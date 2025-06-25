@@ -84,7 +84,13 @@ model SplitwiseSettings {
   groupName        String?
   currencyCode     String?
   emoji            String?   @default("✅")
-  currencySyncedAt DateTime?
+  lastPartnerSyncAt DateTime?
+  
+  // Split configuration
+  defaultSplitRatio  String?  @default("1:1") // Default ratio like "2:1" or "1:1"
+  splitwiseUserId    String?  // Their Splitwise user ID for mapping
+  partnerSplitName   String?  // Optional partner identifier name
+  
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

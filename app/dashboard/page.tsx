@@ -135,7 +135,10 @@ export default async function DashboardPage() {
             {isFullyConfigured && <ScheduledSyncInfo />}
 
             {syncHistory && syncHistory.length > 0 ? (
-              <SyncHistory syncHistory={syncHistory} />
+              <SyncHistory
+                syncHistory={syncHistory}
+                currencyCode={splitwiseSettings?.currencyCode || undefined}
+              />
             ) : (
               <div className="text-center py-8">
                 <RefreshCw className="h-12 w-12 mx-auto text-gray-300 mb-3" />

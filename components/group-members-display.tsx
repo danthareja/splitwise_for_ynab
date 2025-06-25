@@ -48,7 +48,7 @@ export function GroupMembersDisplay({
       <div className="flex -space-x-2">
         {members.slice(0, 2).map((member, index) => (
           <div
-            key={`${member.user_id}-${index}`}
+            key={`${member.id}-${index}`}
             className={`relative ${sizeClasses[size]} overflow-hidden rounded-full border-1 border-muted-foreground`}
           >
             <Image

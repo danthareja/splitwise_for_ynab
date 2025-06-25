@@ -1,0 +1,2 @@
+-- Rename currencySyncedAt to lastPartnerSyncAt to make it more generic for both currency and split ratio syncing
+ALTER TABLE "SplitwiseSettings" RENAME COLUMN "currencySyncedAt" TO "lastPartnerSyncAt";

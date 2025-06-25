@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { SplitwiseSettingsForm } from "@/components/splitwise-settings-form";
 import { GroupMembersDisplay } from "@/components/group-members-display";
@@ -35,6 +34,7 @@ interface SplitwiseConnectionCardProps {
     groupName?: string | null;
     currencyCode?: string | null;
     emoji?: string | null;
+    defaultSplitRatio?: string | null;
   } | null;
 }
 
@@ -49,7 +49,6 @@ export function SplitwiseConnectionCard({
   );
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingGroup, setIsLoadingGroup] = useState(!!settings?.groupId);
-  const router = useRouter();
 
   const isConfigured = settings?.groupId && settings?.currencyCode;
   const needsConfiguration = isConnected && !isConfigured;
@@ -85,8 +84,8 @@ export function SplitwiseConnectionCard({
 
   const handleSettingsSaveSuccess = () => {
     setShowSettings(false);
-    // Trigger a page reload to refresh the data
-    router.refresh();
+    // Refresh will happen automatically due to server components revalidation
+    // No need for router.refresh() which causes janky behavior
   };
 
   const handleConnectSplitwise = async () => {
@@ -168,6 +167,7 @@ export function SplitwiseConnectionCard({
                     initialGroupName={settings?.groupName}
                     initialCurrencyCode={settings?.currencyCode}
                     initialEmoji={settings?.emoji}
+                    initialSplitRatio={settings?.defaultSplitRatio}
                     onSaveSuccess={handleSettingsSaveSuccess}
                   />
                 ) : (
@@ -186,6 +186,7 @@ export function SplitwiseConnectionCard({
                 initialGroupName={settings?.groupName}
                 initialCurrencyCode={settings?.currencyCode}
                 initialEmoji={settings?.emoji}
+                initialSplitRatio={settings?.defaultSplitRatio}
                 onSaveSuccess={handleSettingsSaveSuccess}
               />
             ) : (
@@ -214,11 +215,18 @@ export function SplitwiseConnectionCard({
                     </div>
                     <div>
                       <span className="text-sm font-medium">Sync Marker: </span>
-                      <span className="text-sm text-xl">
-                        {settings.emoji || "✅"}
-                      </span>
+                      <span className="text-md">{settings.emoji || "✅"}</span>
                       <span className="text-xs text-gray-500 ml-2">
                         (Added to Splitwise expenses when synced)
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium">Split Ratio: </span>
+                      <span className="text-sm">
+                        {settings.defaultSplitRatio || "1:1"}
+                      </span>
+                      <span className="text-xs text-gray-500 ml-2">
+                        (How expenses are split between you and your partner)
                       </span>
                     </div>
                   </div>

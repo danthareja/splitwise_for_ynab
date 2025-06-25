@@ -18,18 +18,21 @@ import {
   AlertCircle,
   CheckCircle,
 } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 import type { SyncHistoryItem } from "@/components/sync-history";
 
 interface SyncDetailsDialogProps {
   sync: SyncHistoryItem;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  currencyCode?: string;
 }
 
 export function SyncDetailsDialog({
   sync,
   open,
   onOpenChange,
+  currencyCode,
 }: SyncDetailsDialogProps) {
   const ynabTransactions =
     sync.syncedItems.filter((item) => item.type === "ynab_transaction") || [];
@@ -100,7 +103,7 @@ export function SyncDetailsDialog({
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="ynab" className="flex items-center gap-1">
               <ArrowUpRight className="h-4 w-4" />
-              YNAB to Splitwise
+              To Splitwise
               <span className="ml-1 text-xs bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-full">
                 {ynabTransactions.length}
               </span>
@@ -110,7 +113,7 @@ export function SyncDetailsDialog({
             </TabsTrigger>
             <TabsTrigger value="splitwise" className="flex items-center gap-1">
               <ArrowDownLeft className="h-4 w-4" />
-              Splitwise to YNAB
+              From Splitwise
               <span className="ml-1 text-xs bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-full">
                 {splitwiseExpenses.length}
               </span>
@@ -170,7 +173,10 @@ export function SyncDetailsDialog({
                           <div
                             className={`font-medium ${transaction.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
                           >
-                            ${transaction.amount.toFixed(2)}
+                            {formatCurrency(
+                              transaction.amount,
+                              currencyCode || "USD",
+                            )}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 h-4">
                             {transaction.amount < 0 ? "you paid" : ""}
@@ -241,7 +247,10 @@ export function SyncDetailsDialog({
                           <div
                             className={`font-medium ${expense.amount >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
                           >
-                            ${expense.amount.toFixed(2)}
+                            {formatCurrency(
+                              expense.amount,
+                              currencyCode || "USD",
+                            )}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 h-4">
                             {expense.amount < 0 ? "you owe" : "you get back"}

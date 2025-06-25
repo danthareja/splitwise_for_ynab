@@ -35,9 +35,10 @@ export type SyncHistoryItem = {
 
 interface SyncHistoryProps {
   syncHistory: SyncHistoryItem[];
+  currencyCode?: string;
 }
 
-export function SyncHistory({ syncHistory }: SyncHistoryProps) {
+export function SyncHistory({ syncHistory, currencyCode }: SyncHistoryProps) {
   const [selectedSync, setSelectedSync] = useState<SyncHistoryItem | null>(
     null,
   );
@@ -182,6 +183,7 @@ export function SyncHistory({ syncHistory }: SyncHistoryProps) {
           sync={selectedSync}
           open={!!selectedSync}
           onOpenChange={(open) => !open && setSelectedSync(null)}
+          currencyCode={currencyCode}
         />
       )}
     </div>

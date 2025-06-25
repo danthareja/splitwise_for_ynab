@@ -275,6 +275,65 @@ async function checkEmojiConflict(
   return { hasConflict: false };
 }
 
+// Synchronize split ratio with all partners in the same group
+async function syncSplitRatioWithPartners(
+  userId: string,
+  groupId: string,
+  splitRatio: string,
+) {
+  try {
+    // Find all other users with the same group
+    const partnersWithSameGroup = await prisma.splitwiseSettings.findMany({
+      where: {
+        groupId: groupId,
+        userId: {
+          not: userId, // Exclude the current user
+        },
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    // Update split ratio for all partners
+    if (partnersWithSameGroup.length > 0) {
+      const updatePromises = partnersWithSameGroup.map(
+        (partnerSettings: (typeof partnersWithSameGroup)[0]) => {
+          // Reverse the split ratio for partners (if user has 2:1, partner gets 1:2)
+          const [userShares, partnerShares] = splitRatio.split(":");
+          const partnerSplitRatio = `${partnerShares}:${userShares}`;
+
+          return prisma.splitwiseSettings.update({
+            where: { userId: partnerSettings.userId },
+            data: {
+              defaultSplitRatio: partnerSplitRatio,
+              // Add a flag to indicate the split ratio was synchronized
+              lastPartnerSyncAt: new Date(),
+            },
+          });
+        },
+      );
+
+      await Promise.all(updatePromises);
+      return {
+        success: true,
+        updatedPartners: partnersWithSameGroup.map(
+          (p: (typeof partnersWithSameGroup)[0]) =>
+            p.user.name || `User ${p.userId}`,
+        ),
+      };
+    }
+
+    return { success: true, updatedPartners: [] };
+  } catch (error) {
+    console.error("Error syncing split ratio with partners:", error);
+    return {
+      success: false,
+      error: "Failed to sync split ratio with partners",
+    };
+  }
+}
+
 // Synchronize currency code with all partners in the same group
 async function syncCurrencyWithPartners(
   userId: string,
@@ -304,7 +363,7 @@ async function syncCurrencyWithPartners(
             data: {
               currencyCode: currencyCode,
               // Add a flag to indicate the currency was synchronized
-              currencySyncedAt: new Date(),
+              lastPartnerSyncAt: new Date(),
             },
           });
         },
@@ -341,6 +400,7 @@ export async function saveSplitwiseSettings(formData: FormData) {
   const groupName = formData.get("groupName") as string;
   const currencyCode = formData.get("currencyCode") as string;
   const emoji = formData.get("emoji") as string;
+  const splitRatio = formData.get("splitRatio") as string;
 
   if (!groupId || !currencyCode) {
     return {
@@ -365,13 +425,15 @@ export async function saveSplitwiseSettings(formData: FormData) {
   }
 
   try {
-    // Get current settings to check if currency has changed
+    // Get current settings to check if currency or split ratio has changed
     const currentSettings = await prisma.splitwiseSettings.findUnique({
       where: { userId: session.user.id },
     });
 
     const isCurrencyChanged = currentSettings?.currencyCode !== currencyCode;
     const isGroupChanged = currentSettings?.groupId !== groupId;
+    const isSplitRatioChanged =
+      currentSettings?.defaultSplitRatio !== (splitRatio || "1:1");
 
     // Update or create the user's settings
     await prisma.splitwiseSettings.upsert({
@@ -381,6 +443,7 @@ export async function saveSplitwiseSettings(formData: FormData) {
         groupName,
         currencyCode,
         emoji: emoji || "✅",
+        defaultSplitRatio: splitRatio || "1:1",
       },
       create: {
         userId: session.user.id,
@@ -388,20 +451,35 @@ export async function saveSplitwiseSettings(formData: FormData) {
         groupName,
         currencyCode,
         emoji: emoji || "✅",
+        defaultSplitRatio: splitRatio || "1:1",
       },
     });
 
     // If currency code changed or group changed, sync with partners
-    let syncResult: {
+    let currencySyncResult: {
       success: boolean;
       updatedPartners?: string[];
       error?: string;
     } = { success: true, updatedPartners: [] };
     if ((isCurrencyChanged || isGroupChanged) && currencyCode) {
-      syncResult = await syncCurrencyWithPartners(
+      currencySyncResult = await syncCurrencyWithPartners(
         session.user.id,
         groupId,
         currencyCode,
+      );
+    }
+
+    // If split ratio changed or group changed, sync with partners
+    let splitRatioSyncResult: {
+      success: boolean;
+      updatedPartners?: string[];
+      error?: string;
+    } = { success: true, updatedPartners: [] };
+    if ((isSplitRatioChanged || isGroupChanged) && (splitRatio || "1:1")) {
+      splitRatioSyncResult = await syncSplitRatioWithPartners(
+        session.user.id,
+        groupId,
+        splitRatio || "1:1",
       );
     }
 
@@ -409,8 +487,12 @@ export async function saveSplitwiseSettings(formData: FormData) {
 
     return {
       success: true,
-      currencySynced: (syncResult.updatedPartners ?? []).length > 0,
-      updatedPartners: syncResult.updatedPartners ?? [],
+      currencySynced: (currencySyncResult.updatedPartners ?? []).length > 0,
+      splitRatioSynced: (splitRatioSyncResult.updatedPartners ?? []).length > 0,
+      updatedPartners: [
+        ...(currencySyncResult.updatedPartners ?? []),
+        ...(splitRatioSyncResult.updatedPartners ?? []),
+      ],
     };
   } catch (error) {
     console.error("Error saving settings:", error);
@@ -466,8 +548,8 @@ export async function getPartnerEmoji(groupId: string) {
   }
 }
 
-// Check if currency was recently synced by partner
-export async function checkCurrencySyncStatus() {
+// Check if settings were recently synced by partner
+export async function checkPartnerSyncStatus() {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -478,13 +560,13 @@ export async function checkCurrencySyncStatus() {
     const settings = await prisma.splitwiseSettings.findUnique({
       where: { userId: session.user.id },
       select: {
-        currencySyncedAt: true,
+        lastPartnerSyncAt: true,
       },
     });
 
-    if (settings?.currencySyncedAt) {
+    if (settings?.lastPartnerSyncAt) {
       // Check if the sync happened in the last 24 hours
-      const syncTime = new Date(settings.currencySyncedAt);
+      const syncTime = new Date(settings.lastPartnerSyncAt);
       const now = new Date();
       const hoursSinceSync =
         (now.getTime() - syncTime.getTime()) / (1000 * 60 * 60);
@@ -492,7 +574,7 @@ export async function checkCurrencySyncStatus() {
       if (hoursSinceSync < 24) {
         return {
           recentlyUpdated: true,
-          syncTime: settings.currencySyncedAt,
+          syncTime: settings.lastPartnerSyncAt,
         };
       }
     }

@@ -58,6 +58,7 @@ export async function POST(req: Request) {
     groupId: splitwise.groupId,
     currencyCode: splitwise.currencyCode,
     apiKey: splitwise.apiKey,
+    defaultSplitRatio: splitwise.defaultSplitRatio,
     syncState: syncStateService,
   });
 

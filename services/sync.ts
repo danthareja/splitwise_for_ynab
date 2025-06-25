@@ -307,6 +307,7 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
       currencyCode: user.splitwiseSettings.currencyCode,
       apiKey: splitwiseAccount.access_token,
       syncState,
+      defaultSplitRatio: user.splitwiseSettings.defaultSplitRatio || "1:1",
       backupPayeeName:
         `Splitwise: ${user.splitwiseSettings.groupName}` ||
         "Splitwise for YNAB",
@@ -706,6 +707,7 @@ async function syncUserPhase(
       groupId: user.splitwiseSettings.groupId,
       currencyCode: user.splitwiseSettings.currencyCode,
       apiKey: splitwiseAccount.access_token,
+      defaultSplitRatio: user.splitwiseSettings.defaultSplitRatio || "1:1",
       syncState,
     });
 
