@@ -401,6 +401,9 @@ export async function saveSplitwiseSettings(formData: FormData) {
   const currencyCode = formData.get("currencyCode") as string;
   const emoji = formData.get("emoji") as string;
   const splitRatio = formData.get("splitRatio") as string;
+  const useDescriptionAsPayee =
+    formData.get("useDescriptionAsPayee") === "true";
+  const customPayeeName = formData.get("customPayeeName") as string;
 
   if (!groupId || !currencyCode) {
     return {
@@ -444,6 +447,8 @@ export async function saveSplitwiseSettings(formData: FormData) {
         currencyCode,
         emoji: emoji || "✅",
         defaultSplitRatio: splitRatio || "1:1",
+        useDescriptionAsPayee,
+        customPayeeName,
       },
       create: {
         userId: session.user.id,
@@ -452,6 +457,8 @@ export async function saveSplitwiseSettings(formData: FormData) {
         currencyCode,
         emoji: emoji || "✅",
         defaultSplitRatio: splitRatio || "1:1",
+        useDescriptionAsPayee,
+        customPayeeName,
       },
     });
 

@@ -14,8 +14,9 @@ interface SplitwiseServiceConstructorParams {
   groupId: string;
   currencyCode: string;
   syncState: SyncState;
-  backupPayeeName?: string;
   defaultSplitRatio?: string;
+  useDescriptionAsPayee?: boolean;
+  customPayeeName?: string;
 }
 
 export class SplitwiseService {
@@ -26,8 +27,9 @@ export class SplitwiseService {
   private currencyCode: string;
   private axios: AxiosInstance;
   private syncState: SyncState;
-  private backupPayeeName: string;
   private defaultSplitRatio: string;
+  private useDescriptionAsPayee: boolean;
+  private customPayeeName: string;
 
   constructor({
     userId,
@@ -37,8 +39,9 @@ export class SplitwiseService {
     syncState,
     groupId,
     currencyCode,
-    backupPayeeName = "Splitwise for YNAB",
     defaultSplitRatio = "1:1",
+    useDescriptionAsPayee = true,
+    customPayeeName = "Splitwise for YNAB",
   }: SplitwiseServiceConstructorParams) {
     this.userId = userId;
     this.knownEmoji = knownEmoji;
@@ -46,8 +49,9 @@ export class SplitwiseService {
     this.groupId = groupId;
     this.currencyCode = currencyCode;
     this.syncState = syncState;
-    this.backupPayeeName = backupPayeeName;
     this.defaultSplitRatio = defaultSplitRatio;
+    this.useDescriptionAsPayee = useDescriptionAsPayee;
+    this.customPayeeName = customPayeeName;
 
     this.axios = createSplitwiseAxios({ accessToken: apiKey });
   }
@@ -194,6 +198,10 @@ export class SplitwiseService {
   }
 
   toYNABTransaction(expense: SplitwiseExpense) {
+    if (!this.useDescriptionAsPayee) {
+      return this.toYNABTransactionWithCustomPayee(expense);
+    }
+
     return this.hasInvalidPayee(expense)
       ? this.toYNABTransactionWithInvalidPayee(expense)
       : this.toYNABTransactionWithValidPayee(expense);
@@ -232,7 +240,26 @@ export class SplitwiseService {
 
     return {
       amount: this.toYNABAmount(expense),
-      payee_name: this.backupPayeeName,
+      payee_name: this.customPayeeName,
+      memo,
+      date: this.stripTimestamp(expense.date),
+    };
+  }
+
+  toYNABTransactionWithCustomPayee(expense: SplitwiseExpense) {
+    console.log(
+      ">>>>>>>>>>>>>>>>>>>>>>>> toYNABTransactionWithCustomPayee",
+      this.customPayeeName,
+    );
+    let memo = this.stripEmojis(expense.description);
+
+    if (expense.details) {
+      memo += `: ${expense.details}`;
+    }
+
+    return {
+      amount: this.toYNABAmount(expense),
+      payee_name: this.customPayeeName,
       memo,
       date: this.stripTimestamp(expense.date),
     };

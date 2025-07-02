@@ -86,6 +86,8 @@ model SplitwiseSettings {
   emoji            String?   @default("✅")
   lastPartnerSyncAt DateTime?
   defaultSplitRatio  String?  @default("1:1")
+  useDescriptionAsPayee Boolean? @default(true)
+  customPayeeName  String?
 
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt

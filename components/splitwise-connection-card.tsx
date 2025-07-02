@@ -35,6 +35,8 @@ interface SplitwiseConnectionCardProps {
     currencyCode?: string | null;
     emoji?: string | null;
     defaultSplitRatio?: string | null;
+    useDescriptionAsPayee?: boolean | null;
+    customPayeeName?: string | null;
   } | null;
 }
 
@@ -168,6 +170,10 @@ export function SplitwiseConnectionCard({
                     initialCurrencyCode={settings?.currencyCode}
                     initialEmoji={settings?.emoji}
                     initialSplitRatio={settings?.defaultSplitRatio}
+                    initialUseDescriptionAsPayee={
+                      settings?.useDescriptionAsPayee
+                    }
+                    initialCustomPayeeName={settings?.customPayeeName}
                     onSaveSuccess={handleSettingsSaveSuccess}
                   />
                 ) : (
@@ -187,6 +193,8 @@ export function SplitwiseConnectionCard({
                 initialCurrencyCode={settings?.currencyCode}
                 initialEmoji={settings?.emoji}
                 initialSplitRatio={settings?.defaultSplitRatio}
+                initialUseDescriptionAsPayee={settings?.useDescriptionAsPayee}
+                initialCustomPayeeName={settings?.customPayeeName}
                 onSaveSuccess={handleSettingsSaveSuccess}
               />
             ) : (
@@ -227,6 +235,17 @@ export function SplitwiseConnectionCard({
                       </span>
                       <span className="text-xs text-gray-500 ml-2">
                         (How expenses are split between you and your partner)
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium">YNAB Payee: </span>
+                      <span className="text-sm">
+                        {(settings.useDescriptionAsPayee ?? true)
+                          ? "Use Splitwise description"
+                          : `${settings.customPayeeName || `Splitwise: ${settings.groupName}` || "Splitwise for YNAB"}`}
+                      </span>
+                      <span className="text-xs text-gray-500 ml-2">
+                        (How Splitwise expenses map to YNAB payees)
                       </span>
                     </div>
                   </div>

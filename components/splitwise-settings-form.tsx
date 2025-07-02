@@ -12,6 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Card,
@@ -37,6 +39,8 @@ interface SplitwiseSettingsFormProps {
   initialCurrencyCode?: string | null;
   initialEmoji?: string | null;
   initialSplitRatio?: string | null;
+  initialUseDescriptionAsPayee?: boolean | null;
+  initialCustomPayeeName?: string | null;
   onSaveSuccess?: () => void;
 }
 
@@ -58,8 +62,6 @@ const SPLIT_RATIO_PRESETS = [
   { value: "1:1", label: "Equal Split (1:1)" },
   { value: "2:1", label: "You Pay More (2:1)" },
   { value: "1:2", label: "Partner Pays More (1:2)" },
-  { value: "3:1", label: "You Pay Most (3:1)" },
-  { value: "1:3", label: "Partner Pays Most (1:3)" },
   { value: "custom", label: "Custom Split..." },
 ];
 
@@ -68,6 +70,8 @@ export function SplitwiseSettingsForm({
   initialCurrencyCode,
   initialEmoji = "✅",
   initialSplitRatio = "1:1",
+  initialUseDescriptionAsPayee = true,
+  initialCustomPayeeName,
   onSaveSuccess,
 }: SplitwiseSettingsFormProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -86,6 +90,12 @@ export function SplitwiseSettingsForm({
   );
   const [customSplitRatio, setCustomSplitRatio] = useState("");
   const [showCustomSplit, setShowCustomSplit] = useState(false);
+  const [useDescriptionAsPayee, setUseDescriptionAsPayee] = useState(
+    initialUseDescriptionAsPayee ?? true,
+  );
+  const [customPayeeName, setCustomPayeeName] = useState(
+    initialCustomPayeeName || "Splitwise for YNAB",
+  );
 
   const [partnerInfo, setPartnerInfo] = useState<{
     emoji: string | null;
@@ -150,6 +160,17 @@ export function SplitwiseSettingsForm({
       checkPartnerEmoji(selectedGroupId);
     }
   }, [selectedGroupId, selectedEmoji, selectedCurrency]);
+
+  // Update custom payee name when group selection changes (if still using default)
+  useEffect(() => {
+    const selectedGroup = validGroups.find(
+      (group) => group.id.toString() === selectedGroupId,
+    );
+
+    if (selectedGroup && !initialCustomPayeeName) {
+      setCustomPayeeName(`Splitwise: ${selectedGroup.name}`);
+    }
+  }, [selectedGroupId, validGroups, initialCustomPayeeName]);
 
   // Check if settings were recently synced by partner
   async function checkPartnerSync() {
@@ -246,6 +267,10 @@ export function SplitwiseSettingsForm({
       const finalSplitRatio =
         selectedSplitRatio === "custom" ? customSplitRatio : selectedSplitRatio;
       formData.set("splitRatio", finalSplitRatio);
+
+      // Set the payee field options
+      formData.set("useDescriptionAsPayee", useDescriptionAsPayee.toString());
+      formData.set("customPayeeName", customPayeeName);
 
       if (selectedGroup) {
         formData.set("groupName", selectedGroup.name);
@@ -438,10 +463,12 @@ export function SplitwiseSettingsForm({
               </SelectContent>
             </Select>
             {partnerInfo?.currencyCode && (
-              <p className="text-sm text-muted-foreground">
-                <strong>Note:</strong> If your partner also uses this app, their
-                currency will be synchronized with yours.
-              </p>
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  Your currency will sync with your partner.
+                </AlertDescription>
+              </Alert>
             )}
           </div>
 
@@ -517,7 +544,7 @@ export function SplitwiseSettingsForm({
             </Select>
           </div>
 
-          {showCustomSplit ? (
+          {showCustomSplit && (
             <div className="space-y-2">
               <Label htmlFor="customSplitRatio">Custom Split Ratio</Label>
               <input
@@ -531,41 +558,81 @@ export function SplitwiseSettingsForm({
                 title="Please enter a ratio in the format X:Y (e.g., 2:1)"
                 required
               />
-              <p className="text-sm text-gray-500">
-                Enter your custom split ratio (e.g., &quot;2:3&quot; means you
-                pay 2 parts, partner pays 3 parts)
-              </p>
             </div>
-          ) : (
-            <Alert className="mt-2">
+          )}
+
+          {partnerInfo && (
+            <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>
-                <div className="space-y-2">
-                  <p className="font-medium">Split Ratio Explanation:</p>
-                  <ul className="text-sm space-y-1">
-                    <li>
-                      • <strong>Equal Split (1:1):</strong> You and your partner
-                      each pay 50%
-                    </li>
-                    <li>
-                      • <strong>You Pay More (2:1):</strong> You pay 67%,
-                      partner pays 33%
-                    </li>
-                    <li>
-                      • <strong>Partner Pays More (1:2):</strong> You pay 33%,
-                      partner pays 67%
-                    </li>
-                  </ul>
-                  <p className="text-sm text-muted-foreground mt-3">
-                    <strong>Note:</strong> If your partner also uses this app,
-                    your split ratios will automatically synchronize. When you
-                    set a 2:1 ratio, your partner will automatically get a 1:2
-                    ratio to ensure consistent expense tracking.
-                  </p>
-                </div>
+                Your split ratios will sync with your partner. If you set a{" "}
+                {selectedSplitRatio !== "custom"
+                  ? selectedSplitRatio
+                  : customSplitRatio}{" "}
+                ratio, your partner&apos;s ratio will automatically get a{" "}
+                {(() => {
+                  const ratio =
+                    selectedSplitRatio !== "custom"
+                      ? selectedSplitRatio
+                      : customSplitRatio;
+                  const [a, b] = ratio.split(":").map(Number) ?? [];
+                  if (a && b) {
+                    return `${b}:${a}`;
+                  }
+                  return "X:Y";
+                })()}{" "}
+                ratio.
               </AlertDescription>
             </Alert>
           )}
+
+          <div className="space-y-2">
+            <Label>YNAB Transaction Mapping</Label>
+            <RadioGroup
+              value={useDescriptionAsPayee ? "description" : "custom"}
+              onValueChange={(value) =>
+                setUseDescriptionAsPayee(value === "description")
+              }
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="description" id="description" />
+                <Label htmlFor="description" className="text-sm font-normal">
+                  Use Splitwise description as YNAB payee name
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="custom" id="custom" />
+                <Label htmlFor="custom" className="text-sm font-normal">
+                  Use custom YNAB payee name, put Splitwise description in memo
+                </Label>
+              </div>
+            </RadioGroup>
+
+            {!useDescriptionAsPayee && (
+              <div className="mt-3 space-y-2">
+                <Label htmlFor="customPayeeName">Custom Payee Name</Label>
+                <Input
+                  id="customPayeeName"
+                  type="text"
+                  value={customPayeeName}
+                  onChange={(e) => setCustomPayeeName(e.target.value)}
+                  placeholder={
+                    validGroups.find((g) => g.id.toString() === selectedGroupId)
+                      ?.name
+                      ? `Splitwise: ${validGroups.find((g) => g.id.toString() === selectedGroupId)?.name}`
+                      : "e.g., Splitwise Expenses"
+                  }
+                  className="w-full"
+                  required={!useDescriptionAsPayee}
+                />
+                <p className="text-sm text-muted-foreground">
+                  This will <strong>always</strong> be the payee name for all
+                  Splitwise transactions in YNAB. The original Splitwise
+                  description will be moved to the memo field.
+                </p>
+              </div>
+            )}
+          </div>
 
           {error && (
             <Alert variant="destructive">
