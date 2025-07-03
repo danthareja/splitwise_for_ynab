@@ -474,7 +474,7 @@ export function SplitwiseSettingsForm({
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  Your currency will sync with your partner.
+                  Your currency will sync with {partnerInfo.partnerName}.
                 </AlertDescription>
               </Alert>
             )}
@@ -573,11 +573,13 @@ export function SplitwiseSettingsForm({
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>
-                Your split ratios will sync with your partner. If you set a{" "}
+                Your split ratio will sync with {partnerInfo.partnerName}. If
+                you set a{" "}
                 {selectedSplitRatio !== "custom"
                   ? selectedSplitRatio
                   : customSplitRatio}{" "}
-                ratio, your partner&apos;s ratio will automatically get a{" "}
+                ratio, {partnerInfo.partnerName}&apos;s ratio will automatically
+                get a{" "}
                 {(() => {
                   const ratio =
                     selectedSplitRatio !== "custom"

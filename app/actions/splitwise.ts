@@ -275,7 +275,8 @@ async function checkEmojiConflict(
   if (conflictingUser) {
     return {
       hasConflict: true,
-      conflictingUser: conflictingUser.user.name || "Another user",
+      conflictingUser:
+        conflictingUser.user.name?.split(" ")[0] || "Your partner",
       conflictingEmoji: emoji,
     };
   }
@@ -327,7 +328,7 @@ async function syncSplitRatioWithPartners(
         success: true,
         updatedPartners: partnersWithSameGroup.map(
           (p: (typeof partnersWithSameGroup)[0]) =>
-            p.user.name || `User ${p.userId}`,
+            p.user.name?.split(" ")[0] || `Your partner`,
         ),
       };
     }
@@ -382,7 +383,7 @@ async function syncCurrencyWithPartners(
         success: true,
         updatedPartners: partnersWithSameGroup.map(
           (p: (typeof partnersWithSameGroup)[0]) =>
-            p.user.name || `User ${p.userId}`,
+            p.user.name?.split(" ")[0] || `Your partner`,
         ),
       };
     }
@@ -580,7 +581,7 @@ export async function getPartnerEmoji(groupId: string) {
       return {
         emoji: partnerSettings.emoji,
         currencyCode: partnerSettings.currencyCode,
-        partnerName: partnerSettings.user.name || "Your partner",
+        partnerName: partnerSettings.user.name?.split(" ")[0] || "Your partner",
       };
     }
 
@@ -735,7 +736,7 @@ async function syncFromPartnerIfAvailable(userId: string, groupId: string) {
       return {
         currencyCode: partnerSettings.currencyCode,
         defaultSplitRatio: newPartnerSplitRatio,
-        partnerName: partnerSettings.user.name || "Your partner",
+        partnerName: partnerSettings.user.name?.split(" ")[0] || "Your partner",
       };
     }
 
