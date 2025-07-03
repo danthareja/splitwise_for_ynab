@@ -397,9 +397,9 @@ export function SplitwiseConnectionCard({
                     className="flex items-center gap-1"
                   >
                     <Settings className="h-3.5 w-3.5" />
-                    Configure Splitwise Settings
+                    Update Splitwise Settings
                   </Button>
-                  {/* <Button
+                  <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setShowDisconnectModal(true)}
@@ -407,7 +407,7 @@ export function SplitwiseConnectionCard({
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Disconnect
-                  </Button> */}
+                  </Button>
                 </div>
               </div>
             )}
