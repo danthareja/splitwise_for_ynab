@@ -2,13 +2,14 @@ import type React from "react";
 import { SessionProvider } from "next-auth/react";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { ToasterProvider } from "@/components/ui/toaster-provider";
 import type { Metadata } from "next";
 
 import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "https://splitwiseforynab.com",
+    process.env.NEXT_PUBLIC_APP_URL || "https://www.splitwiseforynab.com",
   ),
   title: {
     default: "Splitwise for YNAB - Automate your shared expenses",
@@ -45,22 +46,12 @@ export const metadata: Metadata = {
     title: "Splitwise for YNAB - Automate Shared Expense Tracking",
     description:
       "Stop manual data entry! Flag transactions in YNAB and automatically sync them with Splitwise while maintaining perfect category tracking.",
-    images: [
-      {
-        url: "/opengraph-image",
-        width: 1200,
-        height: 630,
-        alt: "Splitwise for YNAB - Automate your shared expenses",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Splitwise for YNAB - Automate Shared Expense Tracking",
     description:
       "Stop manual data entry! Flag transactions in YNAB and automatically sync them with Splitwise while maintaining perfect category tracking.",
-    images: ["/opengraph-image"],
-    creator: "@splitwise_ynab",
   },
   robots: {
     index: true,
@@ -92,7 +83,7 @@ export default function RootLayout({
     name: "Splitwise for YNAB",
     description:
       "Automate shared expense tracking by syncing YNAB transactions with Splitwise while maintaining category insights.",
-    url: process.env.NEXT_PUBLIC_APP_URL || "https://splitwiseforynab.com",
+    url: process.env.NEXT_PUBLIC_APP_URL || "https://www.splitwiseforynab.com",
     applicationCategory: "FinanceApplication",
     operatingSystem: "Web",
     offers: {
@@ -124,7 +115,10 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          {children}
+          <ToasterProvider />
+        </SessionProvider>
         <Analytics />
         <SpeedInsights />
       </body>

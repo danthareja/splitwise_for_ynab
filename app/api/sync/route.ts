@@ -2,12 +2,18 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/db";
 import { syncAllUsers, syncUserData } from "@/services/sync";
 import { enforcePerUserRateLimit } from "@/services/rate-limit";
+import { getRateLimitOptions } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return new Response("Unauthorized", { status: 401 });
+    return Response.json(
+      { success: false, error: "Unauthorized" },
+      {
+        status: 401,
+      },
+    );
   }
 
   const token = authHeader.slice("Bearer ".length).trim();
@@ -20,24 +26,26 @@ export async function GET(request: NextRequest) {
   const user = await prisma.user.findFirst({ where: { apiKey: token } });
 
   if (!user) {
-    return new Response("Unauthorized", { status: 401 });
+    return Response.json(
+      { success: false, error: "Unauthorized" },
+      {
+        status: 401,
+      },
+    );
   }
 
-  const maxRequests = Number(process.env.USER_SYNC_MAX_REQUESTS ?? 2);
-  const windowSeconds = Number(process.env.USER_SYNC_WINDOW_SECONDS ?? 3600);
-
+  const rateLimitOpts = getRateLimitOptions();
   const { allowed, retryAfterSeconds } = await enforcePerUserRateLimit(
     user.id,
-    {
-      key: "sync",
-      maxRequests,
-      windowSeconds,
-    },
+    rateLimitOpts,
   );
 
   if (!allowed) {
-    return new Response(
-      `You can send a maximum of ${maxRequests} sync requests in ${windowSeconds} seconds. Try again in ${retryAfterSeconds} seconds`,
+    return Response.json(
+      {
+        success: false,
+        error: `You can trigger at most ${rateLimitOpts.maxRequests} manual syncs every ${rateLimitOpts.windowSeconds / 60} minutes. Try again in ${Math.ceil(retryAfterSeconds / 60)} minutes`,
+      },
       {
         status: 429,
         headers: {

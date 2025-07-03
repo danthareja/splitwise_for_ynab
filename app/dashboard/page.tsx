@@ -14,7 +14,9 @@ import { RefreshCw, HelpCircle, Mail } from "lucide-react";
 import { YNABFlag } from "@/components/ynab-flag";
 import { Button } from "@/components/ui/button";
 import { ScheduledSyncInfo } from "@/components/scheduled-sync-info";
+import { ApiKeyCard } from "@/components/api-key-card";
 import type { Metadata } from "next";
+import { MAX_REQUESTS, WINDOW_SECONDS } from "@/lib/rate-limit";
 
 export const metadata: Metadata = {
   title: "Dashboard - Manage Your YNAB & Splitwise Integration",
@@ -166,6 +168,14 @@ export default async function DashboardPage() {
               </div>
             )}
           </div>
+
+          {/* API Key Section */}
+          <ApiKeyCard
+            initialApiKey={user.apiKey ?? null}
+            maxRequests={MAX_REQUESTS}
+            windowSeconds={WINDOW_SECONDS}
+            baseUrl={process.env.NEXT_PUBLIC_BASE_URL}
+          />
         </div>
       </main>
 

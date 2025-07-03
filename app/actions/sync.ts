@@ -5,6 +5,8 @@ import * as Sentry from "@sentry/nextjs";
 import { syncUserData } from "@/services/sync";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/db"; // Declare the prisma variable
+import { enforcePerUserRateLimit } from "@/services/rate-limit";
+import { getRateLimitOptions } from "@/lib/rate-limit";
 
 export async function syncUserDataAction() {
   const session = await auth();
@@ -17,6 +19,20 @@ export async function syncUserDataAction() {
   }
 
   try {
+    // Rate-limit manual syncs the same as API
+    const rateLimitOpts = getRateLimitOptions();
+    const { allowed, retryAfterSeconds } = await enforcePerUserRateLimit(
+      session.user.id,
+      rateLimitOpts,
+    );
+
+    if (!allowed) {
+      return {
+        success: false,
+        error: `You can trigger at most ${rateLimitOpts.maxRequests} manual syncs every ${rateLimitOpts.windowSeconds / 60} minutes. Try again in ${Math.ceil(retryAfterSeconds / 60)} minutes`,
+      } as const;
+    }
+
     const result = await syncUserData(session.user.id);
 
     // Revalidate the dashboard page to show updated sync status
