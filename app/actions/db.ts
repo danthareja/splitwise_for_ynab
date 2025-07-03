@@ -26,3 +26,42 @@ export async function getUserWithAccounts() {
     return null;
   }
 }
+
+export async function isUserFullyConfigured(userId: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        accounts: true,
+        splitwiseSettings: true,
+        ynabSettings: true,
+      },
+    });
+
+    if (!user) {
+      return false;
+    }
+
+    // Check if the user has a Splitwise account connected
+    const hasSplitwiseConnected = user.accounts.some(
+      (account) => account.provider === "splitwise",
+    );
+
+    // Check if the user has a YNAB account connected
+    const hasYNABConnected = user.accounts.some(
+      (account) => account.provider === "ynab",
+    );
+
+    // Check if user is fully configured
+    const isFullyConfigured =
+      hasSplitwiseConnected &&
+      hasYNABConnected &&
+      user.splitwiseSettings &&
+      user.ynabSettings;
+
+    return isFullyConfigured;
+  } catch (error) {
+    console.error("Failed to check if user is fully configured:", error);
+    return false;
+  }
+}

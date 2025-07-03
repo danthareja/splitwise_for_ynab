@@ -19,7 +19,7 @@ export async function validateSplitwiseApiKey(apiKey: string) {
     if (error instanceof AxiosError && error.response?.status === 401) {
       return {
         success: false,
-        error: "Invalid API key. Please verify your input and try again.",
+        error: "Invalid API key. Did you revoke access to the app?",
         user: null,
       };
     }

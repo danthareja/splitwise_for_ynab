@@ -3,6 +3,7 @@ import { prisma } from "@/db";
 import { syncAllUsers, syncUserData } from "@/services/sync";
 import { enforcePerUserRateLimit } from "@/services/rate-limit";
 import { getRateLimitOptions } from "@/lib/rate-limit";
+import { isUserFullyConfigured } from "@/app/actions/db";
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -30,6 +31,20 @@ export async function GET(request: NextRequest) {
       { success: false, error: "Unauthorized" },
       {
         status: 401,
+      },
+    );
+  }
+
+  const isFullyConfigured = await isUserFullyConfigured(user.id);
+  if (!isFullyConfigured) {
+    return Response.json(
+      {
+        success: false,
+        error:
+          "You must complete your Splitwise and YNAB configuration before syncing",
+      },
+      {
+        status: 403,
       },
     );
   }

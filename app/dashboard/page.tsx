@@ -170,12 +170,14 @@ export default async function DashboardPage() {
           </div>
 
           {/* API Key Section */}
-          <ApiKeyCard
-            initialApiKey={user.apiKey ?? null}
-            maxRequests={MAX_REQUESTS}
-            windowSeconds={WINDOW_SECONDS}
-            baseUrl={process.env.NEXT_PUBLIC_BASE_URL}
-          />
+          {isFullyConfigured && (
+            <ApiKeyCard
+              initialApiKey={user.apiKey ?? null}
+              maxRequests={MAX_REQUESTS}
+              windowSeconds={WINDOW_SECONDS}
+              baseUrl={process.env.NEXT_PUBLIC_BASE_URL}
+            />
+          )}
         </div>
       </main>
 

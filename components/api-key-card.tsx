@@ -50,7 +50,7 @@ export function ApiKeyCard({
     <div className="border rounded-lg p-6 mt-8">
       <h2 className="text-xl font-semibold mb-4">API Access</h2>
       <p className="text-sm text-muted-foreground mt-2 mb-4">
-        For nerds who are into this sort of thing 🤓
+        A programmable manual sync for nerds who are into that sort of thing 🤓
       </p>
       {apiKey ? (
         <>

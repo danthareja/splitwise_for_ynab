@@ -9,7 +9,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "https://www.splitwiseforynab.com",
+    process.env.NEXT_PUBLIC_BASE_URL || "https://www.splitwiseforynab.com",
   ),
   title: {
     default: "Splitwise for YNAB - Automate your shared expenses",
@@ -83,7 +83,7 @@ export default function RootLayout({
     name: "Splitwise for YNAB",
     description:
       "Automate shared expense tracking by syncing YNAB transactions with Splitwise while maintaining category insights.",
-    url: process.env.NEXT_PUBLIC_APP_URL || "https://www.splitwiseforynab.com",
+    url: process.env.NEXT_PUBLIC_BASE_URL || "https://www.splitwiseforynab.com",
     applicationCategory: "FinanceApplication",
     operatingSystem: "Web",
     offers: {

@@ -3,8 +3,13 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { SplitwiseSettingsForm } from "@/components/splitwise-settings-form";
+import { SplitwiseConnectForm } from "@/components/splitwise-connect-form";
 import { GroupMembersDisplay } from "@/components/group-members-display";
-import { getSplitwiseGroupsForUser } from "@/app/actions/splitwise";
+import {
+  getSplitwiseGroupsForUser,
+  testSplitwiseConnection,
+  disconnectSplitwiseAccount,
+} from "@/app/actions/splitwise";
 import type { SplitwiseGroup } from "@/types/splitwise";
 import {
   Trash2,
@@ -14,6 +19,8 @@ import {
   X,
   AlertTriangle,
   LogIn,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -46,14 +53,19 @@ export function SplitwiseConnectionCard({
 }: SplitwiseConnectionCardProps) {
   const [showDisconnectModal, setShowDisconnectModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showReconnect, setShowReconnect] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<SplitwiseGroup | null>(
     null,
   );
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingGroup, setIsLoadingGroup] = useState(!!settings?.groupId);
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [hasConnectionError, setHasConnectionError] = useState(false);
 
   const isConfigured = settings?.groupId && settings?.currencyCode;
-  const needsConfiguration = isConnected && !isConfigured;
+  const needsConfiguration =
+    isConnected && !isConfigured && !hasConnectionError;
 
   useEffect(() => {
     // Load the selected group details if we have settings
@@ -81,8 +93,36 @@ export function SplitwiseConnectionCard({
       }
     }
 
+    // Test connection if user is connected
+    async function testConnection() {
+      if (!isConnected) {
+        setHasConnectionError(false);
+        setConnectionError(null);
+        return;
+      }
+
+      setIsTestingConnection(true);
+      try {
+        const result = await testSplitwiseConnection();
+        if (!result.success && result.isConnectionError) {
+          setHasConnectionError(true);
+          setConnectionError(result.error || "Connection failed");
+        } else {
+          setHasConnectionError(false);
+          setConnectionError(null);
+        }
+      } catch (error) {
+        console.error("Error testing connection:", error);
+        setHasConnectionError(true);
+        setConnectionError("Failed to test connection");
+      } finally {
+        setIsTestingConnection(false);
+      }
+    }
+
     loadSelectedGroup();
-  }, [settings?.groupId]);
+    testConnection();
+  }, [settings?.groupId, isConnected]);
 
   const handleSettingsSaveSuccess = () => {
     setShowSettings(false);
@@ -101,10 +141,51 @@ export function SplitwiseConnectionCard({
     }
   };
 
+  const handleDisconnectAndReconnect = async () => {
+    setIsLoading(true);
+    try {
+      const result = await disconnectSplitwiseAccount();
+      if (result.success) {
+        setHasConnectionError(false);
+        setConnectionError(null);
+        setShowReconnect(true);
+      } else {
+        console.error("Error disconnecting:", result.error);
+      }
+    } catch (error) {
+      console.error("Error disconnecting:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRetryConnection = async () => {
+    setIsTestingConnection(true);
+    try {
+      const result = await testSplitwiseConnection();
+      if (!result.success && result.isConnectionError) {
+        setHasConnectionError(true);
+        setConnectionError(result.error || "Connection failed");
+      } else {
+        setHasConnectionError(false);
+        setConnectionError(null);
+      }
+    } catch (error) {
+      console.error("Error testing connection:", error);
+      setHasConnectionError(true);
+      setConnectionError("Failed to test connection");
+    } finally {
+      setIsTestingConnection(false);
+    }
+  };
+
   // Helper function to get status text
   const getStatusText = () => {
     if (!isConnected) {
       return "Your Splitwise account is not connected. Connect your account to get started.";
+    }
+    if (hasConnectionError) {
+      return `Connection Error: ${connectionError}`;
     }
     if (needsConfiguration) {
       return "Your Splitwise account is connected but needs configuration.";
@@ -124,14 +205,18 @@ export function SplitwiseConnectionCard({
             variant={
               !isConnected
                 ? "destructive"
-                : needsConfiguration
-                  ? "warning"
-                  : "success"
+                : hasConnectionError
+                  ? "destructive"
+                  : needsConfiguration
+                    ? "warning"
+                    : "success"
             }
             className="flex items-center gap-1"
           >
             {!isConnected ? (
               <X className="h-3 w-3" />
+            ) : hasConnectionError ? (
+              <AlertCircle className="h-3 w-3" />
             ) : needsConfiguration ? (
               <AlertTriangle className="h-3 w-3" />
             ) : (
@@ -139,16 +224,79 @@ export function SplitwiseConnectionCard({
             )}
             {!isConnected
               ? "Not Connected"
-              : needsConfiguration
-                ? "Needs Configuration"
-                : "Connected"}
+              : hasConnectionError
+                ? "Connection Error"
+                : needsConfiguration
+                  ? "Needs Configuration"
+                  : "Connected"}
           </Badge>
         </div>
       </CardHeader>
       <CardContent>
         {isConnected ? (
           <>
-            {needsConfiguration ? (
+            {hasConnectionError ? (
+              <div className="space-y-4">
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <div className="space-y-3">
+                      <p className="font-medium">Connection Error</p>
+                      <p className="text-sm">
+                        Your Splitwise connection has failed. Please reconnect
+                        to continue syncing.
+                      </p>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+
+                {showReconnect ? (
+                  <div className="space-y-4">
+                    <h4 className="font-medium">Reconnect to Splitwise</h4>
+                    <SplitwiseConnectForm isUpdate={true} />
+                  </div>
+                ) : (
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      onClick={handleRetryConnection}
+                      disabled={isTestingConnection}
+                      variant="outline"
+                      size="sm"
+                    >
+                      {isTestingConnection ? (
+                        <>
+                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                          Testing...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="mr-2 h-3 w-3" />
+                          Retry Connection
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={handleDisconnectAndReconnect}
+                      disabled={isLoading}
+                      variant="outline"
+                      size="sm"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                          Disconnecting...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="mr-2 h-3 w-3" />
+                          Disconnect & Reconnect
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : needsConfiguration ? (
               <div className="space-y-4">
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
@@ -224,17 +372,11 @@ export function SplitwiseConnectionCard({
                     <div>
                       <span className="text-sm font-medium">Sync Marker: </span>
                       <span className="text-md">{settings.emoji || "✅"}</span>
-                      <span className="text-xs text-gray-500 ml-2">
-                        (Added to Splitwise expenses when synced)
-                      </span>
                     </div>
                     <div>
                       <span className="text-sm font-medium">Split Ratio: </span>
                       <span className="text-sm">
                         {settings.defaultSplitRatio || "1:1"}
-                      </span>
-                      <span className="text-xs text-gray-500 ml-2">
-                        (How expenses are split between you and your partner)
                       </span>
                     </div>
                     <div>
@@ -243,9 +385,6 @@ export function SplitwiseConnectionCard({
                         {(settings.useDescriptionAsPayee ?? true)
                           ? "Use Splitwise description"
                           : `${settings.customPayeeName || `Splitwise: ${settings.groupName}` || "Splitwise for YNAB"}`}
-                      </span>
-                      <span className="text-xs text-gray-500 ml-2">
-                        (How Splitwise expenses map to YNAB payees)
                       </span>
                     </div>
                   </div>
@@ -260,7 +399,7 @@ export function SplitwiseConnectionCard({
                     <Settings className="h-3.5 w-3.5" />
                     Configure Splitwise Settings
                   </Button>
-                  <Button
+                  {/* <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setShowDisconnectModal(true)}
@@ -268,7 +407,7 @@ export function SplitwiseConnectionCard({
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Disconnect
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
             )}

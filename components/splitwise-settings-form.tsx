@@ -288,21 +288,29 @@ export function SplitwiseSettingsForm({
           syncMessages.push("Split ratio synchronized");
         }
 
-        if (
+        // Check for partner sync message (when connecting to existing group)
+        let displayMessage = "Settings saved!";
+        const hasPartnerSync = !!result.partnerSyncMessage;
+        const hasRegularSync =
           syncMessages.length > 0 &&
           result.updatedPartners &&
-          result.updatedPartners.length > 0
-        ) {
+          result.updatedPartners.length > 0;
+
+        if (hasPartnerSync) {
+          displayMessage = `Settings saved! ${result.partnerSyncMessage}.`;
+        } else if (hasRegularSync) {
+          displayMessage = `Settings saved! ${syncMessages.join(" and ")} with ${result.updatedPartners.join(", ")}.`;
+        }
+
+        if (hasPartnerSync || hasRegularSync) {
           // Show success message for sync events
-          setSuccessMessage(
-            `Settings saved! ${syncMessages.join(" and ")} with ${result.updatedPartners.join(", ")}.`,
-          );
+          setSuccessMessage(displayMessage);
           // Clear the message and close form after showing it briefly
           setTimeout(() => {
             setSuccessMessage(null);
             setError(null);
             onSaveSuccess?.();
-          }, 2000); // Reduced from 3000ms
+          }, 2000);
         } else {
           // No sync occurred, close immediately
           setSuccessMessage(null);
@@ -626,9 +634,12 @@ export function SplitwiseSettingsForm({
                   required={!useDescriptionAsPayee}
                 />
                 <p className="text-sm text-muted-foreground">
-                  This will <strong>always</strong> be the payee name for all
-                  Splitwise transactions in YNAB. The original Splitwise
-                  description will be moved to the memo field.
+                  This will be{" "}
+                  <strong>
+                    the payee name for every Splitwise transaction
+                  </strong>{" "}
+                  we send to YNAB. The original Splitwise description will be
+                  added to the memo field.
                 </p>
               </div>
             )}
@@ -648,25 +659,35 @@ export function SplitwiseSettingsForm({
             </Alert>
           )}
 
-          <Button
-            type="submit"
-            disabled={
-              isSaving ||
-              validGroups.length === 0 ||
-              isEmojiConflict ||
-              !selectedGroupId ||
-              !selectedCurrency
-            }
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Save Settings"
-            )}
-          </Button>
+          <div className="flex gap-3 justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onSaveSuccess?.()}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={
+                isSaving ||
+                validGroups.length === 0 ||
+                isEmojiConflict ||
+                !selectedGroupId ||
+                !selectedCurrency
+              }
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Settings"
+              )}
+            </Button>
+          </div>
 
           {isEmojiConflict && (
             <p className="text-sm text-red-500">

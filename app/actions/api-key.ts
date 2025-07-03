@@ -3,11 +3,22 @@
 import { auth } from "@/auth";
 import { prisma } from "@/db";
 import { generateApiKey } from "@/services/api-key";
+import { isUserFullyConfigured } from "@/app/actions/db";
 
 export async function regenerateApiKeyAction() {
   const session = await auth();
   if (!session?.user?.id) {
     return { success: false, error: "Not authenticated" } as const;
+  }
+
+  // Check if user is fully configured before allowing API key regeneration
+  const isFullyConfigured = await isUserFullyConfigured(session.user.id);
+  if (!isFullyConfigured) {
+    return {
+      success: false,
+      error:
+        "You must complete your Splitwise and YNAB configuration before regenerating your API key",
+    } as const;
   }
 
   try {

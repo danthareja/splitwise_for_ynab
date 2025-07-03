@@ -452,24 +452,34 @@ export function YNABSettingsForm({
             </Alert>
           )}
 
-          <Button
-            type="submit"
-            disabled={
-              isSaving ||
-              !selectedBudgetId ||
-              !selectedAccountId ||
-              isFlagColorConflict
-            }
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Save Settings"
-            )}
-          </Button>
+          <div className="flex gap-3 justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onSaveSuccess?.()}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={
+                isSaving ||
+                !selectedBudgetId ||
+                !selectedAccountId ||
+                isFlagColorConflict
+              }
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Settings"
+              )}
+            </Button>
+          </div>
         </form>
 
         {/* Create Account Dialog */}

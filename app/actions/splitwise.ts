@@ -132,10 +132,18 @@ export async function disconnectSplitwiseAccount() {
       },
     });
 
-    // Delete the user's settings as well
-    await prisma.splitwiseSettings.deleteMany({
+    // Only clear group-specific settings, keep user preferences
+    await prisma.splitwiseSettings.updateMany({
       where: {
         userId: session.user.id,
+      },
+      data: {
+        groupId: null,
+        groupName: null,
+        currencyCode: null,
+        defaultSplitRatio: null,
+        lastPartnerSyncAt: null,
+        // Keep user preferences: emoji, useDescriptionAsPayee, customPayeeName
       },
     });
 
@@ -433,10 +441,38 @@ export async function saveSplitwiseSettings(formData: FormData) {
       where: { userId: session.user.id },
     });
 
-    const isCurrencyChanged = currentSettings?.currencyCode !== currencyCode;
+    // If this is a new group connection and user hasn't provided currency/split ratio,
+    // try to sync from partner's existing settings
+    let finalCurrencyCode = currencyCode;
+    let finalSplitRatio = splitRatio || "1:1";
+    let partnerSyncMessage = "";
+
+    const isNewGroupConnection = currentSettings?.groupId !== groupId;
+    if (isNewGroupConnection && (!currencyCode || !splitRatio)) {
+      const partnerSettings = await syncFromPartnerIfAvailable(
+        session.user.id,
+        groupId,
+      );
+      if (partnerSettings) {
+        if (!currencyCode && partnerSettings.currencyCode) {
+          finalCurrencyCode = partnerSettings.currencyCode;
+          partnerSyncMessage += `Currency (${partnerSettings.currencyCode}) `;
+        }
+        if (!splitRatio && partnerSettings.defaultSplitRatio) {
+          finalSplitRatio = partnerSettings.defaultSplitRatio;
+          partnerSyncMessage += `Split ratio (${partnerSettings.defaultSplitRatio}) `;
+        }
+        if (partnerSyncMessage) {
+          partnerSyncMessage = `${partnerSyncMessage.trim()} synced from ${partnerSettings.partnerName}`;
+        }
+      }
+    }
+
+    const isCurrencyChanged =
+      currentSettings?.currencyCode !== finalCurrencyCode;
     const isGroupChanged = currentSettings?.groupId !== groupId;
     const isSplitRatioChanged =
-      currentSettings?.defaultSplitRatio !== (splitRatio || "1:1");
+      currentSettings?.defaultSplitRatio !== finalSplitRatio;
 
     // Update or create the user's settings
     await prisma.splitwiseSettings.upsert({
@@ -444,9 +480,9 @@ export async function saveSplitwiseSettings(formData: FormData) {
       update: {
         groupId,
         groupName,
-        currencyCode,
+        currencyCode: finalCurrencyCode,
         emoji: emoji || "✅",
-        defaultSplitRatio: splitRatio || "1:1",
+        defaultSplitRatio: finalSplitRatio,
         useDescriptionAsPayee,
         customPayeeName,
       },
@@ -454,9 +490,9 @@ export async function saveSplitwiseSettings(formData: FormData) {
         userId: session.user.id,
         groupId,
         groupName,
-        currencyCode,
+        currencyCode: finalCurrencyCode,
         emoji: emoji || "✅",
-        defaultSplitRatio: splitRatio || "1:1",
+        defaultSplitRatio: finalSplitRatio,
         useDescriptionAsPayee,
         customPayeeName,
       },
@@ -468,11 +504,11 @@ export async function saveSplitwiseSettings(formData: FormData) {
       updatedPartners?: string[];
       error?: string;
     } = { success: true, updatedPartners: [] };
-    if ((isCurrencyChanged || isGroupChanged) && currencyCode) {
+    if ((isCurrencyChanged || isGroupChanged) && finalCurrencyCode) {
       currencySyncResult = await syncCurrencyWithPartners(
         session.user.id,
         groupId,
-        currencyCode,
+        finalCurrencyCode,
       );
     }
 
@@ -482,11 +518,11 @@ export async function saveSplitwiseSettings(formData: FormData) {
       updatedPartners?: string[];
       error?: string;
     } = { success: true, updatedPartners: [] };
-    if ((isSplitRatioChanged || isGroupChanged) && (splitRatio || "1:1")) {
+    if ((isSplitRatioChanged || isGroupChanged) && finalSplitRatio) {
       splitRatioSyncResult = await syncSplitRatioWithPartners(
         session.user.id,
         groupId,
-        splitRatio || "1:1",
+        finalSplitRatio,
       );
     }
 
@@ -496,6 +532,7 @@ export async function saveSplitwiseSettings(formData: FormData) {
       success: true,
       currencySynced: (currencySyncResult.updatedPartners ?? []).length > 0,
       splitRatioSynced: (splitRatioSyncResult.updatedPartners ?? []).length > 0,
+      partnerSyncMessage: partnerSyncMessage || undefined,
       updatedPartners: [
         ...(currencySyncResult.updatedPartners ?? []),
         ...(splitRatioSyncResult.updatedPartners ?? []),
@@ -610,6 +647,101 @@ export async function getSplitwiseSettings() {
   } catch (error) {
     console.error("Error getting user settings:", error);
     Sentry.captureException(error);
+    return null;
+  }
+}
+
+export async function testSplitwiseConnection() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return {
+      success: false,
+      error: "You must be logged in to test the connection",
+    };
+  }
+
+  try {
+    const apiKey = await getSplitwiseApiKey();
+
+    if (!apiKey) {
+      return {
+        success: false,
+        error: "No Splitwise API key found",
+        isConnectionError: true,
+      };
+    }
+
+    const result = await validateSplitwiseApiKey(apiKey);
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error,
+        isConnectionError: true,
+      };
+    }
+
+    return {
+      success: true,
+      user: result.user,
+    };
+  } catch (error) {
+    console.error("Error testing Splitwise connection:", error);
+    Sentry.captureException(error);
+    return {
+      success: false,
+      error: "Failed to test connection",
+      isConnectionError: true,
+    };
+  }
+}
+
+// New function to sync settings from partner when connecting to existing group
+async function syncFromPartnerIfAvailable(userId: string, groupId: string) {
+  try {
+    // Check if there's already a partner with this group configured
+    const partnerSettings = await prisma.splitwiseSettings.findFirst({
+      where: {
+        groupId: groupId,
+        userId: {
+          not: userId,
+        },
+        // Only sync from partners who have complete settings
+        currencyCode: {
+          not: null,
+        },
+      },
+      select: {
+        currencyCode: true,
+        defaultSplitRatio: true,
+        user: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (partnerSettings) {
+      // Reverse the split ratio for the new partner
+      let newPartnerSplitRatio = "1:1";
+      if (partnerSettings.defaultSplitRatio) {
+        const [partnerShares, userShares] =
+          partnerSettings.defaultSplitRatio.split(":");
+        newPartnerSplitRatio = `${userShares}:${partnerShares}`;
+      }
+
+      return {
+        currencyCode: partnerSettings.currencyCode,
+        defaultSplitRatio: newPartnerSplitRatio,
+        partnerName: partnerSettings.user.name || "Your partner",
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Error syncing from partner:", error);
     return null;
   }
 }
