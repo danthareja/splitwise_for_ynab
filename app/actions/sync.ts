@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/db"; // Declare the prisma variable
 import { enforcePerUserRateLimit } from "@/services/rate-limit";
 import { getRateLimitOptions } from "@/lib/rate-limit";
+import { Prisma } from "@prisma/client";
 
 export async function syncUserDataAction() {
   const session = await auth();
@@ -60,7 +61,7 @@ export async function getSyncHistory(limit = 7) {
   }
 
   try {
-    const syncHistory = await prisma.syncHistory.findMany({
+    const syncHistory = (await prisma.syncHistory.findMany({
       where: {
         userId: session.user.id,
       },
@@ -71,7 +72,9 @@ export async function getSyncHistory(limit = 7) {
         startedAt: "desc",
       },
       take: limit,
-    });
+    })) as Prisma.SyncHistoryGetPayload<{
+      include: { syncedItems: true };
+    }>[];
 
     // sort syncedItems by date
     syncHistory.forEach((sync) => {

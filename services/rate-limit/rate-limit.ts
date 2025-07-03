@@ -14,15 +14,8 @@ export interface RateLimit {
 export type RateLimitOptions = Record<string, never>;
 
 export class RateLimitFactory {
-  static async create(
-    strategy: "prisma" | "upstash" = "prisma",
-    _options?: RateLimitOptions,
-  ): Promise<RateLimit> {
+  static async create(strategy: "prisma" = "prisma"): Promise<RateLimit> {
     switch (strategy) {
-      case "upstash": {
-        const { UpstashRateLimit } = await import("./rate-limit-upstash");
-        return new UpstashRateLimit(_options);
-      }
       case "prisma":
       default: {
         const { PrismaRateLimit } = await import("./rate-limit-prisma");

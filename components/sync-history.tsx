@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { format, formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SyncDetailsDialog } from "@/components/sync-details-dialog";
@@ -13,6 +12,7 @@ import {
   ChevronRight,
   AlertTriangle,
 } from "lucide-react";
+import { formatDate, formatTime, formatTimeAgo } from "@/lib/utils";
 
 export type SyncHistoryItem = {
   id: string;
@@ -66,7 +66,7 @@ export function SyncHistory({ syncHistory, currencyCode }: SyncHistoryProps) {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-medium">
-                    Sync {format(new Date(sync.startedAt), "MMM d, yyyy")}
+                    Sync {formatDate(new Date(sync.startedAt))}
                   </h3>
                   <Badge
                     variant={
@@ -89,10 +89,8 @@ export function SyncHistory({ syncHistory, currencyCode }: SyncHistoryProps) {
                   </Badge>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {format(new Date(sync.startedAt), "h:mm a")} ·{" "}
-                  {formatDistanceToNow(new Date(sync.startedAt), {
-                    addSuffix: true,
-                  })}
+                  {formatTime(new Date(sync.startedAt))} ·{" "}
+                  {formatTimeAgo(new Date(sync.startedAt))}
                 </p>
               </div>
 

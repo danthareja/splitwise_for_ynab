@@ -1,6 +1,5 @@
 "use client";
 
-import { format, parseISO } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +17,7 @@ import {
   AlertCircle,
   CheckCircle,
 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDateTime, formatDate } from "@/lib/utils";
 import type { SyncHistoryItem } from "@/components/sync-history";
 
 interface SyncDetailsDialogProps {
@@ -78,7 +77,7 @@ export function SyncDetailsDialog({
             </Badge>
           </DialogTitle>
           <DialogDescription>
-            {format(new Date(sync.startedAt), "MMMM d, yyyy 'at' h:mm a")}
+            {formatDateTime(new Date(sync.startedAt))}
             {sync.status !== "in_progress" && (
               <span> · Completed in {durationInSeconds} seconds</span>
             )}
@@ -183,7 +182,7 @@ export function SyncDetailsDialog({
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          {format(parseISO(transaction.date), "MMM d, yyyy")}
+                          {formatDate(transaction.date)}
                         </td>
                       </tr>
                     ))}
@@ -257,7 +256,7 @@ export function SyncDetailsDialog({
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          {format(parseISO(expense.date), "MMM d, yyyy")}
+                          {formatDate(expense.date)}
                         </td>
                       </tr>
                     ))}
