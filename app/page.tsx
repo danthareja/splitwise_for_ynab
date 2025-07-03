@@ -1,11 +1,10 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, ArrowRight, Zap, ExternalLink } from "lucide-react";
+import { CheckCircle, Zap, ExternalLink } from "lucide-react";
 import { InteractiveTransactionDemo } from "@/components/interactive-transaction-demo";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { SignInButton } from "@/components/sign-in-button";
 
 export default function LandingPage() {
   return (
@@ -30,16 +29,7 @@ export default function LandingPage() {
             <span className="font-bold"> perfect category tracking</span>.
           </p>
           <div className="flex justify-center">
-            <Button
-              size="lg"
-              className="text-base px-6 py-4 h-auto bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium"
-              asChild
-            >
-              <Link href="/auth/signin">
-                Sign in with YNAB
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
+            <SignInButton />
           </div>
         </div>
       </section>
@@ -769,16 +759,7 @@ export default function LandingPage() {
             Join YNAB users who&apos;ve eliminated manual data entry and gained
             perfect expense tracking.
           </p>
-          <Button
-            size="lg"
-            className="text-base px-6 py-4 h-auto bg-white hover:bg-gray-50 text-blue-600 font-medium border-2 border-white hover:border-gray-200 transition-all"
-            asChild
-          >
-            <Link href="/auth/signin">
-              Sign in with YNAB
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-          </Button>
+          <SignInButton variant="white" />
           {/* <p className="text-blue-200 dark:text-blue-300 mt-6 text-sm">
             No credit card required • 14-day free trial • Cancel anytime
           </p> */}
