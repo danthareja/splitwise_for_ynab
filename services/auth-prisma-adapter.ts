@@ -3,6 +3,7 @@
  * @auth/prisma-adapter
  */
 import { Prisma } from "@prisma/client";
+import { generateApiKey } from "./api-key";
 import type { ExtendedPrismaClientType } from "@/db";
 import type {
   Adapter,
@@ -17,12 +18,14 @@ export function PrismaAdapter(prisma: ExtendedPrismaClientType): Adapter {
     // We need to let Prisma generate the ID because our default UUID is incompatible with MongoDB
     // @ts-expect-error - Prisma Client type incompatible with AdapterUser
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    createUser: ({ id, ...data }) => p.user.create(stripUndefined(data)),
+    createUser: ({ id, apiKey, ...data }) => {
+      const key = apiKey ?? generateApiKey();
+      return p.user.create(stripUndefined({ apiKey: key, ...data }));
+    },
     // @ts-expect-error - Prisma Client type incompatible with AdapterUser
     getUser: (id) =>
       p.user.findUnique({
         where: { id },
-        // THIS IS THE MAIN REASON FOR THIS ADAPTER. IDK IF IT'S A GOOD IDEA
         cacheStrategy: {
           ttl: 60,
           swr: 60,
@@ -34,7 +37,6 @@ export function PrismaAdapter(prisma: ExtendedPrismaClientType): Adapter {
       const account = await p.account.findUnique({
         where: { provider_providerAccountId },
         include: { user: true },
-        // THIS IS THE MAIN REASON FOR THIS ADAPTER. IDK IF IT'S A GOOD IDEA
         cacheStrategy: {
           ttl: 60,
           swr: 60,

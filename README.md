@@ -96,3 +96,16 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the main page.
+
+## User-specific Sync API
+
+Send a GET request to `/api/sync` with an `Authorization: Bearer <USER_API_KEY>` header to trigger a sync for a single user.
+
+### Rate limiting
+
+By default each user can trigger two syncs every hour. Configure via the following env vars:
+
+```
+USER_SYNC_MAX_REQUESTS=2          # number of allowed requests per window
+USER_SYNC_WINDOW_SECONDS=3600      # window size in seconds (default 30m)
+```
