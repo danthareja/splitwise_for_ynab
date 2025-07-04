@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { signOut } from "@/auth";
+import { SignOutButton } from "@/components/sign-out-button";
 
 export async function Header() {
   return (
@@ -46,16 +46,7 @@ export function AppHeader() {
             </span>
           </Link>
           <div className="flex items-center space-x-3">
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/" });
-              }}
-            >
-              <Button variant="outline" type="submit">
-                Sign out
-              </Button>
-            </form>
+            <SignOutButton />
           </div>
         </div>
       </div>
