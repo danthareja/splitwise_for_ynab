@@ -8,6 +8,7 @@ import {
   getSplitwiseGroups,
   validateSplitwiseApiKey,
 } from "@/services/splitwise-auth";
+import { sendWelcomeEmail } from "@/services/email";
 import type { SplitwiseUser } from "@/types/splitwise";
 
 export async function validateApiKey(formData: FormData) {
@@ -97,6 +98,20 @@ export async function saveSplitwiseUser(
         image: splitwiseUser.picture.medium,
       },
     });
+
+    // Send welcome email only for new Splitwise connections
+    if (!existingAccount && splitwiseUser.email) {
+      try {
+        await sendWelcomeEmail({
+          to: splitwiseUser.email,
+          userName: splitwiseUser.first_name,
+        });
+      } catch (emailError) {
+        // Log the error but don't fail the whole operation
+        console.error("Failed to send welcome email:", emailError);
+        Sentry.captureException(emailError);
+      }
+    }
 
     revalidatePath("/dashboard");
 
