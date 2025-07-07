@@ -24,7 +24,10 @@ export async function GET(request: NextRequest) {
     return Response.json(result);
   }
 
-  const user = await prisma.user.findFirst({ where: { apiKey: token } });
+  const user = await prisma.user.findFirst({
+    where: { apiKey: token },
+    select: { id: true },
+  });
 
   if (!user) {
     return Response.json(
@@ -71,6 +74,5 @@ export async function GET(request: NextRequest) {
   }
 
   const result = await syncUserData(user.id);
-
   return Response.json(result);
 }

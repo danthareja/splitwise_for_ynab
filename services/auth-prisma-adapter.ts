@@ -4,7 +4,7 @@
  */
 import { Prisma } from "@prisma/client";
 import { generateApiKey } from "./api-key";
-import type { ExtendedPrismaClientType } from "@/db";
+import type { PrismaClient } from "@prisma/client";
 import type {
   Adapter,
   AdapterAccount,
@@ -12,7 +12,7 @@ import type {
   AdapterUser,
 } from "@auth/core/adapters";
 
-export function PrismaAdapter(prisma: ExtendedPrismaClientType): Adapter {
+export function PrismaAdapter(prisma: PrismaClient): Adapter {
   const p = prisma;
   return {
     // We need to let Prisma generate the ID because our default UUID is incompatible with MongoDB
@@ -26,10 +26,11 @@ export function PrismaAdapter(prisma: ExtendedPrismaClientType): Adapter {
     getUser: (id) =>
       p.user.findUnique({
         where: { id },
-        cacheStrategy: {
-          ttl: 60,
-          swr: 60,
-        },
+        // THIS IS THE MAIN REASON FOR THIS ADAPTER. IDK IF IT'S A GOOD IDEA
+        // cacheStrategy: {
+        //   ttl: 60,
+        //   swr: 60,
+        // },
       }),
     // @ts-expect-error - Prisma Client type incompatible with AdapterUser
     getUserByEmail: (email) => p.user.findUnique({ where: { email } }),
@@ -37,10 +38,11 @@ export function PrismaAdapter(prisma: ExtendedPrismaClientType): Adapter {
       const account = await p.account.findUnique({
         where: { provider_providerAccountId },
         include: { user: true },
-        cacheStrategy: {
-          ttl: 60,
-          swr: 60,
-        },
+        // THIS IS THE MAIN REASON FOR THIS ADAPTER. IDK IF IT'S A GOOD IDEA
+        // cacheStrategy: {
+        //   ttl: 60,
+        //   swr: 60,
+        // },
       });
       return (account?.user as AdapterUser) ?? null;
     },
@@ -62,10 +64,10 @@ export function PrismaAdapter(prisma: ExtendedPrismaClientType): Adapter {
         where: { sessionToken },
         include: { user: true },
         // THIS IS THE MAIN REASON FOR THIS ADAPTER. IDK IF IT'S A GOOD IDEA
-        cacheStrategy: {
-          ttl: 60,
-          swr: 60,
-        },
+        // cacheStrategy: {
+        //   ttl: 60,
+        //   swr: 60,
+        // },
       });
       if (!userAndSession) return null;
       const { user, ...session } = userAndSession;
@@ -112,9 +114,10 @@ export function PrismaAdapter(prisma: ExtendedPrismaClientType): Adapter {
     async getAccount(providerAccountId, provider) {
       return p.account.findFirst({
         where: { providerAccountId, provider },
-        cacheStrategy: {
-          ttl: 60 * 5, // 5 minutes
-        },
+        // THIS IS THE MAIN REASON FOR THIS ADAPTER. IDK IF IT'S A GOOD IDEA
+        // cacheStrategy: {
+        //   ttl: 60 * 5, // 5 minutes
+        // },
       }) as Promise<AdapterAccount | null>;
     },
     async createAuthenticator(data) {
