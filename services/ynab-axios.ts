@@ -366,15 +366,9 @@ export class YNABUnauthorizedScopeError extends YNABForbiddenError {
 }
 
 export class YNABDataLimitReachedError extends YNABForbiddenError {
-  public override readonly requires_action = true;
-
   constructor(originalError: AxiosError, operation: string) {
     super(originalError, operation);
     this.name = "YNABDataLimitReachedError";
-  }
-
-  override get suggestedFix(): string {
-    return "You've reached YNAB's data limit. Please upgrade your YNAB plan or contact YNAB support for assistance.";
   }
 }
 
