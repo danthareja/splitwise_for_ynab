@@ -39,16 +39,6 @@ vi.mock("@/db", () => ({
 export const server = setupServer();
 
 beforeAll(async () => {
-  execSync("npx prisma generate", {
-    env: { ...process.env },
-    stdio: "inherit",
-  });
-
-  execSync("npx prisma db push --force-reset", {
-    env: { ...process.env },
-    stdio: "inherit",
-  });
-
   await prisma.$connect();
 
   server.listen({ onUnhandledRequest: "error" });
