@@ -1,9 +1,7 @@
 import { beforeAll, afterAll, beforeEach, afterEach, vi } from "vitest";
 import { setupServer } from "msw/node";
 import { PrismaClient } from "@prisma/client";
-import { execSync } from "child_process";
 
-// Create real Prisma client for tests
 export const prisma = new PrismaClient();
 
 vi.mock("@sentry/nextjs", () => ({
@@ -40,7 +38,6 @@ export const server = setupServer();
 
 beforeAll(async () => {
   await prisma.$connect();
-
   server.listen({ onUnhandledRequest: "error" });
 });
 
