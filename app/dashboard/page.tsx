@@ -17,6 +17,7 @@ import { ScheduledSyncInfo } from "@/components/scheduled-sync-info";
 import { ApiKeyCard } from "@/components/api-key-card";
 import type { Metadata } from "next";
 import { MAX_REQUESTS, WINDOW_SECONDS } from "@/lib/rate-limit";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Dashboard - Manage Your YNAB & Splitwise Integration",
@@ -34,7 +35,7 @@ export default async function DashboardPage() {
   const session = await auth();
 
   if (!session?.user) {
-    throw new Error("Authentication required");
+    redirect("/");
   }
 
   // Call the server action to get user data

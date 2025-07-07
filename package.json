@@ -11,7 +11,8 @@
     "prepare": "husky install",
     "postinstall": "prisma generate --no-engine",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "email": "email dev"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown",
@@ -31,6 +32,7 @@
     "@radix-ui/react-select": "^2.2.5",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.12",
+    "@react-email/components": "^0.1.1",
     "@sentry/nextjs": "^9.34.0",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
@@ -44,6 +46,8 @@
     "next-auth": "^5.0.0-beta.28",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-email": "^4.0.17",
+    "resend": "^4.6.0",
     "sonner": "^2.0.5",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7"

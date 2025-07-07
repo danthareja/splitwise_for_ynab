@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/db";
+import { sendWelcomeEmail } from "@/services/email";
 
 export async function GET(request: NextRequest) {
   // Extract the authorization code from the query parameters
@@ -71,13 +72,19 @@ export async function GET(request: NextRequest) {
   }
 
   const userData = await userResponse.json();
-  console.log("User data received:", userData);
 
   // Check if the user already has a Splitwise account
   const existingAccount = await prisma.account.findFirst({
     where: {
       userId: session.user.id,
       provider: "splitwise",
+    },
+  });
+
+  // Check if user has ever connected to Splitwise before (even if they disconnected)
+  const existingSettings = await prisma.splitwiseSettings.findUnique({
+    where: {
+      userId: session.user.id,
     },
   });
 
@@ -115,6 +122,14 @@ export async function GET(request: NextRequest) {
       image: userData.user.picture?.medium,
     },
   });
+
+  // Send welcome email only for truly new Splitwise connections (never connected before)
+  if (!existingAccount && !existingSettings && userData.user.email) {
+    await sendWelcomeEmail({
+      to: userData.user.email,
+      userName: `${userData.user.first_name}`,
+    });
+  }
 
   // Redirect to dashboard or success page
   return NextResponse.redirect(new URL("/dashboard", request.url));
