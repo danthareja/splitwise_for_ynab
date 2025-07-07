@@ -18,6 +18,7 @@ import { ApiKeyCard } from "@/components/api-key-card";
 import type { Metadata } from "next";
 import { MAX_REQUESTS, WINDOW_SECONDS } from "@/lib/rate-limit";
 import { redirect } from "next/navigation";
+import { DisabledAccountAlert } from "@/components/disabled-account-alert";
 
 export const metadata: Metadata = {
   title: "Dashboard - Manage Your YNAB & Splitwise Integration",
@@ -82,6 +83,14 @@ export default async function DashboardPage() {
               : "Welcome!"}
           </h1>
 
+          {/* Disabled Account Alert */}
+          {user.disabled && user.disabledReason && (
+            <DisabledAccountAlert
+              disabledReason={user.disabledReason}
+              suggestedFix={user.suggestedFix}
+            />
+          )}
+
           {/* Need Help Banner */}
           <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -131,11 +140,11 @@ export default async function DashboardPage() {
           <div className="mt-8 border rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Recent Activity</h2>
-              {isFullyConfigured && <ManualSyncButton />}
+              {isFullyConfigured && !user.disabled && <ManualSyncButton />}
             </div>
 
             {/* Scheduled Sync Info for fully configured users */}
-            {isFullyConfigured && <ScheduledSyncInfo />}
+            {isFullyConfigured && !user.disabled && <ScheduledSyncInfo />}
 
             {syncHistory && syncHistory.length > 0 ? (
               <SyncHistory
@@ -171,7 +180,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* API Key Section */}
-          {isFullyConfigured && (
+          {isFullyConfigured && !user.disabled && (
             <ApiKeyCard
               initialApiKey={user.apiKey ?? null}
               maxRequests={MAX_REQUESTS}

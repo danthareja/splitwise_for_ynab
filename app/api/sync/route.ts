@@ -26,7 +26,6 @@ export async function GET(request: NextRequest) {
 
   const user = await prisma.user.findFirst({
     where: { apiKey: token },
-    select: { id: true },
   });
 
   if (!user) {
@@ -45,6 +44,20 @@ export async function GET(request: NextRequest) {
         success: false,
         error:
           "You must complete your Splitwise and YNAB configuration before syncing",
+      },
+      {
+        status: 403,
+      },
+    );
+  }
+
+  // Check if user account is disabled
+  if (user.disabled) {
+    return Response.json(
+      {
+        success: false,
+        error: user.disabledReason || "Your account has been disabled",
+        suggestedFix: user.suggestedFix,
       },
       {
         status: 403,
