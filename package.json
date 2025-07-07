@@ -2,13 +2,16 @@
   "name": "splitwise_for_ynab",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "prepare": "husky install",
-    "postinstall": "prisma generate --no-engine"
+    "postinstall": "prisma generate --no-engine",
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown",
@@ -52,15 +55,20 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/ui": "^2.0.0",
     "dotenv": "^17.0.1",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2",
+    "msw": "^2.0.0",
     "prettier": "3.6.2",
     "prisma": "^6.11.0",
     "tailwindcss": "^4.1.11",
     "tw-animate-css": "^1.3.4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^2.0.0",
+    "vitest-mock-extended": "^2.0.0"
   }
 }

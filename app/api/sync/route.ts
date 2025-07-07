@@ -6,6 +6,7 @@ import { getRateLimitOptions } from "@/lib/rate-limit";
 import { isUserFullyConfigured } from "@/app/actions/db";
 
 export async function GET(request: NextRequest) {
+  console.log(request);
   const authHeader = request.headers.get("authorization");
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -71,6 +72,5 @@ export async function GET(request: NextRequest) {
   }
 
   const result = await syncUserData(user.id);
-
   return Response.json(result);
 }
