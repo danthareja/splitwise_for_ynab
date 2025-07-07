@@ -9,7 +9,7 @@
     "lint": "next lint",
     "prepare": "husky install",
     "postinstall": "prisma generate --no-engine",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown",
