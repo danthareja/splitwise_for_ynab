@@ -126,7 +126,7 @@ describe("/api/sync API Integration Tests", () => {
     });
 
     it("should handle rate limiting", async () => {
-      // Limits configured in .env.test
+      // Limits configured in vitest.config.ts
       const userData = await createFullyConfiguredUser();
 
       const request = new NextRequest("http://localhost/api/sync", {
