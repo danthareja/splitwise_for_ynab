@@ -1,5 +1,6 @@
-import { Resend } from 'resend';
-import * as Sentry from '@sentry/nextjs';
+import { Resend } from "resend";
+import * as Sentry from "@sentry/nextjs";
+// import { WelcomeEmail } from '@/emails/welcome';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -8,13 +9,16 @@ interface SendWelcomeEmailParams {
   userName?: string;
 }
 
-export async function sendWelcomeEmail({ to, userName }: SendWelcomeEmailParams) {
+export async function sendWelcomeEmail({
+  to,
+  userName,
+}: SendWelcomeEmailParams) {
   const { data, error } = await resend.emails.send({
-    from: 'Dan Thareja <dan@splitwiseforynab.com>',
+    from: "Dan Thareja <dan@splitwiseforynab.com>",
     to: [to],
     subject: "How's it going with Splitwise for YNAB?",
-    replyTo: 'support@splitwiseforynab.com',
-    text: `Hi ${userName || 'there'},
+    // react: WelcomeEmail({ userEmail: to, userName }),
+    text: `Hi ${userName || "there"},
 
 I hope you're enjoying Splitwise for YNAB! I wanted to reach out personally to see how things are going with your setup.
 
