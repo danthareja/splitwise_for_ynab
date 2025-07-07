@@ -7,6 +7,7 @@ import { SplitwiseService } from "./splitwise";
 import { processLatestExpenses, processLatestTransactions } from "./glue";
 import type { YNABTransaction } from "@/types/ynab";
 import type { SplitwiseExpense } from "@/types/splitwise";
+import { YNABError } from "./ynab-axios";
 
 interface SyncResult {
   success: boolean;
@@ -30,9 +31,10 @@ export async function syncAllUsers(): Promise<{
   errorCount: number;
   results: Record<string, SyncResult>;
 }> {
-  // Find all fully configured users
+  // Find all fully configured and enabled users
   const configuredUsers = await prisma.user.findMany({
     where: {
+      disabled: false,
       ynabSettings: {
         splitwiseAccountId: {
           not: null,
@@ -430,6 +432,22 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
   } catch (error) {
     console.error("Sync error:", error);
     Sentry.captureException(error);
+
+    // Check if this is a YNAB error that requires action
+    if (error instanceof YNABError && error.requires_action) {
+      console.log(`🚨 YNAB error requires action: ${error.message}`);
+      
+      // Disable the user account
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          disabled: true,
+          disabledAt: new Date(),
+          disabledReason: error.message,
+          suggestedFix: error.suggestedFix,
+        },
+      });
+    }
 
     // Update sync history with error
     await prisma.syncHistory.update({
@@ -866,6 +884,22 @@ async function syncUserPhase(
   } catch (error) {
     console.error(`Sync error for user ${userId}, phase ${phase}:`, error);
     Sentry.captureException(error);
+
+    // Check if this is a YNAB error that requires action
+    if (error instanceof YNABError && error.requires_action) {
+      console.log(`🚨 YNAB error requires action: ${error.message}`);
+      
+      // Disable the user account
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          disabled: true,
+          disabledAt: new Date(),
+          disabledReason: error.message,
+          suggestedFix: error.suggestedFix,
+        },
+      });
+    }
 
     // Update sync history with error
     await prisma.syncHistory.update({

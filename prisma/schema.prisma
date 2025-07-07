@@ -23,6 +23,13 @@ model User {
   syncHistory       SyncHistory[]
   syncState         SyncState?
   rateLimits        RateLimit[]
+  
+  // Account status fields
+  disabled          Boolean         @default(false)
+  disabledAt        DateTime?
+  disabledReason    String?
+  suggestedFix      String?
+  
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 }

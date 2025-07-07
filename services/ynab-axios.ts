@@ -262,6 +262,7 @@ interface YNABErrorDetail {
 export abstract class YNABError extends Error {
   public readonly operation: string;
   public readonly statusCode: number;
+  public readonly requires_action: boolean = false;
 
   constructor(originalError: AxiosError, operation: string) {
     const ynabError = (originalError.response?.data as YNABErrorResponse)
@@ -284,6 +285,10 @@ export abstract class YNABError extends Error {
     const responseData = this.originalError.response?.data as YNABErrorResponse;
     return responseData?.error;
   }
+
+  get suggestedFix(): string | undefined {
+    return undefined;
+  }
 }
 
 // Client Error Classes (4xx)
@@ -302,9 +307,15 @@ export class YNABBadRequestError extends YNABClientError {
 }
 
 export class YNABUnauthorizedError extends YNABClientError {
+  public override readonly requires_action = true;
+
   constructor(originalError: AxiosError, operation: string) {
     super(originalError, operation);
     this.name = "YNABUnauthorizedError";
+  }
+
+  override get suggestedFix(): string {
+    return "Your YNAB authorization has expired or is invalid. Please reconnect your YNAB account.";
   }
 }
 
@@ -316,30 +327,54 @@ export class YNABForbiddenError extends YNABClientError {
 }
 
 export class YNABSubscriptionLapsedError extends YNABForbiddenError {
+  public override readonly requires_action = true;
+
   constructor(originalError: AxiosError, operation: string) {
     super(originalError, operation);
     this.name = "YNABSubscriptionLapsedError";
   }
+
+  override get suggestedFix(): string {
+    return "Your YNAB subscription has lapsed. Please renew your YNAB subscription to continue syncing.";
+  }
 }
 
 export class YNABTrialExpiredError extends YNABForbiddenError {
+  public override readonly requires_action = true;
+
   constructor(originalError: AxiosError, operation: string) {
     super(originalError, operation);
     this.name = "YNABTrialExpiredError";
   }
+
+  override get suggestedFix(): string {
+    return "Your YNAB trial has expired. Please subscribe to YNAB to continue syncing.";
+  }
 }
 
 export class YNABUnauthorizedScopeError extends YNABForbiddenError {
+  public override readonly requires_action = true;
+
   constructor(originalError: AxiosError, operation: string) {
     super(originalError, operation);
     this.name = "YNABUnauthorizedScopeError";
   }
+
+  override get suggestedFix(): string {
+    return "Your YNAB authorization is missing required permissions. Please reconnect your YNAB account with the proper permissions.";
+  }
 }
 
 export class YNABDataLimitReachedError extends YNABForbiddenError {
+  public override readonly requires_action = true;
+
   constructor(originalError: AxiosError, operation: string) {
     super(originalError, operation);
     this.name = "YNABDataLimitReachedError";
+  }
+
+  override get suggestedFix(): string {
+    return "You've reached YNAB's data limit. Please upgrade your YNAB plan or contact YNAB support for assistance.";
   }
 }
 

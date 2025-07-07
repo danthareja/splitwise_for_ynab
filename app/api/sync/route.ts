@@ -52,6 +52,20 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Check if user account is disabled
+  if (user.disabled) {
+    return Response.json(
+      {
+        success: false,
+        error: user.disabledReason || "Your account has been disabled",
+        suggestedFix: user.suggestedFix,
+      },
+      {
+        status: 403,
+      },
+    );
+  }
+
   const rateLimitOpts = getRateLimitOptions();
   const { allowed, retryAfterSeconds } = await enforcePerUserRateLimit(
     user.id,
