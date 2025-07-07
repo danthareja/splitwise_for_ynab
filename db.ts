@@ -1,7 +1,14 @@
 import { PrismaClient } from "@prisma/client";
 import { withAccelerate } from "@prisma/extension-accelerate";
 
-const extendedPrismaClient = new PrismaClient().$extends(withAccelerate());
+// Use Prisma Accelerate only when DATABASE_URL starts with 'prisma://'
+const isPrismaAccelerateUrl =
+  process.env.DATABASE_URL?.startsWith("prisma://") ||
+  process.env.DATABASE_URL?.startsWith("prisma+postgres://");
+
+const extendedPrismaClient = isPrismaAccelerateUrl
+  ? new PrismaClient().$extends(withAccelerate())
+  : new PrismaClient();
 
 export type ExtendedPrismaClientType = typeof extendedPrismaClient;
 

@@ -1,8 +1,5 @@
 import { defineConfig } from "vitest/config";
 import tsconfigPaths from "vite-tsconfig-paths";
-import { config } from "dotenv";
-
-config({ path: ".env.test" });
 
 export default defineConfig({
   test: {
@@ -13,6 +10,14 @@ export default defineConfig({
     hookTimeout: 30000,
     include: ["tests/**/*.test.ts"],
     exclude: ["node_modules", "dist", ".next"],
+    env: {
+      DATABASE_URL:
+        process.env.DATABASE_URL ||
+        "postgresql://postgres:postgres@localhost:6969/test",
+      CRON_SECRET: "test-cron-secret",
+      USER_SYNC_MAX_REQUESTS: "1",
+      USER_SYNC_WINDOW_SECONDS: "60",
+    },
   },
   plugins: [tsconfigPaths()],
 });

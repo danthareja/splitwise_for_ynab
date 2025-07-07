@@ -2,7 +2,6 @@ import { beforeAll, afterAll, beforeEach, afterEach, vi } from "vitest";
 import { setupServer } from "msw/node";
 import { PrismaClient } from "@prisma/client";
 import { execSync } from "child_process";
-import { config } from "dotenv";
 
 // Create real Prisma client for tests
 export const prisma = new PrismaClient();
