@@ -8,6 +8,7 @@ import {
   getSplitwiseGroups,
   validateSplitwiseApiKey,
 } from "@/services/splitwise-auth";
+import { getUserFirstName } from "@/lib/utils";
 import type { SplitwiseUser } from "@/types/splitwise";
 
 export async function validateApiKey(formData: FormData) {
@@ -92,6 +93,8 @@ export async function saveSplitwiseUser(
     await prisma.user.update({
       where: { id: session.user.id },
       data: {
+        firstName: splitwiseUser.first_name,
+        lastName: splitwiseUser.last_name,
         name: `${splitwiseUser.first_name} ${splitwiseUser.last_name}`,
         email: splitwiseUser.email,
         image: splitwiseUser.picture.medium,
@@ -275,8 +278,7 @@ async function checkEmojiConflict(
   if (conflictingUser) {
     return {
       hasConflict: true,
-      conflictingUser:
-        conflictingUser.user.name?.split(" ")[0] || "Your partner",
+      conflictingUser: getUserFirstName(conflictingUser.user) || "Your partner",
       conflictingEmoji: emoji,
     };
   }
@@ -328,7 +330,7 @@ async function syncSplitRatioWithPartners(
         success: true,
         updatedPartners: partnersWithSameGroup.map(
           (p: (typeof partnersWithSameGroup)[0]) =>
-            p.user.name?.split(" ")[0] || `Your partner`,
+            getUserFirstName(p.user) || "Your partner",
         ),
       };
     }
@@ -383,7 +385,7 @@ async function syncCurrencyWithPartners(
         success: true,
         updatedPartners: partnersWithSameGroup.map(
           (p: (typeof partnersWithSameGroup)[0]) =>
-            p.user.name?.split(" ")[0] || `Your partner`,
+            getUserFirstName(p.user) || "Your partner",
         ),
       };
     }
@@ -571,6 +573,7 @@ export async function getPartnerEmoji(groupId: string) {
         currencyCode: true,
         user: {
           select: {
+            firstName: true,
             name: true,
           },
         },
@@ -581,7 +584,7 @@ export async function getPartnerEmoji(groupId: string) {
       return {
         emoji: partnerSettings.emoji,
         currencyCode: partnerSettings.currencyCode,
-        partnerName: partnerSettings.user.name?.split(" ")[0] || "Your partner",
+        partnerName: getUserFirstName(partnerSettings.user) || "Your partner",
       };
     }
 
@@ -718,6 +721,7 @@ async function syncFromPartnerIfAvailable(userId: string, groupId: string) {
         defaultSplitRatio: true,
         user: {
           select: {
+            firstName: true,
             name: true,
           },
         },
@@ -736,7 +740,7 @@ async function syncFromPartnerIfAvailable(userId: string, groupId: string) {
       return {
         currencyCode: partnerSettings.currencyCode,
         defaultSplitRatio: newPartnerSplitRatio,
-        partnerName: partnerSettings.user.name?.split(" ")[0] || "Your partner",
+        partnerName: getUserFirstName(partnerSettings.user) || "Your partner",
       };
     }
 

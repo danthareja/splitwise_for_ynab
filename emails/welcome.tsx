@@ -1,210 +1,159 @@
-import {
-  Body,
-  Button,
-  Container,
-  Head,
-  Heading,
-  Hr,
-  Html,
-  Img,
-  Link,
-  Preview,
-  Section,
-  Text,
-} from "@react-email/components";
+import { Button, Heading, Section, Text } from "@react-email/components";
+import { EmailLayout, baseUrl } from "./components/email-layout";
+import { emailStyles } from "./components/email-styles";
+import { HelpSection } from "./components/help-section";
+import { EmailFooter } from "./components/email-footer";
 
-interface WelcomeEmailProps {
+export interface WelcomeEmailProps {
   userName?: string;
-  userEmail: string;
 }
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-
-export const WelcomeEmail = ({
-  userName = "there",
-  userEmail,
-}: WelcomeEmailProps) => {
-  const previewText = `Welcome to Splitwise for YNAB!`;
+export const WelcomeEmail = ({ userName = "there" }: WelcomeEmailProps) => {
+  const previewText = `Welcome to Splitwise for YNAB! Your complete setup guide`;
 
   return (
-    <Html>
-      <Head />
-      <Preview>{previewText}</Preview>
-      <Body style={main}>
-        <Container style={container}>
-          <Heading style={h1}>Welcome to Splitwise for YNAB! 🎉</Heading>
-          
-          <Text style={text}>Hi {userName},</Text>
-          
-          <Text style={text}>
-            Thank you for connecting your Splitwise account! You're all set to start syncing your shared expenses with YNAB.
-          </Text>
+    <EmailLayout previewText={previewText}>
+      <Text style={emailStyles.text}>Hi {userName},</Text>
 
-          <Section style={section}>
-            <Heading style={h2}>Getting Started</Heading>
-            
-            <Text style={text}>
-              <strong>1. Configure Your Sync Settings</strong><br />
-              Visit your dashboard to set up which Splitwise group you want to sync with YNAB.
-            </Text>
-            
-            <Text style={text}>
-              <strong>2. Choose Your YNAB Account</strong><br />
-              Select which YNAB account should receive your Splitwise transactions.
-            </Text>
-            
-            <Text style={text}>
-              <strong>3. Set Up Automatic Sync</strong><br />
-              Enable automatic syncing to keep your expenses up-to-date without manual intervention.
-            </Text>
-          </Section>
+      <Text style={emailStyles.text}>
+        Thank you for connecting your Splitwise account! You&apos;re almost
+        ready to start syncing your shared expenses with YNAB.
+      </Text>
 
-          <Section style={buttonSection}>
-            <Button
-              style={button}
-              href={`${baseUrl}/dashboard`}
-            >
-              Go to Dashboard
-            </Button>
-          </Section>
+      <Section style={emailStyles.section}>
+        <Heading style={emailStyles.h2}>Complete Your Setup</Heading>
 
-          <Hr style={hr} />
+        <Text style={emailStyles.text}>
+          To start automating your shared expenses, you&apos;ll need to
+          configure both your YNAB and Splitwise connections. Here&apos;s
+          exactly what to do:
+        </Text>
 
-          <Section style={section}>
-            <Heading style={h2}>How It Works</Heading>
-            
-            <Text style={text}>
-              • <strong>Splitwise → YNAB:</strong> Your share of expenses from Splitwise will be imported as transactions in YNAB
-            </Text>
-            
-            <Text style={text}>
-              • <strong>YNAB → Splitwise:</strong> Transactions with your sync emoji (default: ✅) will be created as expenses in Splitwise
-            </Text>
-            
-            <Text style={text}>
-              • <strong>Smart Matching:</strong> We prevent duplicate transactions by matching dates and amounts
-            </Text>
-          </Section>
+        <Text style={emailStyles.text}>
+          <strong>Step 1: Configure Your YNAB Connection</strong>
+          <br />
+          • Select which YNAB budget to use for syncing
+          <br />
+          • Choose or create a &quot;Splitwise&quot; account in YNAB (this
+          tracks your balance)
+          <br />
+          • Set your manual flag color (you&apos;ll use this to mark
+          transactions for syncing)
+          <br />• Set your synced flag color (we&apos;ll change flags to this
+          after processing)
+        </Text>
 
-          <Hr style={hr} />
+        <Text style={emailStyles.text}>
+          <strong>Step 2: Configure Your Splitwise Connection</strong>
+          <br />
+          • Select which Splitwise group to sync with
+          <br />
+          • Set your currency (we&apos;ll match your group&apos;s currency)
+          <br />
+          • Choose your sync emoji (default: ✅) - this marks expenses you
+          create
+          <br />
+          • Set your default split ratio (usually 1:1 for equal splits)
+          <br />• Choose how transaction payee names appear in YNAB
+        </Text>
 
-          <Section style={section}>
-            <Heading style={h2}>Need Help?</Heading>
-            
-            <Text style={text}>
-              Check out our <Link href={`${baseUrl}/help`} style={link}>help documentation</Link> or reply to this email if you have any questions.
-            </Text>
-            
-            <Text style={text}>
-              We're here to help make expense sharing with YNAB as smooth as possible!
-            </Text>
-          </Section>
+        <Text style={emailStyles.text}>
+          <strong>Step 3: Start Syncing!</strong>
+          <br />
+          Once configured, you can flag transactions in YNAB or create expenses
+          in Splitwise, and we&apos;ll sync them automatically.
+        </Text>
+      </Section>
 
-          <Hr style={hr} />
+      <Section
+        style={{ ...emailStyles.buttonSection, textAlign: "center" as const }}
+      >
+        <Button style={emailStyles.button} href={`${baseUrl}/dashboard`}>
+          Complete Setup Now
+        </Button>
+      </Section>
 
-          <Text style={footer}>
-            This email was sent to {userEmail} because you connected your Splitwise account to Splitwise for YNAB.
-          </Text>
-          
-          <Text style={footer}>
-            <Link href={`${baseUrl}/settings`} style={link}>
-              Manage email preferences
-            </Link>
-            {" · "}
-            <Link href={`${baseUrl}/privacy`} style={link}>
-              Privacy Policy
-            </Link>
-          </Text>
-        </Container>
-      </Body>
-    </Html>
+      <Section style={emailStyles.section}>
+        <Heading style={emailStyles.h2}>How It Works</Heading>
+
+        <Text style={emailStyles.text}>
+          Our system creates a <strong>Splitwise cash account</strong> in YNAB
+          to track your balance. Here&apos;s how the magic happens:
+        </Text>
+
+        <Text style={emailStyles.text}>
+          <strong>YNAB → Splitwise Sync:</strong>
+          <br />
+          • Flag any transaction in YNAB with your chosen color
+          <br />
+          • We&apos;ll create a matching expense in your Splitwise group
+          <br />
+          • An adjustment transaction flows back to your Splitwise account
+          <br />• Your YNAB categories show only your share of the expense
+        </Text>
+
+        <Text style={emailStyles.text}>
+          <strong>Splitwise → YNAB Sync:</strong>
+          <br />
+          • When expenses are added to your Splitwise group
+          <br />
+          • We&apos;ll import your share as transactions in YNAB
+          <br />
+          • They&apos;ll be categorized and balanced against your Splitwise
+          account
+          <br />
+        </Text>
+
+        <Text style={emailStyles.text}>
+          <strong>The Balance System:</strong>
+          <br />• <strong>Positive balance:</strong> Your partner owes you money
+          <br />• <strong>Negative balance:</strong> You owe money to your
+          partner
+          <br />• <strong>Settlement:</strong> Transfer money between accounts
+          when you settle up
+        </Text>
+      </Section>
+
+      <Section style={emailStyles.section}>
+        <Heading style={emailStyles.h2}>Sync Timing</Heading>
+
+        <Text style={emailStyles.text}>
+          We automatically sync your data once daily at{" "}
+          <strong>1:00 PM Eastern (10:00 AM Pacific)</strong>. This catches any
+          new expenses or transactions from both apps.
+        </Text>
+
+        <Text style={emailStyles.text}>
+          Need to sync right away? Use the <strong>&quot;Sync Now&quot;</strong>{" "}
+          button on your dashboard. You can manually sync up to{" "}
+          <strong>2 times every 120 minutes</strong>.
+        </Text>
+      </Section>
+
+      <Section style={emailStyles.section}>
+        <Heading style={emailStyles.h2}>Pro Tips</Heading>
+        <Text style={emailStyles.text}>
+          • <strong>Start Small:</strong> Try flagging one transaction after
+          setup to see how it works <br />• <strong>Custom Splits:</strong> For
+          one-off expenses that don&apos;t fit your default split ratio, add the
+          expense directly in Splitwise with your preferred ratio <br />•{" "}
+          <strong>Reimbursements:</strong> When you pay for something entirely
+          for your partner, create a Splitwise expense where you&apos;re owed
+          the full amount <br />• <strong>Watch Your Balance:</strong> The
+          dollars in your Splitwise account aren&apos;t spendable until you
+          settle up <br />
+        </Text>
+      </Section>
+
+      <HelpSection message="Questions about setup? We're here to help you get the most out of automated expense sharing!" />
+
+      <EmailFooter reason="because you signed up for Splitwise for YNAB and recently connected your Splitwise account" />
+    </EmailLayout>
   );
 };
 
 WelcomeEmail.PreviewProps = {
   userName: "John",
-  userEmail: "john@example.com",
 } as WelcomeEmailProps;
 
 export default WelcomeEmail;
-
-// Styles
-const main = {
-  backgroundColor: "#f6f9fc",
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-};
-
-const container = {
-  backgroundColor: "#ffffff",
-  margin: "0 auto",
-  padding: "20px 0 48px",
-  marginBottom: "64px",
-  maxWidth: "600px",
-};
-
-const h1 = {
-  color: "#333",
-  fontSize: "24px",
-  fontWeight: "600",
-  lineHeight: "40px",
-  margin: "30px 0",
-  padding: "0 20px",
-  textAlign: "center" as const,
-};
-
-const h2 = {
-  color: "#333",
-  fontSize: "20px",
-  fontWeight: "600",
-  lineHeight: "28px",
-  margin: "25px 0 15px",
-  padding: "0",
-};
-
-const text = {
-  color: "#333",
-  fontSize: "16px",
-  lineHeight: "26px",
-  margin: "16px 0",
-};
-
-const section = {
-  padding: "0 20px",
-};
-
-const buttonSection = {
-  textAlign: "center" as const,
-  margin: "30px 0",
-};
-
-const button = {
-  backgroundColor: "#5469d4",
-  borderRadius: "5px",
-  color: "#fff",
-  fontSize: "16px",
-  fontWeight: "600",
-  textDecoration: "none",
-  textAlign: "center" as const,
-  display: "inline-block",
-  padding: "12px 24px",
-};
-
-const link = {
-  color: "#5469d4",
-  textDecoration: "underline",
-};
-
-const hr = {
-  borderColor: "#e6ebf1",
-  margin: "40px 0",
-};
-
-const footer = {
-  color: "#8898aa",
-  fontSize: "14px",
-  lineHeight: "20px",
-  margin: "16px 0",
-  textAlign: "center" as const,
-  padding: "0 20px",
-};

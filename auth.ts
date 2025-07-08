@@ -48,6 +48,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return {
           id: profile.user.id.toString(),
           email: profile.user.email,
+          firstName: profile.user.first_name,
+          lastName: profile.user.last_name,
           name: `${profile.user.first_name} ${profile.user.last_name}`,
           image: profile.user.picture.medium,
         };

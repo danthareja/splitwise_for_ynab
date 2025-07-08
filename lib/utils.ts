@@ -6,6 +6,31 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Get the user's first name with fallback logic
+ * @param user - User object or object with name-related fields
+ * @returns The user's first name or undefined if not available
+ */
+export function getUserFirstName(
+  user?: {
+    firstName?: string | null;
+    name?: string | null;
+  } | null,
+): string | undefined {
+  if (!user) return undefined;
+
+  // Use firstName if available
+  if (user.firstName) return user.firstName;
+
+  // Fall back to splitting the name field
+  if (user.name) {
+    const firstNameFromSplit = user.name.split(" ")[0];
+    return firstNameFromSplit || undefined;
+  }
+
+  return undefined;
+}
+
+/**
  * Format a currency amount using the user's locale and the specified currency code
  * @param amount - The amount to format (negative values will be shown as positive)
  * @param currencyCode - ISO currency code (e.g., 'USD', 'EUR', 'CAD')
@@ -102,4 +127,31 @@ export function formatTimeAgo(date: Date | string, locale = "en"): string {
 
   const days = Math.floor(diffInSeconds / 86400);
   return rtf.format(-days, "day");
+}
+
+/**
+ * Strip emojis from a string
+ * @param string - The string to strip emojis from
+ * @returns The string with emojis removed
+ */
+export function stripEmojis(string: string) {
+  return string.replace(/\p{Extended_Pictographic}/gu, "");
+}
+
+/**
+ * Pluralize a word based on count
+ * @param count - The number to check for pluralization
+ * @param singular - The singular form of the word
+ * @param plural - The plural form of the word (optional, defaults to singular + 's')
+ * @returns The correctly pluralized word
+ */
+export function pluralize(
+  count: number,
+  singular: string,
+  plural?: string,
+): string {
+  if (count === 1) {
+    return singular;
+  }
+  return plural || `${singular}s`;
 }

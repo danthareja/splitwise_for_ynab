@@ -19,6 +19,7 @@ import type { Metadata } from "next";
 import { MAX_REQUESTS, WINDOW_SECONDS } from "@/lib/rate-limit";
 import { redirect } from "next/navigation";
 import { DisabledAccountAlert } from "@/components/disabled-account-alert";
+import { getUserFirstName } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Dashboard - Manage Your YNAB & Splitwise Integration",
@@ -78,8 +79,8 @@ export default async function DashboardPage() {
       <main className="flex-1">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold mb-6">
-            {user.name
-              ? `Welcome back, ${user.name.split(" ")[0]}!`
+            {getUserFirstName(user)
+              ? `Welcome back, ${getUserFirstName(user)}!`
               : "Welcome!"}
           </h1>
 
@@ -140,11 +141,11 @@ export default async function DashboardPage() {
           <div className="mt-8 border rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Recent Activity</h2>
-              {isFullyConfigured && !user.disabled && <ManualSyncButton />}
+              {isFullyConfigured && <ManualSyncButton />}
             </div>
 
             {/* Scheduled Sync Info for fully configured users */}
-            {isFullyConfigured && !user.disabled && <ScheduledSyncInfo />}
+            {isFullyConfigured && <ScheduledSyncInfo />}
 
             {syncHistory && syncHistory.length > 0 ? (
               <SyncHistory

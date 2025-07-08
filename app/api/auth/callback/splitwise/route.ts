@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/db";
 import { sendWelcomeEmail } from "@/services/email";
+import { getUserFirstName } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   // Extract the authorization code from the query parameters
@@ -117,6 +118,8 @@ export async function GET(request: NextRequest) {
   await prisma.user.update({
     where: { id: session.user.id },
     data: {
+      firstName: userData.user.first_name,
+      lastName: userData.user.last_name,
       name: `${userData.user.first_name} ${userData.user.last_name}`,
       email: userData.user.email,
       image: userData.user.picture?.medium,
@@ -127,7 +130,7 @@ export async function GET(request: NextRequest) {
   if (!existingAccount && !existingSettings && userData.user.email) {
     await sendWelcomeEmail({
       to: userData.user.email,
-      userName: `${userData.user.first_name}`,
+      userName: getUserFirstName(userData.user),
     });
   }
 

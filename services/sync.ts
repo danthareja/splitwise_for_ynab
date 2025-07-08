@@ -1,13 +1,20 @@
 import * as Sentry from "@sentry/nextjs";
 import type { SyncedItem } from "@prisma/client";
 import { prisma } from "@/db";
+import { stripEmojis } from "@/lib/utils";
+import { YNABError } from "./ynab-axios";
 import { SyncStateFactory } from "./sync-state";
 import { YNABService } from "./ynab";
 import { SplitwiseService } from "./splitwise";
 import { processLatestExpenses, processLatestTransactions } from "./glue";
 import type { YNABTransaction } from "@/types/ynab";
 import type { SplitwiseExpense } from "@/types/splitwise";
-import { YNABError } from "./ynab-axios";
+import {
+  sendSyncPartialEmail,
+  sendSyncErrorEmail,
+  sendSyncErrorRequiresActionEmail,
+} from "./email";
+import { getUserFirstName } from "@/lib/utils";
 
 interface SyncResult {
   success: boolean;
@@ -418,6 +425,16 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
       },
     });
 
+    if (syncStatus === "partial") {
+      await sendSyncPartialEmail({
+        to: user.email || "support@splitwiseforynab.com",
+        userName: getUserFirstName(user),
+        failedExpenses: createdFailedExpenseItems,
+        failedTransactions: createdFailedTransactionItems,
+        currencyCode: user.splitwiseSettings.currencyCode,
+      });
+    }
+
     console.log(`🏆 Single user sync complete for ${user.email || user.id}:`);
 
     return {
@@ -430,15 +447,10 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
       syncedExpenses: [...createdExpenseItems, ...createdFailedExpenseItems],
     };
   } catch (error) {
-    console.error("Sync error:", error);
-    Sentry.captureException(error);
-
-    // Check if this is a YNAB error that requires action
     if (error instanceof YNABError && error.requires_action) {
       console.log(`🚨 YNAB error requires action: ${error.message}`);
-      
-      // Disable the user account
-      await prisma.user.update({
+
+      const user = await prisma.user.update({
         where: { id: userId },
         data: {
           disabled: true,
@@ -446,6 +458,26 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
           disabledReason: error.message,
           suggestedFix: error.suggestedFix,
         },
+      });
+
+      await sendSyncErrorRequiresActionEmail({
+        to: user.email || "support@splitwiseforynab.com",
+        userName: getUserFirstName(user),
+        errorMessage: error.message,
+        suggestedFix: error.suggestedFix || "Please contact support",
+      });
+    } else {
+      console.error("Sync error:", error);
+      Sentry.captureException(error);
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      await sendSyncErrorEmail({
+        to: user?.email || "support@splitwiseforynab.com",
+        userName: getUserFirstName(user),
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
       });
     }
 
@@ -861,9 +893,19 @@ async function syncUserPhase(
       );
 
       // Determine sync status for the final phase
-      const hasFailures = failedExpenses.length > 0;
-      const hasSuccesses = successfulExpenses.length > 0;
-      const syncStatus = hasFailures && hasSuccesses ? "partial" : "success";
+      const createdFailedTransactionItems = createdTransactionItems.filter(
+        (item) => item.status === "error",
+      );
+      const createdFailedExpenseItems = createdExpenseItems.filter(
+        (item) => item.status === "error",
+      );
+
+      // Determine sync status
+      const syncStatus =
+        createdFailedTransactionItems.length > 0 ||
+        createdFailedExpenseItems.length > 0
+          ? "partial"
+          : "success";
 
       // Update sync history to completed only after the final phase
       await prisma.syncHistory.update({
@@ -873,6 +915,16 @@ async function syncUserPhase(
           completedAt: new Date(),
         },
       });
+
+      if (syncStatus === "partial") {
+        await sendSyncPartialEmail({
+          to: user.email || "support@splitwiseforynab.com",
+          userName: getUserFirstName(user),
+          failedExpenses: createdFailedExpenseItems,
+          failedTransactions: createdFailedTransactionItems,
+          currencyCode: user.splitwiseSettings.currencyCode,
+        });
+      }
     }
 
     return {
@@ -882,15 +934,11 @@ async function syncUserPhase(
       syncedExpenses: createdExpenseItems,
     };
   } catch (error) {
-    console.error(`Sync error for user ${userId}, phase ${phase}:`, error);
-    Sentry.captureException(error);
-
     // Check if this is a YNAB error that requires action
     if (error instanceof YNABError && error.requires_action) {
       console.log(`🚨 YNAB error requires action: ${error.message}`);
-      
-      // Disable the user account
-      await prisma.user.update({
+
+      const user = await prisma.user.update({
         where: { id: userId },
         data: {
           disabled: true,
@@ -898,6 +946,26 @@ async function syncUserPhase(
           disabledReason: error.message,
           suggestedFix: error.suggestedFix,
         },
+      });
+
+      await sendSyncErrorRequiresActionEmail({
+        to: user.email || "support@splitwiseforynab.com",
+        userName: getUserFirstName(user),
+        errorMessage: error.message,
+        suggestedFix: error.suggestedFix || "Please contact support",
+      });
+    } else {
+      console.error(`Sync error for user ${userId}, phase ${phase}:`, error);
+      Sentry.captureException(error);
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      await sendSyncErrorEmail({
+        to: user?.email || "support@splitwiseforynab.com",
+        userName: getUserFirstName(user),
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
       });
     }
 
@@ -941,8 +1009,10 @@ function createSyncItemData(
       ? transaction.amount / 1000
       : splitwiseService!.toYNABAmount(expense) / 1000,
     description: isTransaction
-      ? transaction.payee_name || transaction.memo || "Unknown transaction"
-      : expense.description || "Unknown expense",
+      ? stripEmojis(
+          transaction.payee_name || transaction.memo || "Unknown transaction",
+        )
+      : stripEmojis(expense.description || "Unknown expense"),
     date: isTransaction
       ? transaction.date!.split("T")[0] || transaction.date!
       : expense.date!.split("T")[0] || expense.date!,

@@ -8,6 +8,7 @@ import { prisma } from "@/db"; // Declare the prisma variable
 import { enforcePerUserRateLimit } from "@/services/rate-limit";
 import { getRateLimitOptions } from "@/lib/rate-limit";
 import { Prisma } from "@prisma/client";
+import { isUserFullyConfigured } from "./db";
 
 export async function syncUserDataAction() {
   const session = await auth();
@@ -16,6 +17,25 @@ export async function syncUserDataAction() {
     return {
       success: false,
       error: "You must be logged in to sync data",
+    };
+  }
+
+  const isFullyConfigured = await isUserFullyConfigured(session.user.id);
+  if (!isFullyConfigured) {
+    return {
+      success: false,
+      error:
+        "You must complete your Splitwise and YNAB configuration before syncing",
+    };
+  }
+
+  if (session.user.disabled) {
+    return {
+      success: false,
+      error:
+        session.user.suggestedFix ||
+        session.user.disabledReason ||
+        "Your account has been disabled",
     };
   }
 

@@ -1,12 +1,18 @@
 import { Resend } from "resend";
+import { render } from "@react-email/render";
 import * as Sentry from "@sentry/nextjs";
-// import { WelcomeEmail } from '@/emails/welcome';
+import { WelcomeEmail, WelcomeEmailProps } from "@/emails/welcome";
+import { SyncErrorEmail, SyncErrorEmailProps } from "@/emails/sync-error";
+import {
+  SyncErrorRequiresActionEmail,
+  SyncErrorRequiresActionEmailProps,
+} from "@/emails/sync-error-requires-action";
+import SyncPartialEmail, { SyncPartialEmailProps } from "@/emails/sync-partial";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-interface SendWelcomeEmailParams {
+interface SendWelcomeEmailParams extends WelcomeEmailProps {
   to: string;
-  userName?: string;
 }
 
 export async function sendWelcomeEmail({
@@ -14,24 +20,122 @@ export async function sendWelcomeEmail({
   userName,
 }: SendWelcomeEmailParams) {
   const { data, error } = await resend.emails.send({
-    from: "Dan Thareja <dan@splitwiseforynab.com>",
+    from: "Splitwise for YNAB <support@splitwiseforynab.com>",
     to: [to],
-    subject: "How's it going with Splitwise for YNAB?",
-    scheduledAt: "in 24 hours",
-    // react: WelcomeEmail({ userEmail: to, userName }),
-    text: `Hi ${userName || "there"},
+    subject: "Welcome to Splitwise for YNAB!",
+    react: WelcomeEmail({ userName }),
+    text: await render(WelcomeEmail({ userName }), {
+      plainText: true,
+    }),
+  });
 
-I hope you're enjoying Splitwise for YNAB! I wanted to reach out personally to see how things are going with your setup.
+  if (error) {
+    Sentry.captureException(error);
+    console.error(error);
+  }
 
-How's your experience been so far? If you're running into any issues or have questions about getting the most out of the integration, I'm here to help.
+  return data;
+}
 
-Also curious - how did you hear about us?
+interface SendSyncErrorEmailParams extends SyncErrorEmailProps {
+  to: string;
+}
 
-Always happy to help or just hear how it's going.
+export async function sendSyncErrorEmail({
+  to,
+  userName,
+  errorMessage,
+}: SendSyncErrorEmailParams) {
+  const { data, error } = await resend.emails.send({
+    from: "Splitwise for YNAB <support@splitwiseforynab.com>",
+    to: [to],
+    subject: "Your recent sync failed",
+    react: SyncErrorEmail({ userName, errorMessage }),
+    text: await render(SyncErrorEmail({ userName, errorMessage }), {
+      plainText: true,
+    }),
+  });
 
-Best,
-Dan Thareja
-Founder, Splitwise for YNAB`,
+  if (error) {
+    Sentry.captureException(error);
+    console.error(error);
+  }
+
+  return data;
+}
+
+interface SendSyncErrorRequiresActionEmailParams
+  extends SyncErrorRequiresActionEmailProps {
+  to: string;
+}
+
+export async function sendSyncErrorRequiresActionEmail({
+  to,
+  userName,
+  errorMessage,
+  suggestedFix,
+}: SendSyncErrorRequiresActionEmailParams) {
+  const { data, error } = await resend.emails.send({
+    from: "Splitwise for YNAB <support@splitwiseforynab.com>",
+    to: [to],
+    subject: "[ACTION REQUIRED] Your account has temporarily been disabled",
+    react: SyncErrorRequiresActionEmail({
+      userName,
+      errorMessage,
+      suggestedFix,
+    }),
+    text: await render(
+      SyncErrorRequiresActionEmail({
+        userName,
+        errorMessage,
+        suggestedFix,
+      }),
+      {
+        plainText: true,
+      },
+    ),
+  });
+
+  if (error) {
+    Sentry.captureException(error);
+    console.error(error);
+  }
+
+  return data;
+}
+
+interface SendSyncPartialEmailParams extends SyncPartialEmailProps {
+  to: string;
+}
+
+export async function sendSyncPartialEmail({
+  to,
+  userName,
+  failedExpenses,
+  failedTransactions,
+  currencyCode,
+}: SendSyncPartialEmailParams) {
+  const { data, error } = await resend.emails.send({
+    from: "Splitwise for YNAB <support@splitwiseforynab.com>",
+    to: [to],
+    subject: "Your recent sync completed with some errors",
+    react: SyncPartialEmail({
+      userName,
+      failedExpenses,
+      failedTransactions,
+      currencyCode,
+    }),
+    text: await render(
+      SyncPartialEmail({
+        userName,
+        failedExpenses,
+        failedTransactions,
+        currencyCode,
+      }),
+      {
+        plainText: true,
+      },
+    ),
   });
 
   if (error) {

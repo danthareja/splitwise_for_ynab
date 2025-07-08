@@ -12,6 +12,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:6969/test
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
 
     services:
       postgres:
