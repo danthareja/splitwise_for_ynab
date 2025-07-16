@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/db";
 import { sendWelcomeEmail } from "@/services/email";
-import { getUserFirstName } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   // Extract the authorization code from the query parameters
@@ -130,7 +129,7 @@ export async function GET(request: NextRequest) {
   if (!existingAccount && !existingSettings && userData.user.email) {
     await sendWelcomeEmail({
       to: userData.user.email,
-      userName: getUserFirstName(userData.user),
+      userName: userData.user.first_name,
     });
   }
 
