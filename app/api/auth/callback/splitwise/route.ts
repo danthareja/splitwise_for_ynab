@@ -119,7 +119,9 @@ export async function GET(request: NextRequest) {
     data: {
       firstName: userData.user.first_name,
       lastName: userData.user.last_name,
-      name: `${userData.user.first_name} ${userData.user.last_name}`,
+      name: userData.user.last_name
+        ? `${userData.user.first_name} ${userData.user.last_name}`
+        : userData.user.first_name,
       email: userData.user.email,
       image: userData.user.picture?.medium,
     },
