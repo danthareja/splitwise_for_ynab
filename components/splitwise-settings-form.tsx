@@ -607,7 +607,7 @@ export function SplitwiseSettingsForm({
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="description" id="description" />
                 <Label htmlFor="description" className="text-sm font-normal">
-                  Use Splitwise description as YNAB payee name
+                  Use Splitwise description as YNAB payee name (recommended)
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
