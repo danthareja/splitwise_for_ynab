@@ -3,6 +3,7 @@ import { SplitwiseService } from "@/services/splitwise";
 import type { YNABTransaction } from "@/types/ynab";
 import type { SplitwiseExpense } from "@/types/splitwise";
 import { YNABBadRequestError } from "./ynab-axios";
+import { SplitwiseBadRequestError } from "./splitwise-axios";
 
 export async function processLatestExpenses(
   ynab: YNABService,
@@ -91,7 +92,7 @@ export async function processLatestTransactions(
   );
 
   const successful = [];
-  const failed = []; // TODO: Implement failed transactions from Splitwise API
+  const failed = [];
 
   for (const [index, transaction] of transactions.entries()) {
     console.log(
@@ -114,7 +115,12 @@ export async function processLatestTransactions(
       console.error(
         `❌ [processLatestTransactions] Error processing transaction ${transaction.id}: ${error instanceof Error ? error.message : String(error)}`,
       );
-      throw error;
+
+      if (error instanceof SplitwiseBadRequestError) {
+        failed.push({ transaction, error });
+      } else {
+        throw error;
+      }
     }
   }
 
@@ -123,5 +129,5 @@ export async function processLatestTransactions(
     `✅ [processLatestTransactions] Complete! Processed ${transactions.length} transactions. ${successful.length} successful, ${failed.length} failed`,
   );
 
-  return { successful, failed: [] }; // TODO: Implement failed transactions from YNAB API
+  return { successful, failed: [] };
 }
