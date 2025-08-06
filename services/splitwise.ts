@@ -53,14 +53,18 @@ export class SplitwiseService {
     this.useDescriptionAsPayee = useDescriptionAsPayee;
     this.customPayeeName = customPayeeName;
 
-    this.axios = createSplitwiseAxios({ accessToken: apiKey });
+    this.axios = createSplitwiseAxios({
+      accessToken: apiKey,
+    });
   }
 
   static async validateApiKey(apiKey: string) {
     try {
       const axiosInstance = createSplitwiseAxios({ accessToken: apiKey });
 
-      const response = await axiosInstance.get("/get_current_user");
+      const response = await axiosInstance.get("/get_current_user", {
+        _operation: "validate API key",
+      });
       return {
         success: true,
         user: response.data.user,
@@ -87,12 +91,18 @@ export class SplitwiseService {
 
     // For equal splits, use the simpler API
     if (userShares === partnerShares) {
-      const res = await this.axios.post("/create_expense", {
-        currency_code: this.currencyCode,
-        group_id: this.groupId,
-        split_equally: true,
-        ...data,
-      });
+      const res = await this.axios.post(
+        "/create_expense",
+        {
+          currency_code: this.currencyCode,
+          group_id: this.groupId,
+          split_equally: true,
+          ...data,
+        },
+        {
+          _operation: "create expense (equal split)",
+        },
+      );
 
       return res.data.expenses[0] as SplitwiseExpense;
     }
@@ -131,7 +141,9 @@ export class SplitwiseService {
       ...data,
     };
 
-    const res = await this.axios.post("/create_expense", expensePayload);
+    const res = await this.axios.post("/create_expense", expensePayload, {
+      _operation: "create expense (custom split)",
+    });
     return res.data.expenses[0] as SplitwiseExpense;
   }
 
@@ -146,7 +158,9 @@ export class SplitwiseService {
   }
 
   private async getGroupMembers(): Promise<SplitwiseMember[]> {
-    const res = await this.axios.get(`/get_group/${this.groupId}`);
+    const res = await this.axios.get(`/get_group/${this.groupId}`, {
+      _operation: "get group members",
+    });
     return res.data.group.members as SplitwiseMember[];
   }
 
@@ -157,6 +171,7 @@ export class SplitwiseService {
         updated_after,
         limit: 50,
       },
+      _operation: "get unprocessed expenses",
     });
 
     return (res.data.expenses as SplitwiseExpense[]).filter((expense) =>
@@ -165,9 +180,15 @@ export class SplitwiseService {
   }
 
   async markExpenseProcessed(expense: SplitwiseExpense) {
-    await this.axios.post(`/update_expense/${expense.id}`, {
-      description: `${this.knownEmoji}${expense.description}`,
-    });
+    await this.axios.post(
+      `/update_expense/${expense.id}`,
+      {
+        description: `${this.knownEmoji}${expense.description}`,
+      },
+      {
+        _operation: "mark expense as processed",
+      },
+    );
   }
 
   isExpenseUnprocessed(expense: SplitwiseExpense) {
@@ -247,10 +268,6 @@ export class SplitwiseService {
   }
 
   toYNABTransactionWithCustomPayee(expense: SplitwiseExpense) {
-    console.log(
-      ">>>>>>>>>>>>>>>>>>>>>>>> toYNABTransactionWithCustomPayee",
-      this.customPayeeName,
-    );
     let memo = this.stripEmojis(expense.description);
 
     if (expense.details) {

@@ -3,6 +3,7 @@ import type { SyncedItem } from "@prisma/client";
 import { prisma } from "@/db";
 import { stripEmojis } from "@/lib/utils";
 import { YNABError } from "./ynab-axios";
+import { SplitwiseError } from "./splitwise-axios";
 import { SyncStateFactory } from "./sync-state";
 import { YNABService } from "./ynab";
 import { SplitwiseService } from "./splitwise";
@@ -447,8 +448,13 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
       syncedExpenses: [...createdExpenseItems, ...createdFailedExpenseItems],
     };
   } catch (error) {
-    if (error instanceof YNABError && error.requires_action) {
-      console.log(`🚨 YNAB error requires action: ${error.message}`);
+    if (
+      (error instanceof YNABError && error.requires_action) ||
+      (error instanceof SplitwiseError && error.requires_action)
+    ) {
+      console.log(
+        `🚨 ${error instanceof YNABError ? "YNAB" : "Splitwise"} error requires action: ${error.message}`,
+      );
 
       const user = await prisma.user.update({
         where: { id: userId },
@@ -934,9 +940,13 @@ async function syncUserPhase(
       syncedExpenses: createdExpenseItems,
     };
   } catch (error) {
-    // Check if this is a YNAB error that requires action
-    if (error instanceof YNABError && error.requires_action) {
-      console.log(`🚨 YNAB error requires action: ${error.message}`);
+    if (
+      (error instanceof YNABError && error.requires_action) ||
+      (error instanceof SplitwiseError && error.requires_action)
+    ) {
+      console.log(
+        `🚨 ${error instanceof YNABError ? "YNAB" : "Splitwise"} error requires action: ${error.message}`,
+      );
 
       const user = await prisma.user.update({
         where: { id: userId },

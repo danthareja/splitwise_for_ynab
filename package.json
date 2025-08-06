@@ -12,7 +12,8 @@
     "postinstall": "prisma generate --no-engine",
     "test": "vitest",
     "test:run": "vitest run",
-    "email": "email dev"
+    "email": "email dev",
+    "script:impersonate": "npx tsx scripts/impersonate-user.ts"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown",
