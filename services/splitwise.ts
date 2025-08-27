@@ -100,7 +100,7 @@ export class SplitwiseService {
           ...data,
         },
         {
-          _operation: "create expense (equal split)",
+          _operation: `create expense (equal split) for amount ${data.cost}`,
         },
       );
 
@@ -142,8 +142,9 @@ export class SplitwiseService {
     };
 
     const res = await this.axios.post("/create_expense", expensePayload, {
-      _operation: "create expense (custom split)",
+      _operation: `create expense (custom split) for amount ${data.cost}`,
     });
+
     return res.data.expenses[0] as SplitwiseExpense;
   }
 

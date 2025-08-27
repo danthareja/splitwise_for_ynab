@@ -117,6 +117,7 @@ export async function processLatestTransactions(
       );
 
       if (error instanceof SplitwiseBadRequestError) {
+        console.error(error);
         failed.push({ transaction, error });
       } else {
         throw error;
@@ -129,5 +130,5 @@ export async function processLatestTransactions(
     `✅ [processLatestTransactions] Complete! Processed ${transactions.length} transactions. ${successful.length} successful, ${failed.length} failed`,
   );
 
-  return { successful, failed: [] };
+  return { successful, failed };
 }

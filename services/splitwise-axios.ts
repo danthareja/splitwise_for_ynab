@@ -1,4 +1,8 @@
-import axios, { type AxiosInstance, type AxiosError } from "axios";
+import axios, {
+  type AxiosInstance,
+  type AxiosError,
+  AxiosResponse,
+} from "axios";
 import axiosRetry, { isNetworkOrIdempotentRequestError } from "axios-retry";
 
 declare module "axios" {
@@ -33,11 +37,33 @@ export function createSplitwiseAxios({
   });
 
   axiosInstance.interceptors.response.use(
-    (response) => response,
+    createSuccessInterceptor(),
     createErrorInterceptor(),
   );
 
   return axiosInstance;
+}
+
+function createSuccessInterceptor() {
+  return async (response: AxiosResponse) => {
+    if (response.data.errors && Object.keys(response.data.errors).length > 0) {
+      const splitwiseError = new SplitwiseBadRequestError(
+        {
+          response: {
+            data: response.data,
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
+            config: response.config,
+          },
+        } as AxiosError,
+        response.config?._operation || "do operation",
+      );
+      return Promise.reject(splitwiseError);
+    }
+
+    return response;
+  };
 }
 
 function createErrorInterceptor() {
@@ -101,10 +127,17 @@ interface SplitwiseNotFoundResponse {
   };
 }
 
+interface SplitwiseCreateExpenseErrorResponse {
+  errors: {
+    base: string[];
+  };
+}
+
 type SplitwiseErrorResponse =
   | SplitwiseUnauthorizedResponse
   | SplitwiseForbiddenResponse
   | SplitwiseNotFoundResponse
+  | SplitwiseCreateExpenseErrorResponse
   | Record<string, unknown>;
 
 export abstract class SplitwiseError extends Error {
@@ -158,6 +191,23 @@ export abstract class SplitwiseError extends Error {
           : notFoundResponse.errors.base;
         return `Splitwise can't ${operation}: ${errorMessage}`;
       }
+    }
+
+    if (statusCode === 200 && responseData && "errors" in responseData) {
+      const createExpenseErrorResponse =
+        responseData as SplitwiseCreateExpenseErrorResponse;
+      if (createExpenseErrorResponse.errors?.base) {
+        const errorMessage = Array.isArray(
+          createExpenseErrorResponse.errors.base,
+        )
+          ? createExpenseErrorResponse.errors.base.join(", ")
+          : createExpenseErrorResponse.errors.base;
+        return `Splitwise can't ${operation}: ${errorMessage}`;
+      }
+
+      return `Splitwise can't ${operation}: ${JSON.stringify(
+        createExpenseErrorResponse.errors,
+      )}`;
     }
 
     return `Splitwise can't ${operation}`;
