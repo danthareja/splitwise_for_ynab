@@ -40,12 +40,12 @@ describe("services/glue", () => {
         mockExpenses,
       );
       vi.mocked(splitwiseService.toYNABTransaction).mockImplementation(
-        (expense) =>
-          ({
-            amount: -12750,
-            payee_name: expense.description,
-            date: expense.date,
-          }) as Partial<YNABTransaction>,
+        (expense) => ({
+          amount: -12750,
+          payee_name: expense.description,
+          memo: expense.details,
+          date: expense.date,
+        }),
       );
       vi.mocked(ynabService.createTransaction).mockResolvedValue({});
       vi.mocked(splitwiseService.markExpenseProcessed).mockResolvedValue();
@@ -86,19 +86,19 @@ describe("services/glue", () => {
         mockExpenses,
       );
       vi.mocked(splitwiseService.toYNABTransaction).mockImplementation(
-        (expense) =>
-          ({
-            amount: -12750,
-            payee_name: expense.description,
-            date: expense.date,
-          }) as Partial<YNABTransaction>,
+        (expense) => ({
+          amount: -12750,
+          payee_name: expense.description,
+          memo: expense.details,
+          date: expense.date,
+        }),
       );
 
       // First expense succeeds, second fails
       vi.mocked(ynabService.createTransaction)
         .mockResolvedValueOnce({})
         .mockRejectedValueOnce(
-          new YNABBadRequestError("Invalid payee name", {}, false),
+          new YNABBadRequestError({} as any, "Invalid payee name"),
         );
 
       vi.mocked(splitwiseService.markExpenseProcessed).mockResolvedValue();
@@ -134,12 +134,12 @@ describe("services/glue", () => {
         mockExpenses,
       );
       vi.mocked(splitwiseService.toYNABTransaction).mockImplementation(
-        (expense) =>
-          ({
-            amount: -12750,
-            payee_name: expense.description,
-            date: expense.date,
-          }) as Partial<YNABTransaction>,
+        (expense) => ({
+          amount: -12750,
+          payee_name: expense.description,
+          memo: expense.details,
+          date: expense.date,
+        }),
       );
 
       // Throw a network error
@@ -197,12 +197,12 @@ describe("services/glue", () => {
         serverKnowledge: 150,
       });
       vi.mocked(ynabService.toSplitwiseExpense).mockImplementation(
-        (transaction) =>
-          ({
-            cost: "25.50",
-            description: transaction.payee_name,
-            date: transaction.date,
-          }) as Partial<SplitwiseExpense>,
+        (transaction) => ({
+          cost: "25.50",
+          description: transaction.payee_name || "Unknown",
+          details: transaction.memo || undefined,
+          date: transaction.date,
+        }),
       );
       vi.mocked(splitwiseService.createExpense).mockResolvedValue({
         id: 1,
@@ -247,19 +247,19 @@ describe("services/glue", () => {
         serverKnowledge: 150,
       });
       vi.mocked(ynabService.toSplitwiseExpense).mockImplementation(
-        (transaction) =>
-          ({
-            cost: "25.50",
-            description: transaction.payee_name,
-            date: transaction.date,
-          }) as Partial<SplitwiseExpense>,
+        (transaction) => ({
+          cost: "25.50",
+          description: transaction.payee_name || "Unknown",
+          details: transaction.memo || undefined,
+          date: transaction.date,
+        }),
       );
 
       // First transaction succeeds, second fails
       vi.mocked(splitwiseService.createExpense)
         .mockResolvedValueOnce({ id: 1 } as SplitwiseExpense)
         .mockRejectedValueOnce(
-          new SplitwiseBadRequestError("Invalid expense data", {}, false),
+          new SplitwiseBadRequestError({} as any, "Invalid expense data"),
         );
 
       vi.mocked(ynabService.markTransactionProcessed).mockResolvedValue({});
@@ -297,12 +297,12 @@ describe("services/glue", () => {
         serverKnowledge: 150,
       });
       vi.mocked(ynabService.toSplitwiseExpense).mockImplementation(
-        (transaction) =>
-          ({
-            cost: "25.50",
-            description: transaction.payee_name,
-            date: transaction.date,
-          }) as Partial<SplitwiseExpense>,
+        (transaction) => ({
+          cost: "25.50",
+          description: transaction.payee_name || "Unknown",
+          details: transaction.memo || undefined,
+          date: transaction.date,
+        }),
       );
 
       // Throw a network error

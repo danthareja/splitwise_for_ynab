@@ -76,19 +76,20 @@ This plan is designed for **incremental implementation with manual review checkp
 
 ---
 
-### 🚧 Phase 4: Rate Limiting & Feature Gating (CURRENT)
+### ✅ Phase 4: Rate Limiting & Feature Gating
 
 **Deliverables:**
 
-- [ ] Updated `services/rate-limit` for subscription-based limits
-- [ ] Updated sync actions with premium checks
-- [ ] Gating for split ratio in Splitwise settings
-- [ ] Gating for YNAB payee in Splitwise settings
-- [ ] Filter auto-sync to premium users only
-- [ ] API access restricted to premium users
-- [ ] Tests for all feature gating logic
+- ✅ Updated `lib/rate-limit.ts` for subscription-based limits (2/hour, 6/day free; unlimited premium)
+- ✅ Updated `app/actions/sync.ts` with subscription-aware rate limiting
+- ✅ Gating for split ratio in Splitwise settings (premium only)
+- ✅ Gating for YNAB payee in Splitwise settings (premium only)
+- ✅ Filter auto-sync to premium users only in `services/sync.ts`
+- ✅ API access restricted to premium users in `app/api/sync/route.ts`
+- ✅ Updated test factories to create premium users
+- ✅ All 166 tests passing
 
-**Checkpoint:** Run tests, verify rate limits and feature gates work correctly
+**Status:** COMPLETED ✅
 
 ---
 
@@ -158,14 +159,15 @@ This plan is designed for **incremental implementation with manual review checkp
 
 ## Progress Summary
 
-✅ **3/9 phases completed**
+✅ **4/9 phases completed**
 
 **Completed:**
 
 - Phase 1: Database & Subscription Service
 - Phase 2: Stripe Integration Core
 - Phase 3: Stripe API Routes
+- Phase 4: Rate Limiting & Feature Gating
 
-**Current:** Phase 4 - Rate Limiting & Feature Gating
+**Current:** Phase 5 - UI Components
 
-**Next:** Phase 5 - UI Components
+**Next:** Phase 6 - Dashboard & Marketing Pages

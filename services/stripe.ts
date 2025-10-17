@@ -25,7 +25,7 @@ const getStripeSecretKey = (): string => {
  * Only use this on the server side (API routes, server actions, etc.)
  */
 export const stripe = new Stripe(getStripeSecretKey(), {
-  apiVersion: "2024-11-20.acacia",
+  apiVersion: "2025-09-30.clover",
   typescript: true,
 });
 

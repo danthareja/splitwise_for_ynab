@@ -2,8 +2,9 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/db";
 import { syncAllUsers, syncUserData } from "@/services/sync";
 import { enforcePerUserRateLimit } from "@/services/rate-limit";
-import { getRateLimitOptions } from "@/lib/rate-limit";
+import { getRateLimitOptionsForUser } from "@/lib/rate-limit";
 import { isUserFullyConfigured } from "@/app/actions/db";
+import { canAccessFeature } from "@/services/subscription";
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -65,22 +66,56 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const rateLimitOpts = getRateLimitOptions();
-  const { allowed, retryAfterSeconds } = await enforcePerUserRateLimit(
-    user.id,
-    rateLimitOpts,
-  );
-
-  if (!allowed) {
+  // Check if user has API access (premium feature)
+  const hasApiAccess = await canAccessFeature(user.id, "api_access");
+  if (!hasApiAccess) {
     return Response.json(
       {
         success: false,
-        error: `You can trigger at most ${rateLimitOpts.maxRequests} manual syncs every ${rateLimitOpts.windowSeconds / 60} minutes. Try again in ${Math.ceil(retryAfterSeconds / 60)} minutes`,
+        error:
+          "API access is a Premium feature. Upgrade to Premium to use API keys for programmatic syncing.",
+        upgrade: true,
+      },
+      {
+        status: 403,
+      },
+    );
+  }
+
+  // Get subscription-aware rate limits
+  const rateLimits = await getRateLimitOptionsForUser(user.id);
+
+  // Check hourly limit
+  const hourlyCheck = await enforcePerUserRateLimit(user.id, rateLimits.hourly);
+
+  if (!hourlyCheck.allowed) {
+    return Response.json(
+      {
+        success: false,
+        error: `Hourly rate limit exceeded (${rateLimits.hourly.maxRequests} per hour). Try again in ${Math.ceil(hourlyCheck.retryAfterSeconds / 60)} minutes.`,
       },
       {
         status: 429,
         headers: {
-          "Retry-After": retryAfterSeconds.toString(),
+          "Retry-After": hourlyCheck.retryAfterSeconds.toString(),
+        },
+      },
+    );
+  }
+
+  // Check daily limit
+  const dailyCheck = await enforcePerUserRateLimit(user.id, rateLimits.daily);
+
+  if (!dailyCheck.allowed) {
+    return Response.json(
+      {
+        success: false,
+        error: `Daily rate limit exceeded (${rateLimits.daily.maxRequests} per day). Try again in ${Math.ceil(dailyCheck.retryAfterSeconds / 3600)} hours.`,
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": dailyCheck.retryAfterSeconds.toString(),
         },
       },
     );

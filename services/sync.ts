@@ -39,10 +39,15 @@ export async function syncAllUsers(): Promise<{
   errorCount: number;
   results: Record<string, SyncResult>;
 }> {
-  // Find all fully configured and enabled users
+  // Find all fully configured, enabled, and premium users
+  // Automatic sync is a premium-only feature
   const configuredUsers = await prisma.user.findMany({
     where: {
       disabled: false,
+      subscriptionTier: "premium", // Only sync premium users automatically
+      subscriptionStatus: {
+        in: ["active", "trialing"], // Only active or trialing subscriptions
+      },
       ynabSettings: {
         splitwiseAccountId: {
           not: null,
@@ -68,7 +73,9 @@ export async function syncAllUsers(): Promise<{
     },
   });
 
-  console.log(`Found ${configuredUsers.length} configured users to sync`);
+  console.log(
+    `Found ${configuredUsers.length} premium users to automatically sync`,
+  );
 
   // Group users by Splitwise group
   const groupMap = new Map<string, PairedGroup>();

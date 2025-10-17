@@ -136,20 +136,21 @@ async function handleCheckoutSessionCompleted(
   }
 
   // Get subscription details
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const subscription = (await stripe.subscriptions.retrieve(
+    subscriptionId,
+  )) as Stripe.Subscription;
 
   const updateData: any = {
     stripeCustomerId: customerId,
     stripeSubscriptionId: subscriptionId,
-    subscriptionStatus: subscription.status as any,
+    subscriptionStatus: subscription.status,
     subscriptionTier: "premium",
   };
 
   // Only set period end if it exists
-  if (subscription.current_period_end) {
-    updateData.subscriptionCurrentPeriodEnd = new Date(
-      subscription.current_period_end * 1000,
-    );
+  const currentPeriodEnd = subscription.current_period_end;
+  if (currentPeriodEnd) {
+    updateData.subscriptionCurrentPeriodEnd = new Date(currentPeriodEnd * 1000);
   }
 
   await updateUserSubscription(userId, updateData);
@@ -167,20 +168,20 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
   // Prepare update data with safety checks
   const updateData: any = {
-    subscriptionStatus: subscription.status as any,
+    subscriptionStatus: subscription.status,
   };
 
   // Only set period end if it exists
-  if (subscription.current_period_end) {
-    updateData.subscriptionCurrentPeriodEnd = new Date(
-      subscription.current_period_end * 1000,
-    );
+  const currentPeriodEnd = subscription.current_period_end;
+  if (currentPeriodEnd) {
+    updateData.subscriptionCurrentPeriodEnd = new Date(currentPeriodEnd * 1000);
   }
 
   // Only set cancel date if it exists
-  if (subscription.cancel_at !== undefined) {
-    updateData.subscriptionCanceledAt = subscription.cancel_at
-      ? new Date(subscription.cancel_at * 1000)
+  const cancelAt = subscription.cancel_at;
+  if (cancelAt !== undefined) {
+    updateData.subscriptionCanceledAt = cancelAt
+      ? new Date(cancelAt * 1000)
       : null;
   }
 
@@ -233,12 +234,17 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   console.log("Invoice payment succeeded:", invoice.id);
 
-  const subscriptionId = invoice.subscription as string;
+  const subscriptionId =
+    typeof invoice.subscription === "string"
+      ? invoice.subscription
+      : invoice.subscription?.id;
   if (!subscriptionId) {
     return;
   }
 
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const subscription = (await stripe.subscriptions.retrieve(
+    subscriptionId,
+  )) as Stripe.Subscription;
   const user = await prisma.user.findUnique({
     where: { stripeSubscriptionId: subscriptionId },
   });
@@ -249,14 +255,13 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   }
 
   const updateData: any = {
-    subscriptionStatus: subscription.status as any,
+    subscriptionStatus: subscription.status,
   };
 
   // Only set period end if it exists
-  if (subscription.current_period_end) {
-    updateData.subscriptionCurrentPeriodEnd = new Date(
-      subscription.current_period_end * 1000,
-    );
+  const currentPeriodEnd = subscription.current_period_end;
+  if (currentPeriodEnd) {
+    updateData.subscriptionCurrentPeriodEnd = new Date(currentPeriodEnd * 1000);
   }
 
   await updateUserSubscription(user.id, updateData);
@@ -270,7 +275,10 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   console.log("Invoice payment failed:", invoice.id);
 
-  const subscriptionId = invoice.subscription as string;
+  const subscriptionId =
+    typeof invoice.subscription === "string"
+      ? invoice.subscription
+      : invoice.subscription?.id;
   if (!subscriptionId) {
     return;
   }

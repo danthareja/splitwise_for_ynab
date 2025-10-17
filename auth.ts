@@ -7,6 +7,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: {
     signIn: "/auth/signin",
   },
+  callbacks: {
+    async session({ session, user }) {
+      if (session.user) {
+        // Cast user to any to access custom properties
+        const customUser = user as any;
+        session.user.id = user.id;
+        session.user.apiKey = customUser.apiKey;
+        session.user.disabled = customUser.disabled;
+        session.user.disabledReason = customUser.disabledReason;
+        session.user.suggestedFix = customUser.suggestedFix;
+        session.user.firstName = customUser.firstName;
+        session.user.lastName = customUser.lastName;
+        // Add subscription fields to session for performance
+        session.user.subscriptionTier = customUser.subscriptionTier;
+        session.user.subscriptionStatus = customUser.subscriptionStatus;
+        session.user.subscriptionCurrentPeriodEnd =
+          customUser.subscriptionCurrentPeriodEnd;
+      }
+      return session;
+    },
+  },
   providers: [
     {
       id: "ynab",

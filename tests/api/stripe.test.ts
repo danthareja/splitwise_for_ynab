@@ -123,7 +123,7 @@ describe("Stripe API Routes", () => {
 
     it("should return 401 if not authenticated", async () => {
       const { auth } = await import("@/auth");
-      vi.mocked(auth).mockResolvedValue(null);
+      vi.mocked(auth).mockResolvedValue(null as any);
 
       const request = new Request(
         "http://localhost:3000/api/stripe/create-checkout-session",
@@ -234,7 +234,7 @@ describe("Stripe API Routes", () => {
 
     it("should return 401 if not authenticated", async () => {
       const { auth } = await import("@/auth");
-      vi.mocked(auth).mockResolvedValue(null);
+      vi.mocked(auth).mockResolvedValue(null as any);
 
       const request = new Request(
         "http://localhost:3000/api/stripe/create-portal-session",

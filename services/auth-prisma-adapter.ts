@@ -144,7 +144,21 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
 
 /** @see https://www.prisma.io/docs/orm/prisma-client/special-fields-and-types/null-and-undefined */
 function stripUndefined<T>(obj: T) {
-  const data = {} as T;
-  for (const key in obj) if (obj[key] !== undefined) data[key] = obj[key];
+  const data = {} as any;
+  for (const key in obj) {
+    const value = obj[key];
+    // Skip undefined and null values (Prisma boolean fields don't accept null)
+    if (value !== undefined && value !== null) {
+      data[key] = value;
+    } else if (value === null) {
+      // For fields that can be null (like strings), we need to handle them
+      // Check if it's a field that should accept null (string fields typically do)
+      // For boolean fields, we skip them (don't set them at all)
+      const fieldName = String(key);
+      if (!fieldName.includes("disabled") && !fieldName.includes("approved")) {
+        data[key] = value;
+      }
+    }
+  }
   return { data };
 }

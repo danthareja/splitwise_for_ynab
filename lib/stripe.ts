@@ -25,6 +25,8 @@ export const getStripe = (): Promise<Stripe | null> => {
 
 /**
  * Redirect to Stripe checkout
+ * Note: redirectToCheckout is legacy but still supported in Stripe.js
+ * Modern approach would be to redirect directly to the checkout URL from the session
  */
 export async function redirectToCheckout(sessionId: string): Promise<void> {
   const stripe = await getStripe();
@@ -33,11 +35,12 @@ export async function redirectToCheckout(sessionId: string): Promise<void> {
     throw new Error("Stripe.js failed to load");
   }
 
-  const { error } = await stripe.redirectToCheckout({
+  // Type assertion to handle legacy API
+  const result = await (stripe as any).redirectToCheckout({
     sessionId,
   });
 
-  if (error) {
-    throw error;
+  if (result?.error) {
+    throw result.error;
   }
 }

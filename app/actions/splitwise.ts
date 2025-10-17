@@ -10,6 +10,7 @@ import {
 } from "@/services/splitwise-auth";
 import { getUserFirstName } from "@/lib/utils";
 import type { SplitwiseUser } from "@/types/splitwise";
+import { canAccessFeature } from "@/services/subscription";
 
 export async function validateApiKey(formData: FormData) {
   const apiKey = formData.get("apiKey") as string;
@@ -421,6 +422,40 @@ export async function saveSplitwiseSettings(formData: FormData) {
       success: false,
       error: "Group and currency code are required",
     };
+  }
+
+  // Check premium features (use session data - no DB query!)
+  const hasCustomSplitRatio = splitRatio && splitRatio !== "1:1";
+  const hasCustomPayee = useDescriptionAsPayee || customPayeeName;
+
+  if (hasCustomSplitRatio) {
+    const canUseCustomSplitRatio = canAccessFeature(
+      session.user,
+      "custom_split_ratio",
+    );
+    if (!canUseCustomSplitRatio) {
+      return {
+        success: false,
+        error:
+          "Custom split ratios are a Premium feature. Upgrade to Premium to use split ratios other than 1:1.",
+        isPremiumFeature: true,
+      };
+    }
+  }
+
+  if (hasCustomPayee) {
+    const canUseCustomPayee = canAccessFeature(
+      session.user,
+      "custom_payee_name",
+    );
+    if (!canUseCustomPayee) {
+      return {
+        success: false,
+        error:
+          "Custom payee names are a Premium feature. Upgrade to Premium to use custom payee settings.",
+        isPremiumFeature: true,
+      };
+    }
   }
 
   // Check for emoji conflicts

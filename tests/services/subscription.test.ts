@@ -1,5 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { prisma } from "@/db";
+import { describe, it, expect } from "vitest";
 import {
   isUserPremium,
   canAccessFeature,

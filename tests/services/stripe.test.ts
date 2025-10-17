@@ -56,7 +56,7 @@ describe("Stripe Service", () => {
       // We need to get the mocked stripe instance
       const Stripe = await import("stripe");
       const stripeInstance = new Stripe.default("test_key", {
-        apiVersion: "2024-11-20.acacia",
+        apiVersion: "2025-09-30.clover",
       });
       const createMock = stripeInstance.checkout.sessions.create as ReturnType<
         typeof vi.fn
@@ -109,7 +109,7 @@ describe("Stripe Service", () => {
 
       const Stripe = await import("stripe");
       const stripeInstance = new Stripe.default("test_key", {
-        apiVersion: "2024-11-20.acacia",
+        apiVersion: "2025-09-30.clover",
       });
       const createMock = stripeInstance.billingPortal.sessions
         .create as ReturnType<typeof vi.fn>;
@@ -141,7 +141,7 @@ describe("Stripe Service", () => {
 
       const Stripe = await import("stripe");
       const stripeInstance = new Stripe.default("test_key", {
-        apiVersion: "2024-11-20.acacia",
+        apiVersion: "2025-09-30.clover",
       });
       const retrieveMock = stripeInstance.subscriptions.retrieve as ReturnType<
         typeof vi.fn
@@ -157,7 +157,7 @@ describe("Stripe Service", () => {
     it("should return null on error", async () => {
       const Stripe = await import("stripe");
       const stripeInstance = new Stripe.default("test_key", {
-        apiVersion: "2024-11-20.acacia",
+        apiVersion: "2025-09-30.clover",
       });
       const retrieveMock = stripeInstance.subscriptions.retrieve as ReturnType<
         typeof vi.fn
@@ -180,7 +180,7 @@ describe("Stripe Service", () => {
 
       const Stripe = await import("stripe");
       const stripeInstance = new Stripe.default("test_key", {
-        apiVersion: "2024-11-20.acacia",
+        apiVersion: "2025-09-30.clover",
       });
       const updateMock = stripeInstance.subscriptions.update as ReturnType<
         typeof vi.fn
@@ -206,7 +206,7 @@ describe("Stripe Service", () => {
 
       const Stripe = await import("stripe");
       const stripeInstance = new Stripe.default("test_key", {
-        apiVersion: "2024-11-20.acacia",
+        apiVersion: "2025-09-30.clover",
       });
       const updateMock = stripeInstance.subscriptions.update as ReturnType<
         typeof vi.fn
@@ -232,7 +232,7 @@ describe("Stripe Service", () => {
 
       const Stripe = await import("stripe");
       const stripeInstance = new Stripe.default("test_key", {
-        apiVersion: "2024-11-20.acacia",
+        apiVersion: "2025-09-30.clover",
       });
       const retrieveMock = stripeInstance.customers.retrieve as ReturnType<
         typeof vi.fn
@@ -253,7 +253,7 @@ describe("Stripe Service", () => {
 
       const Stripe = await import("stripe");
       const stripeInstance = new Stripe.default("test_key", {
-        apiVersion: "2024-11-20.acacia",
+        apiVersion: "2025-09-30.clover",
       });
       const retrieveMock = stripeInstance.customers.retrieve as ReturnType<
         typeof vi.fn
@@ -268,7 +268,7 @@ describe("Stripe Service", () => {
     it("should return null on error", async () => {
       const Stripe = await import("stripe");
       const stripeInstance = new Stripe.default("test_key", {
-        apiVersion: "2024-11-20.acacia",
+        apiVersion: "2025-09-30.clover",
       });
       const retrieveMock = stripeInstance.customers.retrieve as ReturnType<
         typeof vi.fn

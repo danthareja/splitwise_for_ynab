@@ -6,9 +6,10 @@ import { syncUserData } from "@/services/sync";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/db"; // Declare the prisma variable
 import { enforcePerUserRateLimit } from "@/services/rate-limit";
-import { getRateLimitOptions } from "@/lib/rate-limit";
+import { getRateLimitOptionsForUser } from "@/lib/rate-limit";
 import { Prisma } from "@/prisma/generated/client";
 import { isUserFullyConfigured } from "./db";
+import { isUserPremium } from "@/services/subscription";
 
 export async function syncUserDataAction() {
   const session = await auth();
@@ -40,17 +41,39 @@ export async function syncUserDataAction() {
   }
 
   try {
-    // Rate-limit manual syncs the same as API
-    const rateLimitOpts = getRateLimitOptions();
-    const { allowed, retryAfterSeconds } = await enforcePerUserRateLimit(
+    // Get subscription-aware rate limits (use session data - no DB query!)
+    const rateLimits = await getRateLimitOptionsForUser(session.user);
+    const isPremium = isUserPremium(session.user);
+
+    // Check hourly limit
+    const hourlyCheck = await enforcePerUserRateLimit(
       session.user.id,
-      rateLimitOpts,
+      rateLimits.hourly,
     );
 
-    if (!allowed) {
+    if (!hourlyCheck.allowed) {
+      const upgradeMessage = isPremium
+        ? ""
+        : " Upgrade to Premium for unlimited syncs.";
       return {
         success: false,
-        error: `You can trigger at most ${rateLimitOpts.maxRequests} manual syncs every ${rateLimitOpts.windowSeconds / 60} minutes. Try again in ${Math.ceil(retryAfterSeconds / 60)} minutes`,
+        error: `You've reached your hourly sync limit (${rateLimits.hourly.maxRequests} per hour). Try again in ${Math.ceil(hourlyCheck.retryAfterSeconds / 60)} minutes.${upgradeMessage}`,
+      } as const;
+    }
+
+    // Check daily limit
+    const dailyCheck = await enforcePerUserRateLimit(
+      session.user.id,
+      rateLimits.daily,
+    );
+
+    if (!dailyCheck.allowed) {
+      const upgradeMessage = isPremium
+        ? ""
+        : " Upgrade to Premium for unlimited syncs.";
+      return {
+        success: false,
+        error: `You've reached your daily sync limit (${rateLimits.daily.maxRequests} per day). Try again in ${Math.ceil(dailyCheck.retryAfterSeconds / 3600)} hours.${upgradeMessage}`,
       } as const;
     }
 
@@ -70,7 +93,7 @@ export async function syncUserDataAction() {
   }
 }
 
-export async function getSyncHistory(limit = 7) {
+export async function getSyncHistory(limit?: number) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -81,6 +104,10 @@ export async function getSyncHistory(limit = 7) {
   }
 
   try {
+    // Get subscription-aware history limit if not specified (use session data - no DB query!)
+    const isPremium = isUserPremium(session.user);
+    const historyLimit = limit ?? (isPremium ? undefined : 7); // Premium: unlimited (undefined = no limit), Free: 7 days
+
     const syncHistory = (await prisma.syncHistory.findMany({
       where: {
         userId: session.user.id,
@@ -91,7 +118,7 @@ export async function getSyncHistory(limit = 7) {
       orderBy: {
         startedAt: "desc",
       },
-      take: limit,
+      ...(historyLimit !== undefined && { take: historyLimit }),
     })) as Prisma.SyncHistoryGetPayload<{
       include: { syncedItems: true };
     }>[];

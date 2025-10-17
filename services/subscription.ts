@@ -36,44 +36,88 @@ export interface RateLimitConfig {
 }
 
 /**
- * Check if a user has an active premium subscription
+ * Minimal user data needed for subscription checks (from session or DB)
  */
-export async function isUserPremium(userId: string): Promise<boolean> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      subscriptionTier: true,
-      subscriptionStatus: true,
-      subscriptionCurrentPeriodEnd: true,
-    },
-  });
+export interface UserSubscriptionData {
+  subscriptionTier?: string | null;
+  subscriptionStatus?: string | null;
+  subscriptionCurrentPeriodEnd?: Date | null;
+}
 
-  if (!user) {
-    return false;
-  }
-
-  // User is premium if:
-  // 1. Tier is premium AND
-  // 2. Status is active or trialing AND
-  // 3. Period hasn't ended (or no period end set, for grandfathered users)
+/**
+ * Check if subscription data indicates premium status
+ * This is the core logic used by all premium checks
+ */
+function checkIsPremium(userData: UserSubscriptionData): boolean {
   return (
-    user.subscriptionTier === "premium" &&
-    (user.subscriptionStatus === "active" ||
-      user.subscriptionStatus === "trialing") &&
-    (!user.subscriptionCurrentPeriodEnd ||
-      user.subscriptionCurrentPeriodEnd > new Date())
+    userData.subscriptionTier === "premium" &&
+    (userData.subscriptionStatus === "active" ||
+      userData.subscriptionStatus === "trialing") &&
+    (!userData.subscriptionCurrentPeriodEnd ||
+      userData.subscriptionCurrentPeriodEnd > new Date())
   );
 }
 
 /**
+ * Check if a user has an active premium subscription
+ * Overload: accepts userId (requires DB query)
+ */
+export async function isUserPremium(userId: string): Promise<boolean>;
+/**
+ * Check if a user has an active premium subscription
+ * Overload: accepts user data (no DB query - use from session!)
+ */
+export function isUserPremium(userData: UserSubscriptionData): boolean;
+/**
+ * Implementation
+ */
+export function isUserPremium(
+  userIdOrData: string | UserSubscriptionData,
+): boolean | Promise<boolean> {
+  // If it's a string, it's a userId - query DB
+  if (typeof userIdOrData === "string") {
+    return prisma.user
+      .findUnique({
+        where: { id: userIdOrData },
+        select: {
+          subscriptionTier: true,
+          subscriptionStatus: true,
+          subscriptionCurrentPeriodEnd: true,
+        },
+      })
+      .then((user) => {
+        if (!user) return false;
+        return checkIsPremium(user);
+      });
+  }
+
+  // Otherwise it's user data - check directly (fast!)
+  return checkIsPremium(userIdOrData);
+}
+
+/**
  * Check if a user can access a specific premium feature
+ * Overload: accepts userId (requires DB query)
  */
 export async function canAccessFeature(
   userId: string,
   feature: PremiumFeature,
-): Promise<boolean> {
-  const isPremium = await isUserPremium(userId);
-
+): Promise<boolean>;
+/**
+ * Check if a user can access a specific premium feature
+ * Overload: accepts user data (no DB query - use from session!)
+ */
+export function canAccessFeature(
+  userData: UserSubscriptionData,
+  feature: PremiumFeature,
+): boolean;
+/**
+ * Implementation
+ */
+export function canAccessFeature(
+  userIdOrData: string | UserSubscriptionData,
+  feature: PremiumFeature,
+): boolean | Promise<boolean> {
   // Map features to their access requirements
   const premiumOnlyFeatures: PremiumFeature[] = [
     "automatic_sync",
@@ -84,35 +128,66 @@ export async function canAccessFeature(
     "custom_payee_name",
   ];
 
-  if (premiumOnlyFeatures.includes(feature)) {
-    return isPremium;
+  const checkFeature = (isPremium: boolean) => {
+    if (premiumOnlyFeatures.includes(feature)) {
+      return isPremium;
+    }
+    // Default to allowing access for any unrecognized features
+    return true;
+  };
+
+  // If it's a string, check premium status with DB query
+  if (typeof userIdOrData === "string") {
+    return isUserPremium(userIdOrData).then(checkFeature);
   }
 
-  // Default to allowing access for any unrecognized features
-  return true;
+  // Otherwise use the provided data (fast!)
+  return checkFeature(isUserPremium(userIdOrData));
 }
 
 /**
  * Get rate limit configuration for a user based on their subscription tier
+ * Overload: accepts userId (requires DB query)
  */
 export async function getRateLimitForUser(
   userId: string,
-): Promise<RateLimitConfig> {
-  const isPremium = await isUserPremium(userId);
+): Promise<RateLimitConfig>;
+/**
+ * Get rate limit configuration for a user based on their subscription tier
+ * Overload: accepts user data (no DB query - use from session!)
+ */
+export function getRateLimitForUser(
+  userData: UserSubscriptionData,
+): RateLimitConfig;
+/**
+ * Implementation
+ */
+export function getRateLimitForUser(
+  userIdOrData: string | UserSubscriptionData,
+): RateLimitConfig | Promise<RateLimitConfig> {
+  const getLimits = (isPremium: boolean): RateLimitConfig => {
+    if (isPremium) {
+      // Premium users: unlimited (represented by very high numbers)
+      return {
+        hourly: 999999,
+        daily: 999999,
+      };
+    }
 
-  if (isPremium) {
-    // Premium users: unlimited (represented by very high numbers)
+    // Free tier: 2 per hour, max 6 per day
     return {
-      hourly: 999999,
-      daily: 999999,
+      hourly: 2,
+      daily: 6,
     };
+  };
+
+  // If it's a string, check premium status with DB query
+  if (typeof userIdOrData === "string") {
+    return isUserPremium(userIdOrData).then(getLimits);
   }
 
-  // Free tier: 2 per hour, max 6 per day
-  return {
-    hourly: 2,
-    daily: 6,
-  };
+  // Otherwise use the provided data (fast!)
+  return getLimits(isUserPremium(userIdOrData));
 }
 
 /**

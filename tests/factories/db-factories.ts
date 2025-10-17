@@ -121,7 +121,12 @@ export async function createFullyConfiguredUser(
     ynabSettings?: Partial<YnabSettings>;
   } = {},
 ) {
-  const user = await createTestUser(overrides.user);
+  // Fully configured users are premium by default (for automatic sync tests)
+  const user = await createTestUser({
+    subscriptionTier: "premium",
+    subscriptionStatus: "active",
+    ...overrides.user,
+  });
 
   const [ynabAccount, splitwiseAccount] = await Promise.all([
     createTestAccount("ynab", { userId: user.id }),

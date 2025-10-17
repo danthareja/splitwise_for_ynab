@@ -26,7 +26,35 @@ vi.mock("@/lib/rate-limit", () => ({
   getRateLimitOptions: vi.fn(() => ({
     maxRequests: 3,
     windowSeconds: 60,
+    key: "sync",
   })),
+  getRateLimitOptionsForUser: vi.fn(() =>
+    Promise.resolve({
+      hourly: {
+        maxRequests: 2,
+        windowSeconds: 3600,
+        key: "sync_hourly",
+      },
+      daily: {
+        maxRequests: 6,
+        windowSeconds: 86400,
+        key: "sync_daily",
+      },
+    }),
+  ),
+}));
+
+// Mock subscription service
+vi.mock("@/services/subscription", () => ({
+  isUserPremium: vi.fn(() => Promise.resolve(false)),
+  getSyncHistoryLimit: vi.fn(() => Promise.resolve(7)),
+  getRateLimitForUser: vi.fn(() =>
+    Promise.resolve({
+      hourly: 2,
+      daily: 6,
+    }),
+  ),
+  canAccessFeature: vi.fn(() => Promise.resolve(false)),
 }));
 
 // Mock next/cache
@@ -101,8 +129,10 @@ describe("actions/sync", () => {
       expect(result.error).toContain("Please reconnect your account");
     });
 
-    it("should enforce rate limiting", async () => {
-      const userData = await createFullyConfiguredUser();
+    it("should enforce rate limiting (hourly)", async () => {
+      const userData = await createFullyConfiguredUser({
+        user: { subscriptionTier: "free", subscriptionStatus: "free" },
+      });
 
       vi.mocked(auth).mockResolvedValue({
         user: {
@@ -112,16 +142,49 @@ describe("actions/sync", () => {
         },
       } as any);
 
-      vi.mocked(enforcePerUserRateLimit).mockResolvedValue({
+      // First call (hourly) returns not allowed
+      vi.mocked(enforcePerUserRateLimit).mockResolvedValueOnce({
         allowed: false,
-        retryAfterSeconds: 120,
+        retryAfterSeconds: 3000, // 50 minutes
       });
 
       const result = await syncUserDataAction();
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("manual syncs");
-      expect(result.error).toContain("2 minutes");
+      expect(result.error).toContain("hourly sync limit");
+      expect(result.error).toContain("50 minutes");
+    });
+
+    it("should enforce rate limiting (daily)", async () => {
+      const userData = await createFullyConfiguredUser({
+        user: { subscriptionTier: "free", subscriptionStatus: "free" },
+      });
+
+      vi.mocked(auth).mockResolvedValue({
+        user: {
+          id: userData.user.id,
+          email: userData.user.email,
+          disabled: false,
+        },
+      } as any);
+
+      // First call (hourly) returns allowed
+      vi.mocked(enforcePerUserRateLimit).mockResolvedValueOnce({
+        allowed: true,
+        retryAfterSeconds: 3600,
+      });
+
+      // Second call (daily) returns not allowed
+      vi.mocked(enforcePerUserRateLimit).mockResolvedValueOnce({
+        allowed: false,
+        retryAfterSeconds: 43200, // 12 hours
+      });
+
+      const result = await syncUserDataAction();
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("daily sync limit");
+      expect(result.error).toContain("12 hours");
     });
 
     it("should successfully sync user data when all checks pass", async () => {
@@ -231,6 +294,10 @@ describe("actions/sync", () => {
         user: {
           id: userData.user.id,
           email: userData.user.email,
+          subscriptionTier: userData.user.subscriptionTier,
+          subscriptionStatus: userData.user.subscriptionStatus,
+          subscriptionCurrentPeriodEnd:
+            userData.user.subscriptionCurrentPeriodEnd,
         },
       } as any);
 
@@ -314,6 +381,10 @@ describe("actions/sync", () => {
         user: {
           id: userData.user.id,
           email: userData.user.email,
+          subscriptionTier: userData.user.subscriptionTier,
+          subscriptionStatus: userData.user.subscriptionStatus,
+          subscriptionCurrentPeriodEnd:
+            userData.user.subscriptionCurrentPeriodEnd,
         },
       } as any);
 
