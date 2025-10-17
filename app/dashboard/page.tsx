@@ -15,11 +15,13 @@ import { YNABFlag } from "@/components/ynab-flag";
 import { Button } from "@/components/ui/button";
 import { ScheduledSyncInfo } from "@/components/scheduled-sync-info";
 import { ApiKeyCard } from "@/components/api-key-card";
+import { SubscriptionTestCard } from "@/components/subscription-test-card";
 import type { Metadata } from "next";
 import { MAX_REQUESTS, WINDOW_SECONDS } from "@/lib/rate-limit";
 import { redirect } from "next/navigation";
 import { DisabledAccountAlert } from "@/components/disabled-account-alert";
 import { getUserFirstName } from "@/lib/utils";
+import { getUserSubscriptionInfo } from "@/services/subscription";
 import {
   Card,
   CardHeader,
@@ -77,6 +79,9 @@ export default async function DashboardPage() {
   const syncHistory = syncHistoryResult.success
     ? syncHistoryResult.syncHistory || []
     : [];
+
+  // Get subscription info for test card
+  const subscriptionInfo = await getUserSubscriptionInfo(user.id);
 
   // Check if user is fully configured
   const isFullyConfigured =
@@ -218,6 +223,15 @@ export default async function DashboardPage() {
               baseUrl={process.env.NEXT_PUBLIC_BASE_URL}
             />
           )}
+
+          {/* Subscription Test Card */}
+          <div className="mt-8">
+            <SubscriptionTestCard
+              subscriptionStatus={subscriptionInfo.status}
+              subscriptionTier={subscriptionInfo.tier}
+              currentPeriodEnd={subscriptionInfo.currentPeriodEnd}
+            />
+          </div>
 
           {/* FAQ Section */}
           <Card id="faq" className="mt-8">

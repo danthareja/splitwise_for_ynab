@@ -34,6 +34,14 @@ model User {
   disabledReason    String?
   suggestedFix      String?
   
+  // Subscription fields
+  subscriptionStatus          String   @default("free") // free, active, canceled, past_due, trialing
+  subscriptionTier            String   @default("free") // free, premium
+  stripeCustomerId            String?  @unique
+  stripeSubscriptionId        String?  @unique
+  subscriptionCurrentPeriodEnd DateTime?
+  subscriptionCanceledAt      DateTime?
+  
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 }
@@ -173,4 +181,14 @@ model RateLimit {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, key])
+}
+
+model StripeEvent {
+  id            String   @id @default(cuid())
+  eventId       String   @unique // Stripe event ID for idempotency
+  type          String   // Event type (e.g., checkout.session.completed)
+  processed     Boolean  @default(false)
+  data          String   @db.Text // JSON data from Stripe
+  createdAt     DateTime @default(now())
+  processedAt   DateTime?
 }
