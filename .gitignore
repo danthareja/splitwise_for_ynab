@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env
+!.env.example
 
 # vercel
 .vercel
@@ -49,5 +50,6 @@ next-env.d.ts
 # prisma generated client
 prisma/generated
 
-# db dump
-db_dump.bak
+# database backups
+backup_*.dump
+*.dump

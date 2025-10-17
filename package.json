@@ -13,6 +13,11 @@
     "test": "vitest",
     "test:run": "vitest run",
     "email": "email dev",
+    "db:setup": "bash scripts/db-setup.sh",
+    "db:migrate": "prisma migrate dev",
+    "db:dump": "bash scripts/db-dump.sh",
+    "db:restore": "bash scripts/db-restore.sh",
+    "db:studio": "prisma studio",
     "script:impersonate": "npx tsx scripts/impersonate-user.ts"
   },
   "lint-staged": {
@@ -23,6 +28,7 @@
   "dependencies": {
     "@auth/core": "^0.41.0",
     "@prisma/adapter-neon": "^6.17.1",
+    "@prisma/adapter-pg": "^6.17.1",
     "@prisma/client": "^6.17.1",
     "@prisma/instrumentation": "^6.17.1",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -57,7 +63,6 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@prisma/adapter-pg": "^6.17.1",
     "@react-email/preview-server": "^4.3.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^24",

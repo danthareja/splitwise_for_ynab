@@ -72,21 +72,50 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 ### Prerequisites
 
 - Node >= v22
-- A Postgres database ([Prisma](https://prisma.io/postgres), [Neon](https://neon.tech), or local installation)
+- Docker (for local PostgreSQL)
 
 ### Setup
 
-Set up your environment variables
+**1. Start PostgreSQL container:**
+
+```bash
+docker-compose up -d
+```
+
+**2. Set up your environment variables:**
+
+Create a `.env` file in the project root with your configuration:
 
 ```bash
 cp .env.example .env
 vim .env # fill these out
 ```
 
-Install dependencies
+Make sure your `.env` includes:
+
+```bash
+DATABASE_URL="postgresql://postgres:postgres@localhost:6969/dev"
+# ... other env vars
+```
+
+**3. Install dependencies:**
 
 ```bash
 npm install
+```
+
+**4. Setup databases:**
+
+This creates the `dev` and `test` databases:
+
+```bash
+npm run db:setup
+```
+
+**5. Run migrations:**
+
+```bash
+npm run db:migrate
 ```
 
 ### Run the development server
