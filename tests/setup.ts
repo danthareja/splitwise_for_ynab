@@ -1,10 +1,10 @@
 import { beforeAll, afterAll, beforeEach, afterEach, vi } from "vitest";
 import { setupServer } from "msw/node";
 import { PrismaClient } from "@/prisma/generated/client";
-import { PrismaNeon } from "@prisma/adapter-neon";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const connectionString = process.env.DATABASE_URL!;
-const adapter = new PrismaNeon({ connectionString });
+// Use the PostgreSQL adapter for local PostgreSQL database
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 
 export const prisma = new PrismaClient({ adapter });
 

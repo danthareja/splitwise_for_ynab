@@ -11,10 +11,8 @@ export default defineConfig({
     include: ["tests/**/*.test.ts"],
     exclude: ["node_modules", "dist", ".next"],
     env: {
-      DATABASE_URL:
-        process.env.DATABASE_URL ||
-        "postgresql://postgres:postgres@localhost:6969/test",
-      RESEND_API_KEY: process.env.RESEND_API_KEY || "test-resend-api-key",
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:6969/test",
+      RESEND_API_KEY: "test-resend-api-key",
       CRON_SECRET: "test-cron-secret",
       USER_SYNC_MAX_REQUESTS: "1",
       USER_SYNC_WINDOW_SECONDS: "60",

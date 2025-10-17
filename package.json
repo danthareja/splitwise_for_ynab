@@ -57,6 +57,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@prisma/adapter-pg": "^6.17.1",
     "@react-email/preview-server": "^4.3.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^24",
