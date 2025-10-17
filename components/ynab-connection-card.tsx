@@ -11,13 +11,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { AlertCircle, Check, X, AlertTriangle, Settings } from "lucide-react";
+import {
+  AlertCircle,
+  Check,
+  X,
+  AlertTriangle,
+  Settings,
+  LogIn,
+  RefreshCw,
+} from "lucide-react";
 import { YNABFlag, FLAG_COLORS } from "@/components/ynab-flag";
 import {
   Alert,
   AlertDescription as UiAlertDescription,
 } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { signIn } from "next-auth/react";
+import { YNABDisconnectModal } from "@/components/ynab-disconnect-modal";
 
 interface YNABConnectionCardProps {
   isConnected: boolean;
@@ -29,13 +39,18 @@ interface YNABConnectionCardProps {
     manualFlagColor?: string | null;
     syncedFlagColor?: string | null;
   } | null;
+  isUserDisabled?: boolean;
+  suggestedFix?: string | null;
 }
 
 export function YNABConnectionCard({
   isConnected,
   settings,
+  isUserDisabled,
+  suggestedFix,
 }: YNABConnectionCardProps) {
   const [showSettings, setShowSettings] = useState(false);
+  const [showDisconnectModal, setShowDisconnectModal] = useState(false);
   const router = useRouter();
 
   const isConfigured = settings?.budgetId && settings?.splitwiseAccountId;
@@ -50,6 +65,10 @@ export function YNABConnectionCard({
     router.refresh();
   };
 
+  const handleDisconnectYNAB = async () => {
+    setShowDisconnectModal(true);
+  };
+
   // Helper function to get status text
   const getStatusText = () => {
     if (!isConnected) {
@@ -60,6 +79,11 @@ export function YNABConnectionCard({
     }
     return "Your YNAB account is connected and configured.";
   };
+
+  const shouldShowReconnect =
+    !!isUserDisabled &&
+    !!suggestedFix &&
+    suggestedFix.toLowerCase().includes("reconnect your ynab account");
 
   return (
     <Card>
@@ -182,26 +206,48 @@ export function YNABConnectionCard({
                     </div>
                   </div>
                 )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowSettings(true)}
-                  className="flex items-center gap-1"
-                >
-                  <Settings className="h-3.5 w-3.5" />
-                  Update YNAB Settings
-                </Button>
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowSettings(true)}
+                    className="flex items-center gap-1"
+                  >
+                    <Settings className="h-3.5 w-3.5" />
+                    Update YNAB Settings
+                  </Button>
+                  {shouldShowReconnect && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDisconnectYNAB}
+                      className="flex items-center gap-1 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      Reconnect
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
           </>
         ) : (
           <div className="space-y-4">
-            <Button asChild>
-              <a href="/auth/signin">Sign in with YNAB</a>
+            <Button
+              onClick={() => signIn("ynab", { callbackUrl: "/dashboard" })}
+            >
+              <LogIn className="mr-2 h-4 w-4" />
+              Sign in with YNAB
             </Button>
           </div>
         )}
       </CardContent>
+      {showDisconnectModal && (
+        <YNABDisconnectModal
+          isOpen={showDisconnectModal}
+          onClose={() => setShowDisconnectModal(false)}
+        />
+      )}
     </Card>
   );
 }

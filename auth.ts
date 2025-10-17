@@ -13,12 +13,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       name: "YNAB",
       type: "oauth",
       authorization: {
-        url: "https://app.youneedabudget.com/oauth/authorize",
+        url: "https://app.ynab.com/oauth/authorize",
         params: { scope: "" },
       },
-      token: "https://api.youneedabudget.com/oauth/token",
+      token: "https://app.ynab.com/oauth/token",
       userinfo: {
-        url: "https://api.youneedabudget.com/v1/user",
+        url: "https://api.ynab.com/v1/user",
       },
       profile(profile) {
         return {

@@ -146,3 +146,42 @@ export async function getYNABSettings() {
     return null;
   }
 }
+
+export async function disconnectYNABAccount() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return {
+      success: false,
+      error: "You must be logged in to disconnect your YNAB account",
+    };
+  }
+
+  try {
+    // Delete the YNAB account tokens but keep user preferences/settings
+    const result = await prisma.account.deleteMany({
+      where: {
+        userId: session.user.id,
+        provider: "ynab",
+      },
+    });
+
+    console.log("result", result);
+
+    // Preserve YNAB settings (budget/account/flags) so reconnect keeps configuration
+    // No settings update needed here
+
+    revalidatePath("/dashboard");
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Error disconnecting YNAB account:", error);
+    Sentry.captureException(error);
+    return {
+      success: false,
+      error: "Failed to disconnect your YNAB account",
+    };
+  }
+}

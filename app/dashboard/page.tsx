@@ -157,6 +157,8 @@ export default async function DashboardPage() {
             <YNABConnectionCard
               isConnected={!!hasYNABConnected}
               settings={ynabSettings}
+              isUserDisabled={user.disabled}
+              suggestedFix={user.suggestedFix}
             />
 
             <SplitwiseConnectionCard

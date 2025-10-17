@@ -134,37 +134,94 @@ export async function refreshYNABAccessToken(originalAccessToken: string) {
   }
 
   // Use YNAB's OAuth refresh endpoint
-  const response = await axios.post(
-    "https://app.youneedabudget.com/oauth/token",
-    {
-      grant_type: "refresh_token",
-      refresh_token: account.refresh_token,
-      client_id: process.env.AUTH_YNAB_ID,
-      client_secret: process.env.AUTH_YNAB_SECRET,
-    },
-  );
+  try {
+    const response = await axios.post(
+      "https://app.youneedabudget.com/oauth/token",
+      {
+        grant_type: "refresh_token",
+        refresh_token: account.refresh_token,
+        client_id: process.env.AUTH_YNAB_ID,
+        client_secret: process.env.AUTH_YNAB_SECRET,
+      },
+    );
 
-  console.log("✅ Successfully received response from YNAB OAuth endpoint");
+    console.log("✅ Successfully received response from YNAB OAuth endpoint");
 
-  const { access_token, refresh_token } = response.data;
+    const { access_token, refresh_token } = response.data;
 
-  if (!access_token) {
-    console.error("❌ Token refresh failed: No access token in response");
-    throw new Error("No access token received from YNAB");
+    if (!access_token) {
+      console.error("❌ Token refresh failed: No access token in response");
+      throw new Error("No access token received from YNAB");
+    }
+
+    // Update the database with new tokens
+    await prisma.account.update({
+      where: { id: account.id },
+      data: {
+        access_token,
+        refresh_token: refresh_token || account.refresh_token, // Keep old refresh token if new one not provided
+      },
+    });
+
+    console.log("🔑 YNAB access token refresh completed successfully");
+
+    return access_token;
+  } catch (err: unknown) {
+    const axiosErr = err as AxiosError;
+    const status = axiosErr.response?.status;
+    const data = axiosErr.response?.data as
+      | { error?: { id?: string; detail?: string } }
+      | { error?: string; error_description?: string }
+      | unknown;
+
+    // Extract both YNAB API error shape and OAuth error shape
+    const apiErrorId = (data as any)?.error?.id as string | undefined;
+    const apiErrorDetail = (data as any)?.error?.detail as string | undefined;
+    const oauthError =
+      typeof (data as any)?.error === "string"
+        ? ((data as any).error as string)
+        : undefined;
+    const oauthErrorDescription = (data as any)?.error_description as
+      | string
+      | undefined;
+
+    const summary =
+      apiErrorDetail ||
+      oauthErrorDescription ||
+      axiosErr.message ||
+      "Unknown error";
+    const codeTag = apiErrorId
+      ? `[${apiErrorId}]`
+      : oauthError
+        ? `[${oauthError}]`
+        : "";
+
+    console.error(
+      `🔻 YNAB refresh failed (${status ?? "no-status"}) ${codeTag}: ${summary}`,
+    );
+
+    // Emit raw response body for faster diagnosis
+    try {
+      console.error(`🧾 YNAB OAuth response body: ${JSON.stringify(data)}`);
+    } catch {
+      // best effort
+    }
+
+    // Map common OAuth errors to actionable error types
+    if (oauthError === "invalid_grant") {
+      // User needs to reconnect: token expired/revoked or wrong client binding
+      console.error("🛠️ YNAB invalid_grant: user needs to reconnect");
+      throw new YNABUnauthorizedError(axiosErr, "refresh access token");
+    }
+
+    if (oauthError === "invalid_client") {
+      console.error(
+        "🛠️ YNAB invalid_client: verify AUTH_YNAB_ID/SECRET match the client used to authorize existing tokens.",
+      );
+    }
+
+    throw err;
   }
-
-  // Update the database with new tokens
-  await prisma.account.update({
-    where: { id: account.id },
-    data: {
-      access_token,
-      refresh_token: refresh_token || account.refresh_token, // Keep old refresh token if new one not provided
-    },
-  });
-
-  console.log("🔑 YNAB access token refresh completed successfully");
-
-  return access_token;
 }
 
 function createErrorInterceptor() {
