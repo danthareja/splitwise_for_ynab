@@ -214,6 +214,7 @@ export async function getUserSubscriptionInfo(userId: string): Promise<{
   status: SubscriptionStatus;
   currentPeriodEnd: Date | null;
   canceledAt: Date | null;
+  stripeCustomerId: string | null;
 }> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -222,6 +223,7 @@ export async function getUserSubscriptionInfo(userId: string): Promise<{
       subscriptionStatus: true,
       subscriptionCurrentPeriodEnd: true,
       subscriptionCanceledAt: true,
+      stripeCustomerId: true,
     },
   });
 
@@ -234,6 +236,7 @@ export async function getUserSubscriptionInfo(userId: string): Promise<{
     status: user.subscriptionStatus as SubscriptionStatus,
     currentPeriodEnd: user.subscriptionCurrentPeriodEnd,
     canceledAt: user.subscriptionCanceledAt,
+    stripeCustomerId: user.stripeCustomerId,
   };
 }
 

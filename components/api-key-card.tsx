@@ -3,14 +3,16 @@
 import { useState, useTransition } from "react";
 import { regenerateApiKeyAction } from "@/app/actions/api-key";
 import { Button } from "@/components/ui/button";
-import { Copy, RefreshCw, Check } from "lucide-react";
+import { Copy, RefreshCw, Check, Crown, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { UpgradeModal } from "@/components/upgrade-modal";
 
 interface ApiKeyCardProps {
   initialApiKey: string | null;
   maxRequests: number;
   windowSeconds: number;
   baseUrl?: string;
+  isPremium: boolean;
 }
 
 export function ApiKeyCard({
@@ -18,11 +20,13 @@ export function ApiKeyCard({
   maxRequests,
   windowSeconds,
   baseUrl = "http://localhost:3000",
+  isPremium,
 }: ApiKeyCardProps) {
   const [apiKey, setApiKey] = useState(initialApiKey);
   const [isPending, startTransition] = useTransition();
   const [copiedKey, setCopiedKey] = useState(false);
   const [copiedCurl, setCopiedCurl] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const copy = () => {
     if (!apiKey) return;
@@ -46,9 +50,84 @@ export function ApiKeyCard({
   const curlPreview = `curl -H "Authorization: Bearer ${apiKey ?? "<YOUR_KEY>"}" \\\n  ${baseUrl}/api/sync`;
   const curlOneLine = `curl -H "Authorization: Bearer ${apiKey ?? "<YOUR_KEY>"}" ${baseUrl}/api/sync`;
 
+  // Free tier - show upgrade prompt
+  if (!isPremium) {
+    return (
+      <>
+        <div className="border rounded-lg p-6 mt-8 relative overflow-hidden">
+          {/* Blur overlay */}
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center">
+            <div className="text-center space-y-4 p-6">
+              <div className="flex justify-center">
+                <div className="rounded-full bg-primary/10 p-3">
+                  <Lock className="h-8 w-8 text-primary" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
+                  <Crown className="h-5 w-5 text-primary" />
+                  Premium Feature
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-sm">
+                  API access is available on the Premium plan. Upgrade to unlock
+                  programmatic syncing with API keys.
+                </p>
+              </div>
+              <Button
+                onClick={() => setShowUpgradeModal(true)}
+                size="lg"
+                className="mt-2"
+              >
+                <Crown className="mr-2 h-4 w-4" />
+                Upgrade to Premium
+              </Button>
+            </div>
+          </div>
+
+          {/* Blurred content behind */}
+          <div className="pointer-events-none select-none">
+            <h2 className="text-xl font-semibold mb-4">API Access</h2>
+            <p className="text-sm text-muted-foreground mt-2 mb-4">
+              A programmable manual sync for nerds who are into that sort of
+              thing 🤓
+            </p>
+            <div className="flex items-center gap-2 mb-4">
+              <code className="bg-gray-100 rounded px-2 py-1 text-sm">
+                sk_••••••••••••••••••••••••••
+              </code>
+              <Button variant="secondary" size="icon" disabled>
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button disabled className="mb-6">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Generate Key
+            </Button>
+            <h3 className="font-medium mb-2">Usage</h3>
+            <pre className="bg-gray-50 p-3 rounded text-sm">
+              curl -H &quot;Authorization: Bearer YOUR_KEY&quot; \{"\n"}
+              {`  ${baseUrl}/api/sync`}
+            </pre>
+          </div>
+        </div>
+
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          feature="API Access"
+          message="Unlock API access to sync programmatically with your own scripts and automations."
+        />
+      </>
+    );
+  }
+
+  // Premium tier - show full API access
   return (
     <div className="border rounded-lg p-6 mt-8">
-      <h2 className="text-xl font-semibold mb-4">API Access</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">API Access</h2>
+        <Crown className="h-5 w-5 text-primary" />
+      </div>
       <p className="text-sm text-muted-foreground mt-2 mb-4">
         A programmable manual sync for nerds who are into that sort of thing 🤓
       </p>

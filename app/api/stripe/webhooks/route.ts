@@ -65,31 +65,31 @@ export async function POST(request: NextRequest) {
     // Handle the event
     switch (event.type) {
       case "checkout.session.completed": {
-        const session = event.data.object as Stripe.Checkout.Session;
+        const session = event.data.object;
         await handleCheckoutSessionCompleted(session);
         break;
       }
 
       case "customer.subscription.updated": {
-        const subscription = event.data.object as Stripe.Subscription;
+        const subscription = event.data.object;
         await handleSubscriptionUpdated(subscription);
         break;
       }
 
       case "customer.subscription.deleted": {
-        const subscription = event.data.object as Stripe.Subscription;
+        const subscription = event.data.object;
         await handleSubscriptionDeleted(subscription);
         break;
       }
 
       case "invoice.payment_succeeded": {
-        const invoice = event.data.object as Stripe.Invoice;
+        const invoice = event.data.object;
         await handleInvoicePaymentSucceeded(invoice);
         break;
       }
 
       case "invoice.payment_failed": {
-        const invoice = event.data.object as Stripe.Invoice;
+        const invoice = event.data.object;
         await handleInvoicePaymentFailed(invoice);
         break;
       }
@@ -127,8 +127,8 @@ async function handleCheckoutSessionCompleted(
   console.log("Checkout session completed:", session.id);
 
   const userId = session.metadata?.userId;
-  const customerId = session.customer as string;
-  const subscriptionId = session.subscription as string;
+  const customerId = session.customer;
+  const subscriptionId = session.subscription;
 
   if (!userId) {
     console.error("No userId in session metadata");
@@ -136,19 +136,19 @@ async function handleCheckoutSessionCompleted(
   }
 
   // Get subscription details
-  const subscription = (await stripe.subscriptions.retrieve(
-    subscriptionId,
-  )) as Stripe.Subscription;
+  const subscription = await stripe.subscriptions.retrieve(
+    subscriptionId as string,
+  );
 
   const updateData: any = {
-    stripeCustomerId: customerId,
-    stripeSubscriptionId: subscriptionId,
+    stripeCustomerId: customerId as string,
+    stripeSubscriptionId: subscriptionId as string,
     subscriptionStatus: subscription.status,
     subscriptionTier: "premium",
   };
 
   // Only set period end if it exists
-  const currentPeriodEnd = subscription.current_period_end;
+  const currentPeriodEnd = (subscription as any).current_period_end;
   if (currentPeriodEnd) {
     updateData.subscriptionCurrentPeriodEnd = new Date(currentPeriodEnd * 1000);
   }
@@ -172,13 +172,13 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   };
 
   // Only set period end if it exists
-  const currentPeriodEnd = subscription.current_period_end;
+  const currentPeriodEnd = (subscription as any).current_period_end;
   if (currentPeriodEnd) {
     updateData.subscriptionCurrentPeriodEnd = new Date(currentPeriodEnd * 1000);
   }
 
   // Only set cancel date if it exists
-  const cancelAt = subscription.cancel_at;
+  const cancelAt = (subscription as any).cancel_at;
   if (cancelAt !== undefined) {
     updateData.subscriptionCanceledAt = cancelAt
       ? new Date(cancelAt * 1000)
@@ -234,17 +234,16 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   console.log("Invoice payment succeeded:", invoice.id);
 
+  const invoiceAny = invoice as any;
   const subscriptionId =
-    typeof invoice.subscription === "string"
-      ? invoice.subscription
-      : invoice.subscription?.id;
+    typeof invoiceAny.subscription === "string"
+      ? invoiceAny.subscription
+      : invoiceAny.subscription?.id;
   if (!subscriptionId) {
     return;
   }
 
-  const subscription = (await stripe.subscriptions.retrieve(
-    subscriptionId,
-  )) as Stripe.Subscription;
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   const user = await prisma.user.findUnique({
     where: { stripeSubscriptionId: subscriptionId },
   });
@@ -259,7 +258,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   };
 
   // Only set period end if it exists
-  const currentPeriodEnd = subscription.current_period_end;
+  const currentPeriodEnd = (subscription as any).current_period_end;
   if (currentPeriodEnd) {
     updateData.subscriptionCurrentPeriodEnd = new Date(currentPeriodEnd * 1000);
   }
@@ -275,10 +274,11 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   console.log("Invoice payment failed:", invoice.id);
 
+  const invoiceAny = invoice as any;
   const subscriptionId =
-    typeof invoice.subscription === "string"
-      ? invoice.subscription
-      : invoice.subscription?.id;
+    typeof invoiceAny.subscription === "string"
+      ? invoiceAny.subscription
+      : invoiceAny.subscription?.id;
   if (!subscriptionId) {
     return;
   }

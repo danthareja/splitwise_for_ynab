@@ -1,10 +1,21 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Zap, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  CheckCircle,
+  Zap,
+  ExternalLink,
+  Crown,
+  Clock,
+  Key,
+  History,
+  X,
+} from "lucide-react";
 import { InteractiveTransactionDemo } from "@/components/interactive-transaction-demo";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { SignInButton } from "@/components/sign-in-button";
+import Link from "next/link";
 
 export default function LandingPage() {
   return (
@@ -745,6 +756,128 @@ export default function LandingPage() {
                 </p>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="py-20 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
+              Simple, Transparent Pricing
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
+              Start for free, upgrade when you need automation
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* Free Tier Card */}
+            <Card className="relative">
+              <CardContent className="p-8">
+                <h3 className="text-2xl font-bold mb-2">Free</h3>
+                <div className="mb-6">
+                  <span className="text-4xl font-bold">$0</span>
+                  <span className="text-gray-600 dark:text-gray-400">
+                    /month
+                  </span>
+                </div>
+                <ul className="space-y-3 mb-8">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+                    <span className="text-sm">Manual sync (2/hour, 6/day)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+                    <span className="text-sm">7 days of history</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+                    <span className="text-sm">Basic sync features</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <X className="h-5 w-5 text-gray-400 mt-0.5 shrink-0" />
+                    <span className="text-sm text-gray-500">
+                      No automatic sync
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <X className="h-5 w-5 text-gray-400 mt-0.5 shrink-0" />
+                    <span className="text-sm text-gray-500">No API access</span>
+                  </li>
+                </ul>
+                <SignInButton variant="outline" className="w-full" />
+              </CardContent>
+            </Card>
+
+            {/* Premium Tier Card */}
+            <Card className="relative border-2 border-primary shadow-xl">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-1">
+                  Most Popular
+                </Badge>
+              </div>
+              <CardContent className="p-8 pt-10">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-2xl font-bold">Premium</h3>
+                  <Crown className="h-6 w-6 text-primary" />
+                </div>
+                <div className="mb-6">
+                  <span className="text-4xl font-bold">$4.99</span>
+                  <span className="text-gray-600 dark:text-gray-400">
+                    /month
+                  </span>
+                  <p className="text-sm text-gray-500 mt-1">
+                    or $49/year (save 18%)
+                  </p>
+                </div>
+                <ul className="space-y-3 mb-8">
+                  <li className="flex items-start gap-2">
+                    <Zap className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                    <span className="text-sm">
+                      <strong>Unlimited syncs</strong>
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Clock className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                    <span className="text-sm">
+                      <strong>Automatic hourly sync</strong>
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Key className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                    <span className="text-sm">
+                      <strong>API access</strong>
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <History className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                    <span className="text-sm">
+                      <strong>Unlimited history</strong>
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Crown className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                    <span className="text-sm">
+                      <strong>Custom split ratios</strong>
+                    </span>
+                  </li>
+                </ul>
+                <SignInButton className="w-full">
+                  <Crown className="mr-2 h-4 w-4" />
+                  Get Started
+                </SignInButton>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="text-center mt-8">
+            <Button asChild variant="link">
+              <Link href="/pricing" className="text-primary">
+                View detailed pricing and FAQ →
+              </Link>
+            </Button>
           </div>
         </div>
       </section>

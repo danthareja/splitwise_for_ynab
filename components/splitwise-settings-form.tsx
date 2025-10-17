@@ -31,6 +31,8 @@ import {
 import type { SplitwiseGroup } from "@/types/splitwise";
 import { AlertCircle, Loader2, AlertTriangle, Info, Check } from "lucide-react";
 import { EmojiPicker } from "@/components/emoji-picker";
+import { UpgradeModal } from "@/components/upgrade-modal";
+import { PremiumBadge } from "@/components/premium-badge";
 import Image from "next/image";
 
 interface SplitwiseSettingsFormProps {
@@ -42,6 +44,7 @@ interface SplitwiseSettingsFormProps {
   initialUseDescriptionAsPayee?: boolean | null;
   initialCustomPayeeName?: string | null;
   onSaveSuccess?: () => void;
+  isPremium?: boolean;
 }
 
 const CURRENCY_OPTIONS = [
@@ -73,6 +76,7 @@ export function SplitwiseSettingsForm({
   initialUseDescriptionAsPayee = true,
   initialCustomPayeeName,
   onSaveSuccess,
+  isPremium = false,
 }: SplitwiseSettingsFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -104,6 +108,8 @@ export function SplitwiseSettingsForm({
   } | null>(null);
   const [isEmojiConflict, setIsEmojiConflict] = useState(false);
   const [partnerSynced, setPartnerSynced] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeFeature, setUpgradeFeature] = useState<string>("");
 
   // Track if groups have been loaded to avoid unnecessary reloading
   const groupsLoadedRef = useRef(false);
@@ -239,6 +245,13 @@ export function SplitwiseSettingsForm({
 
   // Handle split ratio changes
   function handleSplitRatioChange(value: string) {
+    // Check if trying to use non-1:1 ratio without premium
+    if (!isPremium && value !== "1:1") {
+      setUpgradeFeature("Custom Split Ratios");
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setSelectedSplitRatio(value);
     if (value === "custom") {
       setShowCustomSplit(true);
@@ -246,6 +259,18 @@ export function SplitwiseSettingsForm({
       setShowCustomSplit(false);
       setCustomSplitRatio("");
     }
+  }
+
+  // Handle payee option changes
+  function handlePayeeOptionChange(value: string) {
+    // Check if trying to use custom payee without premium
+    if (!isPremium && value === "custom") {
+      setUpgradeFeature("Custom Payee Names");
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    setUseDescriptionAsPayee(value === "description");
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -318,6 +343,12 @@ export function SplitwiseSettingsForm({
           onSaveSuccess?.();
         }
       } else {
+        // Check if it's a premium feature error
+        if (result.isPremiumFeature) {
+          setUpgradeFeature("Premium Settings");
+          setShowUpgradeModal(true);
+        }
+
         setError(result.error || "Failed to save settings");
 
         // If there's an emoji conflict, highlight it
@@ -532,24 +563,39 @@ export function SplitwiseSettingsForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="splitRatio">Split Ratio</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="splitRatio">Split Ratio</Label>
+              {!isPremium && <PremiumBadge variant="small" />}
+            </div>
             <Select
               name="splitRatio"
               value={selectedSplitRatio}
               onValueChange={handleSplitRatioChange}
               required
+              disabled={!isPremium && selectedSplitRatio === "1:1"}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select split ratio" />
               </SelectTrigger>
               <SelectContent>
                 {SPLIT_RATIO_PRESETS.map((ratio) => (
-                  <SelectItem key={ratio.value} value={ratio.value}>
+                  <SelectItem
+                    key={ratio.value}
+                    value={ratio.value}
+                    disabled={!isPremium && ratio.value !== "1:1"}
+                  >
                     {ratio.label}
+                    {!isPremium && ratio.value !== "1:1" && " 👑"}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {!isPremium && (
+              <p className="text-xs text-muted-foreground">
+                Custom split ratios require Premium. Currently using 1:1 (equal
+                split).
+              </p>
+            )}
           </div>
 
           {showCustomSplit && (
@@ -569,7 +615,7 @@ export function SplitwiseSettingsForm({
             </div>
           )}
 
-          {partnerInfo && (
+          {partnerInfo && selectedSplitRatio !== "1:1" && (
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>
@@ -597,12 +643,13 @@ export function SplitwiseSettingsForm({
           )}
 
           <div className="space-y-2">
-            <Label>YNAB Transaction Mapping</Label>
+            <div className="flex items-center justify-between">
+              <Label>YNAB Transaction Mapping</Label>
+              {!isPremium && <PremiumBadge variant="small" />}
+            </div>
             <RadioGroup
               value={useDescriptionAsPayee ? "description" : "custom"}
-              onValueChange={(value) =>
-                setUseDescriptionAsPayee(value === "description")
-              }
+              onValueChange={handlePayeeOptionChange}
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="description" id="description" />
@@ -611,12 +658,25 @@ export function SplitwiseSettingsForm({
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="custom" id="custom" />
-                <Label htmlFor="custom" className="text-sm font-normal">
+                <RadioGroupItem
+                  value="custom"
+                  id="custom"
+                  disabled={!isPremium}
+                />
+                <Label
+                  htmlFor="custom"
+                  className={`text-sm font-normal ${!isPremium ? "text-muted-foreground" : ""}`}
+                >
                   Use custom YNAB payee name, put Splitwise description in memo
+                  {!isPremium && " 👑"}
                 </Label>
               </div>
             </RadioGroup>
+            {!isPremium && (
+              <p className="text-xs text-muted-foreground">
+                Custom payee names require Premium.
+              </p>
+            )}
 
             {!useDescriptionAsPayee && (
               <div className="mt-3 space-y-2">
@@ -697,6 +757,12 @@ export function SplitwiseSettingsForm({
             </p>
           )}
         </form>
+
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          feature={upgradeFeature}
+        />
       </CardContent>
     </Card>
   );

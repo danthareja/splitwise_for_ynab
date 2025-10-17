@@ -2,8 +2,15 @@
 
 import { Clock } from "lucide-react";
 import { useEffect, useState } from "react";
+import { PremiumBadge } from "@/components/premium-badge";
 
-export function ScheduledSyncInfo() {
+interface ScheduledSyncInfoProps {
+  isPremium?: boolean;
+}
+
+export function ScheduledSyncInfo({
+  isPremium = true,
+}: ScheduledSyncInfoProps) {
   const [localTimeRange, setLocalTimeRange] = useState<string>("");
   const [isClient, setIsClient] = useState(false);
 
@@ -95,16 +102,19 @@ export function ScheduledSyncInfo() {
 
   return (
     <div className="mb-4 bg-gray-50 border border-gray-200 rounded-lg p-3">
-      <div className="flex items-center gap-2">
-        <Clock className="h-5 w-5 text-gray-600" />
-        <p className="text-sm text-gray-700">
-          <span className="font-medium">Automatic sync:</span> Daily between{" "}
-          {isClient && localTimeRange ? (
-            localTimeRange
-          ) : (
-            <span className="inline-block h-4 bg-gray-200 rounded animate-pulse w-32 align-middle"></span>
-          )}
-        </p>
+      <div className="flex items-center gap-2 justify-between">
+        <div className="flex items-center gap-2">
+          <Clock className="h-5 w-5 text-gray-600" />
+          <p className="text-sm text-gray-700">
+            <span className="font-medium">Automatic sync:</span> Daily between{" "}
+            {isClient && localTimeRange ? (
+              localTimeRange
+            ) : (
+              <span className="inline-block h-4 bg-gray-200 rounded animate-pulse w-32 align-middle"></span>
+            )}
+          </p>
+        </div>
+        {isPremium && <PremiumBadge variant="small" />}
       </div>
     </div>
   );

@@ -15,13 +15,16 @@ import { YNABFlag } from "@/components/ynab-flag";
 import { Button } from "@/components/ui/button";
 import { ScheduledSyncInfo } from "@/components/scheduled-sync-info";
 import { ApiKeyCard } from "@/components/api-key-card";
-import { SubscriptionTestCard } from "@/components/subscription-test-card";
+import { SubscriptionCard } from "@/components/subscription-card";
 import type { Metadata } from "next";
 import { MAX_REQUESTS, WINDOW_SECONDS } from "@/lib/rate-limit";
 import { redirect } from "next/navigation";
 import { DisabledAccountAlert } from "@/components/disabled-account-alert";
 import { getUserFirstName } from "@/lib/utils";
-import { getUserSubscriptionInfo } from "@/services/subscription";
+import {
+  getUserSubscriptionInfo,
+  isUserPremium,
+} from "@/services/subscription";
 import {
   Card,
   CardHeader,
@@ -82,6 +85,7 @@ export default async function DashboardPage() {
 
   // Get subscription info for test card
   const subscriptionInfo = await getUserSubscriptionInfo(user.id);
+  const isPremium = await isUserPremium(user.id);
 
   // Check if user is fully configured
   const isFullyConfigured =
@@ -172,14 +176,26 @@ export default async function DashboardPage() {
             />
           </div>
 
+          {/* Subscription Card */}
+          <div className="mt-8">
+            <SubscriptionCard
+              subscriptionStatus={subscriptionInfo.status}
+              subscriptionTier={subscriptionInfo.tier}
+              currentPeriodEnd={subscriptionInfo.currentPeriodEnd}
+              stripeCustomerId={subscriptionInfo.stripeCustomerId}
+            />
+          </div>
+
           <div className="mt-8 border rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Recent Activity</h2>
               {isFullyConfigured && <ManualSyncButton />}
             </div>
 
-            {/* Scheduled Sync Info for fully configured users */}
-            {isFullyConfigured && <ScheduledSyncInfo />}
+            {/* Scheduled Sync Info - Only show for premium users */}
+            {isFullyConfigured && isPremium && (
+              <ScheduledSyncInfo isPremium={isPremium} />
+            )}
 
             {syncHistory && syncHistory.length > 0 ? (
               <SyncHistory
@@ -221,17 +237,9 @@ export default async function DashboardPage() {
               maxRequests={MAX_REQUESTS}
               windowSeconds={WINDOW_SECONDS}
               baseUrl={process.env.NEXT_PUBLIC_BASE_URL}
+              isPremium={isPremium}
             />
           )}
-
-          {/* Subscription Test Card */}
-          <div className="mt-8">
-            <SubscriptionTestCard
-              subscriptionStatus={subscriptionInfo.status}
-              subscriptionTier={subscriptionInfo.tier}
-              currentPeriodEnd={subscriptionInfo.currentPeriodEnd}
-            />
-          </div>
 
           {/* FAQ Section */}
           <Card id="faq" className="mt-8">
@@ -310,6 +318,47 @@ export default async function DashboardPage() {
                     Nothing happens immediately. If you later re‑apply your sync
                     flag to that same transaction, it will be treated as new and
                     synced again, creating a duplicate in Splitwise.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="q-subscription">
+                  <AccordionTrigger>
+                    What&apos;s the difference between Free and Premium?
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <strong>Free tier:</strong> Manual sync with rate limits (2
+                    syncs/hour, 6/day), 7 days of history, and basic features.
+                    Perfect for occasional syncing.
+                    <div className="mt-2">
+                      <strong>Premium ($4.99/month or $49/year):</strong>{" "}
+                      Unlimited manual syncs, automatic hourly sync, API key
+                      access, unlimited history, custom split ratios (60/40,
+                      70/30, etc.), and custom payee names. Best for power users
+                      who want full automation.
+                    </div>
+                    <div className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                      See the{" "}
+                      <a
+                        href="/pricing"
+                        className="text-primary hover:underline"
+                      >
+                        pricing page
+                      </a>{" "}
+                      for more details.
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="q-custom-split-ratio">
+                  <AccordionTrigger>
+                    Can I use custom split ratios on the Free tier?
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    The Free tier supports equal splits (1:1) only. Custom split
+                    ratios like 60/40, 70/30, or any other ratio require a
+                    Premium subscription. This ensures the sync logic stays
+                    simple and reliable for free users while providing advanced
+                    flexibility for paying subscribers.
                   </AccordionContent>
                 </AccordionItem>
 
