@@ -17,4 +17,6 @@ Sentry.init({
   debug: false,
 
   enableLogs: true,
+
+  integrations: [Sentry.prismaIntegration()],
 });
