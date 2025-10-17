@@ -265,11 +265,31 @@ export abstract class YNABError extends Error {
   public readonly requires_action: boolean = false;
 
   constructor(originalError: AxiosError, operation: string) {
-    const ynabError = (originalError.response?.data as YNABErrorResponse)
-      ?.error;
-    const helpfulMessage = ynabError
-      ? `YNAB can't ${operation}: ${ynabError.detail} (${ynabError.id})`
-      : `YNAB can't ${operation}`;
+    const responseData = originalError.response?.data as
+      | YNABErrorResponse
+      | { error?: string; error_description?: string }
+      | undefined;
+
+    const apiError =
+      typeof (responseData as any)?.error === "object"
+        ? ((responseData as any).error as YNABErrorDetail)
+        : undefined;
+    const oauthError =
+      typeof (responseData as any)?.error === "string"
+        ? ((responseData as any).error as string)
+        : undefined;
+    const oauthErrorDescription = (responseData as any)?.error_description as
+      | string
+      | undefined;
+
+    let helpfulMessage = `YNAB can't ${operation}`;
+    if (apiError?.detail) {
+      const idSuffix = apiError.id ? ` (${apiError.id})` : "";
+      helpfulMessage = `YNAB can't ${operation}: ${apiError.detail}${idSuffix}`;
+    } else if (oauthError || oauthErrorDescription) {
+      const parts = [oauthError, oauthErrorDescription].filter(Boolean);
+      helpfulMessage = `YNAB can't ${operation}: ${parts.join(" - ")}`;
+    }
 
     super(helpfulMessage, { cause: originalError });
     this.name = "YNABError";
