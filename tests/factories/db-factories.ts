@@ -7,17 +7,22 @@ import type {
   SyncHistory,
   SyncState,
 } from "@/prisma/generated/client";
+import { nanoid } from "nanoid";
 
 // Test data creation functions that actually insert into the database
 export async function createTestUser(
   overrides: Partial<User> = {},
 ): Promise<User> {
+  const id = overrides.id || `test-user-${nanoid(10)}`;
+  const email = overrides.email || `test-${nanoid(10)}@example.com`;
+  const apiKey = overrides.apiKey || `test-api-key-${nanoid(10)}`;
+
   return await prisma.user.create({
     data: {
-      id: `test-user-${Math.random().toString(36).substring(7)}`,
+      id,
       name: "Test User",
-      email: `test-${Math.random().toString(36).substring(7)}@example.com`,
-      apiKey: `test-api-key-${Math.random().toString(36).substring(7)}`,
+      email,
+      apiKey,
       ...overrides,
     },
   });
@@ -27,11 +32,16 @@ export async function createTestAccount(
   type: "ynab" | "splitwise",
   overrides: Partial<Account> & { userId: string },
 ): Promise<Account> {
+  const providerAccountId =
+    overrides.providerAccountId || `${type}-account-${nanoid(10)}`;
+  const access_token =
+    overrides.access_token || `${type}-access-token-${nanoid(10)}`;
+
   const baseData = {
     type: type === "ynab" ? "oauth" : "oauth",
     provider: type === "ynab" ? "ynab" : "splitwise",
-    providerAccountId: `${type}-account-${Math.random().toString(36).substring(7)}`,
-    access_token: `${type}-access-token-${Math.random().toString(36).substring(7)}`,
+    providerAccountId,
+    access_token,
     ...overrides,
   };
 
@@ -43,9 +53,11 @@ export async function createTestAccount(
 export async function createTestSplitwiseSettings(
   overrides: Partial<SplitwiseSettings> & { userId: string },
 ): Promise<SplitwiseSettings> {
+  const groupId = overrides.groupId || `test-group-${nanoid(10)}`;
+
   return await prisma.splitwiseSettings.create({
     data: {
-      groupId: `test-group-${Math.random().toString(36).substring(7)}`,
+      groupId,
       groupName: "Test Splitwise Group",
       currencyCode: "USD",
       emoji: "✅",
@@ -59,11 +71,15 @@ export async function createTestSplitwiseSettings(
 export async function createTestYnabSettings(
   overrides: Partial<YnabSettings> & { userId: string },
 ): Promise<YnabSettings> {
+  const budgetId = overrides.budgetId || `test-budget-${nanoid(10)}`;
+  const splitwiseAccountId =
+    overrides.splitwiseAccountId || `test-account-${nanoid(10)}`;
+
   return await prisma.ynabSettings.create({
     data: {
-      budgetId: `test-budget-${Math.random().toString(36).substring(7)}`,
+      budgetId,
       budgetName: "Test YNAB Budget",
-      splitwiseAccountId: `test-account-${Math.random().toString(36).substring(7)}`,
+      splitwiseAccountId,
       splitwiseAccountName: "Test Splitwise Account",
       manualFlagColor: "blue",
       syncedFlagColor: "green",
@@ -134,20 +150,20 @@ export async function createFullyConfiguredUser(
 
 // Helper function to create paired group users
 export async function createPairedGroupUsers() {
-  const groupId = `paired-group-${Math.random().toString(36).substring(7)}`;
+  const groupId = `paired-group-${nanoid(10)}`;
 
   const user1Data = await createFullyConfiguredUser({
     user: {
-      id: "user-1",
-      email: "user1@example.com",
+      id: `user-1-${nanoid(10)}`,
+      email: `user1-${nanoid(10)}@example.com`,
     },
     splitwiseSettings: { groupId },
   });
 
   const user2Data = await createFullyConfiguredUser({
     user: {
-      id: "user-2",
-      email: "user2@example.com",
+      id: `user-2-${nanoid(10)}`,
+      email: `user2-${nanoid(10)}@example.com`,
     },
     splitwiseSettings: { groupId },
   });

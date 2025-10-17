@@ -10,6 +10,13 @@ export default defineConfig({
     hookTimeout: 30000,
     include: ["tests/**/*.test.ts"],
     exclude: ["node_modules", "dist", ".next"],
+    // Run tests serially to avoid database conflicts
+    pool: "forks",
+    poolOptions: {
+      forks: {
+        singleFork: true,
+      },
+    },
     env: {
       DATABASE_URL: "postgresql://postgres:postgres@localhost:6969/test",
       RESEND_API_KEY: "test-resend-api-key",
