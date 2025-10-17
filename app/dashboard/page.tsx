@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { getUserWithAccounts } from "@/app/actions/db";
-import type { Account } from "@prisma/client";
+import type { Account } from "@/prisma/generated/client";
 import { AppHeader } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { SplitwiseConnectionCard } from "@/components/splitwise-connection-card";

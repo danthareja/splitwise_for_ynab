@@ -45,3 +45,9 @@ next-env.d.ts
 
 # sync state
 .sync-state
+
+# prisma generated client
+prisma/generated
+
+# db dump
+db_dump.bak

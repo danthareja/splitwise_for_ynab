@@ -6,7 +6,7 @@ import type {
   YnabSettings,
   SyncHistory,
   SyncState,
-} from "@prisma/client";
+} from "@/prisma/generated/client";
 
 // Test data creation functions that actually insert into the database
 export async function createTestUser(

@@ -2,9 +2,9 @@
  * Forked from
  * @auth/prisma-adapter
  */
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/prisma/generated/client";
 import { generateApiKey } from "./api-key";
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@/prisma/generated/client";
 import type {
   Adapter,
   AdapterAccount,

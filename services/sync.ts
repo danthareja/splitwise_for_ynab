@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
-import type { SyncedItem } from "@prisma/client";
+import type { SyncedItem } from "@/prisma/generated/client";
 import { prisma } from "@/db";
 import { stripEmojis } from "@/lib/utils";
 import { YNABError } from "./ynab-axios";

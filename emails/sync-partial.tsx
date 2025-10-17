@@ -1,4 +1,4 @@
-import { SyncedItem } from "@prisma/client";
+import { SyncedItem } from "@/prisma/generated/client";
 import { Button, Heading, Section, Text, Hr } from "@react-email/components";
 import { baseUrl, EmailLayout } from "./components/email-layout";
 import { emailStyles } from "./components/email-styles";

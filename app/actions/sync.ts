@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/db"; // Declare the prisma variable
 import { enforcePerUserRateLimit } from "@/services/rate-limit";
 import { getRateLimitOptions } from "@/lib/rate-limit";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/prisma/generated/client";
 import { isUserFullyConfigured } from "./db";
 
 export async function syncUserDataAction() {

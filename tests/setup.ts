@@ -1,8 +1,12 @@
 import { beforeAll, afterAll, beforeEach, afterEach, vi } from "vitest";
 import { setupServer } from "msw/node";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@/prisma/generated/client";
+import { PrismaNeon } from "@prisma/adapter-neon";
 
-export const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL!;
+const adapter = new PrismaNeon({ connectionString });
+
+export const prisma = new PrismaClient({ adapter });
 
 vi.mock("@sentry/nextjs", () => ({
   captureException: vi.fn(),
