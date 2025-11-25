@@ -1,768 +1,390 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Zap, ExternalLink } from "lucide-react";
-import { InteractiveTransactionDemo } from "@/components/interactive-transaction-demo";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { SignInButton } from "@/components/sign-in-button";
+import {
+  PersonaWalkthrough,
+  YNABCategories,
+  YNABAccounts,
+  YNABTransaction,
+} from "@/components/persona-walkthrough";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0f0f0f]">
       <Header />
 
       {/* Hero Section */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center">
-          <Badge
-            variant="secondary"
-            className="mb-6 px-3 py-1 text-sm font-medium bg-gradient-to-r from-blue-100 to-green-100 dark:from-blue-900/50 dark:to-green-900/50 text-blue-800 dark:text-blue-200 hover:from-blue-200 hover:to-green-200 dark:hover:from-blue-800/50 dark:hover:to-green-800/50 border-0"
-          >
-            For YNAB Users & Coaches
-          </Badge>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6 tracking-tight">
-            Automate your Shared Expenses
-          </h1>
-          <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed">
-            Stop the tedious manual data entry. Flag a transaction in YNAB, and
-            we&apos;ll automatically sync it with Splitwise while maintaining{" "}
-            <span className="font-bold"> perfect category tracking</span>.
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-16 pb-12 sm:pb-20">
+        <div className="text-center mb-4 sm:mb-6">
+          <p className="hidden sm:block text-sm uppercase tracking-[0.2em] text-amber-700 dark:text-amber-500 font-medium mb-8">
+            For YNAB users who split expenses
           </p>
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-serif text-gray-900 dark:text-white leading-[1.1] tracking-tight mb-4 sm:mb-8">
+            Your categories are{" "}
+            <span className="relative">
+              <span className="relative z-10">lying</span>
+              <span
+                className="absolute bottom-0.5 sm:bottom-1 md:bottom-2 left-0 w-full h-2 sm:h-3 bg-red-200 dark:bg-red-900/50 -z-0"
+                aria-hidden="true"
+              />
+            </span>{" "}
+            to you.
+          </h1>
+          <p className="text-lg sm:text-xl md:text-2xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
+            That $150 grocery run? Only $75 was yours.
+            <br className="hidden sm:block" />
+            <span className="sm:hidden"> </span>
+            <span className="text-gray-900 dark:text-white font-medium">
+              We make YNAB see the truth.
+            </span>
+          </p>
+        </div>
+
+        {/* YNAB-style Category Comparison */}
+        <div className="max-w-xl mx-auto my-8 sm:my-16 space-y-4 sm:space-y-6">
+          {/* Without - shows less available */}
+          <div>
+            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 text-center font-medium">
+              Without Splitwise for YNAB
+            </p>
+            <YNABCategories
+              title="Category"
+              categories={[
+                {
+                  emoji: "🛒",
+                  name: "Groceries",
+                  assigned: "$300.00",
+                  activity: "-$150.00",
+                  available: "$150.00",
+                  availableColor: "yellow",
+                },
+              ]}
+            />
+            <p className="text-gray-500 dark:text-gray-400 text-xs mt-2 text-center">
+              You spent $150 on groceries...
+            </p>
+          </div>
+
+          {/* Arrow */}
           <div className="flex justify-center">
-            <SignInButton />
+            <svg
+              className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 14l-7 7m0 0l-7-7m7 7V3"
+              />
+            </svg>
+          </div>
+
+          {/* With - shows more available */}
+          <div>
+            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 text-center font-medium">
+              With Splitwise for YNAB
+            </p>
+            <div className="ring-2 ring-emerald-500/50 rounded-lg">
+              <YNABCategories
+                title="Category"
+                categories={[
+                  {
+                    emoji: "🛒",
+                    name: "Groceries",
+                    assigned: "$300.00",
+                    activity: "-$75.00",
+                    available: "$225.00",
+                    availableColor: "green",
+                  },
+                ]}
+              />
+            </div>
+            <p className="text-emerald-600 dark:text-emerald-400 text-xs mt-2 text-center">
+              ✓ Only $75 was yours—accurate category balance
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-center">
+          <SignInButton />
+        </div>
+      </section>
+
+      {/* The Secret: Phantom Account Section */}
+      <section className="py-16 sm:py-24 bg-white dark:bg-[#141414] border-y border-gray-100 dark:border-gray-800">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-3xl md:text-4xl font-serif text-gray-900 dark:text-white mb-6">
+              The secret: a phantom Splitwise account
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
+              Create a &ldquo;Splitwise&rdquo; cash account in YNAB—it&apos;s
+              not a real bank account, just an IOU ledger. Positive balance
+              means you&apos;re owed money. Negative means you owe. When you
+              settle up, it goes to zero.
+            </p>
+          </div>
+
+          {/* Accounts Example */}
+          <div className="max-w-md mx-auto mb-8">
+            <YNABAccounts
+              title="Accounts"
+              accounts={[
+                { name: "💰 Checking", balance: "$750.00", isPositive: true },
+                {
+                  name: "💳 Credit Card",
+                  balance: "-$100.00",
+                  isPositive: false,
+                },
+                {
+                  name: "🤝 Splitwise",
+                  balance: "+$75.00",
+                  isPositive: true,
+                  highlight: true,
+                },
+              ]}
+            />
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
+              <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                +$75
+              </span>{" "}
+              — Your partner owes you half of that $150 grocery run
+            </p>
+          </div>
+
+          {/* Info banner */}
+          <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+              <strong>Don&apos;t have Splitwise?</strong>{" "}
+              <a
+                href="https://www.splitwise.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:no-underline"
+              >
+                It&apos;s free to sign up
+              </a>
+              —great for tracking shared expenses with anyone.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Problem Section */}
-      <section className="bg-white dark:bg-gray-900 py-20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
-              The Problem
+      {/* Interactive Persona Walkthrough */}
+      <PersonaWalkthrough />
+
+      {/* What We Automate Section */}
+      <section className="py-16 sm:py-24 bg-gray-50 dark:bg-[#0a0a0a] border-y border-gray-100 dark:border-gray-800">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-3xl md:text-4xl font-serif text-gray-900 dark:text-white mb-6">
+              What we automate
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              Not all partnerships use joint accounts. If you&apos;re in a
-              partnership with many shared expenses but separate accounts,
-              tracking this in YNAB can be a pain.
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
+              Without this app, you&apos;d manually enter every expense in
+              Splitwise AND add adjustment transactions in YNAB. We do both
+              automatically.
             </p>
           </div>
 
-          <div className="mb-16">
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 tracking-tight text-center">
-              Common Challenges:
-            </h3>
-            <div className="max-w-2xl mx-auto">
-              <ul className="space-y-3">
-                <li className="flex items-start">
-                  <div className="w-2 h-2 bg-red-500 rounded-full mt-2.5 mr-3 flex-shrink-0"></div>
-                  <span className="text-base text-gray-700 dark:text-gray-300">
-                    You cover their share of purchases at first
-                  </span>
-                </li>
-                <li className="flex items-start">
-                  <div className="w-2 h-2 bg-red-500 rounded-full mt-2.5 mr-3 flex-shrink-0"></div>
-                  <span className="text-base text-gray-700 dark:text-gray-300">
-                    Some of your expenses are paid by your partner
-                  </span>
-                </li>
-                <li className="flex items-start">
-                  <div className="w-2 h-2 bg-red-500 rounded-full mt-2.5 mr-3 flex-shrink-0"></div>
-                  <span className="text-base text-gray-700 dark:text-gray-300">
-                    How to plan for a partner&apos;s share of groceries?
-                  </span>
-                </li>
-                <li className="flex items-start">
-                  <div className="w-2 h-2 bg-red-500 rounded-full mt-2.5 mr-3 flex-shrink-0"></div>
-                  <span className="text-base text-gray-700 dark:text-gray-300">
-                    How to track paying them back for rent?
-                  </span>
-                </li>
-              </ul>
+          {/* Flagging Example */}
+          <div className="mb-12">
+            <p className="text-sm uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 text-center font-medium">
+              Just flag the transaction
+            </p>
+            <YNABTransaction
+              flag="blue"
+              account="💰 Checking"
+              date={new Date()}
+              payee="Whole Foods"
+              category="🛒 Groceries"
+              outflow="$150.00"
+              highlightFlag
+            />
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-3">
+              Click the flag → we handle the rest
+            </p>
+          </div>
+
+          {/* Steps */}
+          <div className="grid md:grid-cols-3 gap-6 text-center mb-10">
+            <div>
+              <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
+                <span className="font-serif text-amber-700 dark:text-amber-400">
+                  1
+                </span>
+              </div>
+              <p className="font-medium text-gray-900 dark:text-white mb-1">
+                Flag the transaction
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Your only action
+              </p>
+            </div>
+            <div>
+              <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
+                <span className="font-serif text-amber-700 dark:text-amber-400">
+                  2
+                </span>
+              </div>
+              <p className="font-medium text-gray-900 dark:text-white mb-1">
+                We sync to Splitwise
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Expense created automatically
+              </p>
+            </div>
+            <div>
+              <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
+                <span className="font-serif text-amber-700 dark:text-amber-400">
+                  3
+                </span>
+              </div>
+              <p className="font-medium text-gray-900 dark:text-white mb-1">
+                YNAB stays accurate
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Adjustment added, same category
+              </p>
             </div>
           </div>
 
-          {/* Prominent Splitwise Introduction */}
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-blue-500 rounded-2xl transform rotate-1"></div>
-            <Card className="relative bg-white dark:bg-gray-800 border-0 shadow-xl overflow-hidden transform -rotate-1 hover:rotate-0 transition-transform duration-300">
-              <CardContent className="p-10 text-center">
-                <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
-                  Enter: Splitwise
-                </h3>
-                <p className="text-lg text-gray-600 dark:text-gray-300 mb-6 leading-relaxed max-w-2xl mx-auto">
-                  Splitwise helps track who owes what, but integrating it with
-                  YNAB&apos;s detailed budgeting has been a{" "}
-                  <strong className="text-red-600 dark:text-red-400">
-                    manual nightmare
-                  </strong>
-                  .
-                </p>
-                <div className="inline-flex items-center px-4 py-2 bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200 rounded-full text-sm font-medium">
-                  <span className="mr-2">⚡</span>
-                  Until now...
-                </div>
-              </CardContent>
-            </Card>
+          {/* Links to walkthroughs */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
+            <a
+              href="#walkthrough-solo"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 font-medium hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
+            >
+              <span>👤</span>
+              <span>I use YNAB, my partner doesn&apos;t</span>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 10l7-7m0 0l7 7m-7-7v18"
+                />
+              </svg>
+            </a>
+            <a
+              href="#walkthrough-dual"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+            >
+              <span>👥</span>
+              <span>We both use YNAB</span>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 10l7-7m0 0l7 7m-7-7v18"
+                />
+              </svg>
+            </a>
+          </div>
+
+          {/* Custom splits callout */}
+          <div className="bg-gray-100 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+              <strong className="text-gray-900 dark:text-white">
+                Not 50/50?
+              </strong>{" "}
+              No problem. You can set a custom split ratio.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Existing Solution Section */}
-      <section className="bg-gray-50 dark:bg-gray-800 py-20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
-              The Existing Solution
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed mb-4">
-              YNAB&apos;s{" "}
-              <a
-                href="https://support.ynab.com/en_us/splitwise-and-ynab-a-guide-H1GwOyuCq"
-                className="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center font-medium"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                official guide <ExternalLink className="h-3 w-3 ml-1" />
-              </a>{" "}
-              makes you choose: either lose detailed spending insights or spend
-              hours on manual data entry.
-            </p>
-          </div>
+      {/* The YNAB Problem Section */}
+      <section className="py-16 sm:py-24">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl md:text-4xl font-serif text-center text-gray-900 dark:text-white mb-6">
+            The workarounds don&apos;t work.
+          </h2>
+          <p className="text-center text-gray-600 dark:text-gray-400 mb-12 sm:mb-16 max-w-xl mx-auto">
+            Every YNAB user with shared expenses has tried these.
+          </p>
 
-          <div className="grid lg:grid-cols-2 gap-8 mb-12 relative">
+          <div className="space-y-6">
             {/* Option 1 */}
-            <Card className="border-0 shadow-md overflow-hidden bg-white dark:bg-gray-900">
-              <CardContent className="p-8">
-                <div className="flex items-center mb-4">
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold mr-3">
-                    1
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
-                    Keep It Simple
-                  </h3>
-                </div>
-                <p className="text-base text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-                  Use a generic &quot;Splitting&quot; category for all shared
-                  expenses.
-                </p>
-                <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mb-4">
-                  <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
-                    ✓ Easy to manage
-                  </p>
-                </div>
-                <div className="bg-red-50 dark:bg-red-900/30 p-4 rounded-lg">
-                  <p className="text-sm text-red-800 dark:text-red-200 font-medium">
-                    ✗ Lose all category insights
-                  </p>
-                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-                    Can&apos;t track spending on groceries, utilities, etc.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Big OR divider */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-full w-16 h-16 flex items-center justify-center shadow-lg">
-                <span className="text-2xl font-bold text-gray-600 dark:text-gray-300">
-                  OR
+            <div className="bg-white dark:bg-[#141414] p-6 rounded-xl border border-gray-200 dark:border-gray-800">
+              <div className="flex items-start justify-between gap-4 mb-3">
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  The &ldquo;Reimbursement&rdquo; category
+                </h3>
+                <span className="flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                  Loses insight
                 </span>
               </div>
+              <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                Dump all shared expenses into one generic category. Simple, but
+                now you have no idea how much you <em>actually</em> spend on
+                groceries, gas, or utilities.
+              </p>
             </div>
 
             {/* Option 2 */}
-            <Card className="border-0 shadow-md overflow-hidden bg-white dark:bg-gray-900">
-              <CardContent className="p-8">
-                <div className="flex items-center mb-4">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold mr-3">
-                    2
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
-                    Keep It Detailed
-                  </h3>
-                </div>
-                <p className="text-base text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-                  Create complex &quot;Settle Up&quot; split transactions with
-                  multiple lines.
-                </p>
-                <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg mb-4">
-                  <p className="text-sm text-green-800 dark:text-green-200 font-medium">
-                    ✓ Maintain category accuracy
-                  </p>
-                </div>
-                <div className="bg-red-50 dark:bg-red-900/30 p-4 rounded-lg">
-                  <p className="text-sm text-red-800 dark:text-red-200 font-medium">
-                    ✗ Extremely tedious process
-                  </p>
-                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-                    Manual split transactions for every settlement
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* You Shouldn't Have to Choose */}
-          <Card className="max-w-3xl mx-auto border-2 border-green-200 dark:border-green-800 shadow-lg overflow-hidden bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20">
-            <CardContent className="p-10 text-center">
-              {/* <div className="flex justify-center mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center">
-                  <CheckCircle className="h-8 w-8 text-white" />
-                </div>
-              </div> */}
-              <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 tracking-tight">
-                You Shouldn&apos;t Have to Choose
-              </h3>
-              <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed max-w-2xl mx-auto">
-                Our solution gives you{" "}
-                <strong className="text-green-600 dark:text-green-400">
-                  both simplicity AND detailed category tracking
-                </strong>{" "}
-                without any manual work.
-              </p>
-
-              <div className="grid md:grid-cols-2 gap-6 mb-8">
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
-                  <div className="flex items-center justify-center mb-3">
-                    <Zap className="h-6 w-6 text-blue-500 mr-2" />
-                    <h4 className="text-lg font-bold text-gray-900 dark:text-white">
-                      Simple as Option 1
-                    </h4>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    Just flag transactions with a color. That&apos;s it.
-                  </p>
-                </div>
-
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
-                  <div className="flex items-center justify-center mb-3">
-                    <CheckCircle className="h-6 w-6 text-green-500 mr-2" />
-                    <h4 className="text-lg font-bold text-gray-900 dark:text-white">
-                      Detailed as Option 2
-                    </h4>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    Perfect category tracking with zero manual split
-                    transactions.
-                  </p>
-                </div>
-              </div>
-
-              {/* <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-100 to-blue-100 dark:from-green-900/50 dark:to-blue-900/50 text-green-800 dark:text-green-200 rounded-full text-base font-medium">
-                <span className="mr-2">🎯</span>
-                The best of both worlds, automatically
-              </div> */}
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Our Solution Section */}
-      <section className="bg-white dark:bg-gray-900 py-20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
-              Our Solution
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              Our solution uses a{" "}
-              <strong className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                Splitwise cash account
-              </strong>{" "}
-              in YNAB to track the balance owed in the Splitwise app. Let me
-              show you exactly how this works with a real example.
-            </p>
-          </div>
-
-          {/* Introduction */}
-          <div className="mb-16">
-            <Card className="max-w-4xl mx-auto border-0 shadow-md overflow-hidden bg-white dark:bg-gray-800">
-              <CardContent className="p-8">
-                <div className="grid lg:grid-cols-2 gap-8 items-center">
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 tracking-tight">
-                      How It Works:
-                    </h3>
-                    <ul className="space-y-4">
-                      <li className="flex items-start">
-                        <CheckCircle className="h-6 w-6 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
-                        <div>
-                          <strong className="text-gray-900 dark:text-white font-medium">
-                            Positive balance:
-                          </strong>
-                          <span className="text-gray-600 dark:text-gray-300 ml-1">
-                            You&apos;re owed money by your partner
-                          </span>
-                        </div>
-                      </li>
-                      <li className="flex items-start">
-                        <CheckCircle className="h-6 w-6 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
-                        <div>
-                          <strong className="text-gray-900 dark:text-white font-medium">
-                            Negative balance:
-                          </strong>
-                          <span className="text-gray-600 dark:text-gray-300 ml-1">
-                            You owe money to your partner
-                          </span>
-                        </div>
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-gray-700 p-8 rounded-xl text-center">
-                    <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-6 tracking-tight">
-                      Starting Point: Clean Slate
-                    </h4>
-                    <div className="max-w-[300px] mx-auto border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm overflow-hidden">
-                      <img
-                        src="/images/0-accounts-2.png"
-                        alt="YNAB accounts showing Checking at $400 and Splitwise at $0"
-                        className="w-full"
-                      />
-                    </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-4 font-medium">
-                      Both accounts are ready: Checking has $400, Splitwise
-                      starts at $0
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Real Example Header */}
-          <div className="text-center mb-12">
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
-              A Real Example: Dan and Eira&apos;s Month
-            </h3>
-            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              Follow along as Dan and Eira handle their shared expenses
-              throughout the month. Dan uses YNAB, but Eira does not.
-            </p>
-          </div>
-
-          {/* Example 1: Dan Pays for Gas */}
-          <div className="mb-20">
-            <div className="bg-blue-50 dark:bg-blue-900/30 p-6 rounded-xl mb-8">
-              <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight">
-                Step 1: Dan pays $50 for gas
-              </h4>
-              <p className="text-base text-gray-600 dark:text-gray-300 leading-relaxed">
-                Dan fills up the car they both use. Here&apos;s the manual
-                process to categorize this expense:
-              </p>
-            </div>
-
-            <div className="grid lg:grid-cols-3 gap-8 mb-8">
-              <Card className="border-0 shadow-md overflow-hidden bg-white dark:bg-gray-800">
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold mr-3">
-                      1
-                    </div>
-                    <h5 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
-                      YNAB Transaction
-                    </h5>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-                    Dan categorizes the $50 <strong>outflow</strong> in his{" "}
-                    <i>Transportation</i> category
-                  </p>
-                  <div className="border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm overflow-hidden">
-                    <img
-                      src="/images/8-flag.png"
-                      alt="YNAB transaction showing $50 gas expense"
-                      className="w-full"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-md overflow-hidden bg-white dark:bg-gray-800">
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-bold mr-3">
-                      2
-                    </div>
-                    <h5 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
-                      Splitwise Entry
-                    </h5>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-                    Dan adds a $50 <strong>split evenly</strong> expense to
-                    their shared group
-                  </p>
-                  <div className="border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm overflow-hidden">
-                    <img
-                      src="/images/2-splitwise-exp-2.png"
-                      alt="Splitwise showing gas expense split between Dan and Eira"
-                      className="w-full"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-md overflow-hidden bg-white dark:bg-gray-800">
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold mr-3">
-                      3
-                    </div>
-                    <h5 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
-                      YNAB Adjustment
-                    </h5>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-                    Dan adds a $25 <strong>inflow</strong> to his Splitwise
-                    account, categorized back to <i>Transportation</i>
-                  </p>
-                  <div className="border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm overflow-hidden">
-                    <img
-                      src="/images/1-ynab-txn.png"
-                      alt="YNAB showing both gas transactions"
-                      className="w-full"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="border border-gray-200 dark:border-gray-700 p-6 rounded-xl bg-white dark:bg-gray-800">
-              <h5 className="text-lg font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
-                Result:
-              </h5>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                    <strong>Dan&apos;s YNAB shows:</strong> Only spent $25 on{" "}
-                    <i>Transportation</i> (his half)
-                  </p>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <strong>Dan&apos;s Splitwise shows:</strong>{" "}
-                    <span className="text-green-600 font-bold">+$25</span> (Eira
-                    owes Dan)
-                  </p>
-                </div>
-                <div className="max-w-[300px] border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm overflow-hidden">
-                  <img
-                    src="/images/3-accounts-2.png"
-                    alt="YNAB accounts showing positive Splitwise balance"
-                    className="w-full"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Example 2: Eira Pays for Electricity */}
-          <div className="mb-20">
-            <div className="bg-blue-50 dark:bg-blue-900/30 p-6 rounded-xl mb-8">
-              <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight">
-                Step 2: Eira pays $100 for electricity
-              </h4>
-              <p className="text-base text-gray-600 dark:text-gray-300 leading-relaxed">
-                Later that day, Eira pays their shared electricity bill.
-                Here&apos;s how Dan handles this in his YNAB:
-              </p>
-            </div>
-
-            <div className="grid lg:grid-cols-2 gap-8 mb-8">
-              <Card className="border-0 shadow-md overflow-hidden bg-white dark:bg-gray-800">
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold mr-3">
-                      1
-                    </div>
-                    <h5 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
-                      Splitwise Expense
-                    </h5>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-                    Eira adds the $100 electricity bill to their shared group
-                  </p>
-                  <div className="border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm overflow-hidden">
-                    <img
-                      src="/images/4-splitwise-exp-2.png"
-                      alt="Splitwise showing both gas and electric expenses"
-                      className="w-full"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-md overflow-hidden bg-white dark:bg-gray-800">
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-bold mr-3">
-                      2
-                    </div>
-                    <h5 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
-                      YNAB Transaction
-                    </h5>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-                    Dan adds a $50 <strong>outflow</strong> to his Splitwise
-                    account, categorized to <i>Utilities</i>
-                  </p>
-                  <div className="border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm overflow-hidden">
-                    <img
-                      src="/images/5-ynab-txn.png"
-                      alt="YNAB showing utilities transaction"
-                      className="w-full"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="border border-gray-200 dark:border-gray-700 p-6 rounded-xl bg-white dark:bg-gray-800">
-              <h5 className="text-lg font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
-                Result:
-              </h5>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                    <strong>Dan&apos;s YNAB shows:</strong> Spent $50 on
-                    Utilities (his half)
-                  </p>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <strong>Dan&apos;s Splitwise shows:</strong>{" "}
-                    <span className="text-red-600 font-bold">-$25</span> (Dan
-                    owes Eira $25 net)
-                  </p>
-                </div>
-                <div className="max-w-[300px] border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm overflow-hidden">
-                  <img
-                    src="/images/6-accounts-2.png"
-                    alt="YNAB accounts showing negative Splitwise balance"
-                    className="w-full"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Settling Up */}
-          <div className="mb-16">
-            <div className="bg-blue-50 dark:bg-blue-900/30 p-6 rounded-xl mb-8">
-              <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight">
-                Step 3: Settling Up
-              </h4>
-              <p className="text-base text-gray-600 dark:text-gray-300 leading-relaxed">
-                At the end of the month, Dan and Eira settle their balance. Dan
-                sends Eira $25 and categorizes it as a transfer to his Splitwise
-                account.
-              </p>
-            </div>
-
-            <div className="max-w-2xl mx-auto">
-              <Card className="border-0 shadow-md overflow-hidden bg-white dark:bg-gray-800">
-                <CardContent className="p-8 text-center">
-                  <h5 className="text-lg font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
-                    Transfer: Checking → Splitwise
-                  </h5>
-                  <p className="text-base text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-                    Dan categorizes the $25 <strong>outflow</strong> as a
-                    transfer from his Checking account to his Splitwise account.
-                  </p>
-                  <div className="max-w-[300px] mx-auto border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm overflow-hidden">
-                    <img
-                      src="/images/7-settle-2.png"
-                      alt="YNAB accounts after settling up"
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mt-6">
-                    <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
-                      <strong>Important:</strong> Because its&apos; a transfer,
-                      settling up doesn&apos;t affect spending plan balances!
-                      Dan still shows $25 spent on <i>Transportation</i> and $50
-                      on <i>Utilities</i>.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Important Caveat */}
-          <Card className="max-w-3xl mx-auto border-yellow-200 dark:border-yellow-800 border-2 shadow-md overflow-hidden bg-yellow-50 dark:bg-yellow-900/20">
-            <CardContent className="p-6">
-              <div className="flex items-start">
-                <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-                  <span className="text-white font-bold text-sm">!</span>
-                </div>
-                <div>
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-3 tracking-tight">
-                    Important Caveat
-                  </h4>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 leading-relaxed">
-                    With this workflow,{" "}
-                    <strong>
-                      the dollars in your Splitwise cash account are not
-                      spendable
-                    </strong>
-                    . When the balance is positive (you are owed money), you can
-                    assign those dollars in your plan, but they are not in your
-                    Checking account yet.
-                  </p>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
-                    You must keep an eye on this and settle up as needed.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* The Automation */}
-      <section className="bg-gray-50 dark:bg-gray-800 py-20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
-              The Automation
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              Here&apos;s the cool part:{" "}
-              <strong className="text-green-600 dark:text-green-400">
-                We automate ALL the manual steps above.{" "}
-              </strong>
-              All you have to do is flag transactions with a color.
-            </p>
-          </div>
-
-          {/* Interactive Demo */}
-          <div className="mb-16">
-            <InteractiveTransactionDemo />
-          </div>
-
-          {/* What Happens Automatically Behind the Scenes */}
-          <div className="mb-16">
-            <Card className="max-w-4xl mx-auto border-0 shadow-md overflow-hidden bg-white dark:bg-gray-900">
-              <CardContent className="p-8">
-                <h3 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-8 tracking-tight">
-                  What Happens Automatically Behind the Scenes
+            <div className="bg-white dark:bg-[#141414] p-6 rounded-xl border border-gray-200 dark:border-gray-800">
+              <div className="flex items-start justify-between gap-4 mb-3">
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  Manual split transactions
                 </h3>
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div className="flex items-start">
-                    <div>
-                      <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                        Splitwise Integration
-                      </h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                        Creates a split expense in your shared group with the
-                        exact amount and description from YNAB
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <div>
-                      <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                        YNAB Transaction
-                      </h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                        Adds the corresponding adjustment transaction to your
-                        Splitwise account with proper categorization
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                <span className="flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                  Time sink
+                </span>
+              </div>
+              <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                Create multi-line split transactions for every settlement. Takes
+                15+ minutes each time. Miss one? Your accounts won&apos;t
+                reconcile.
+              </p>
+            </div>
 
-          {/* Time Savings */}
-          {/* <Card className="max-w-4xl mx-auto border-2 border-green-200 dark:border-green-800 shadow-lg overflow-hidden bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20">
-            <CardContent className="p-10 text-center">
-              <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-2xl">⏱️</span>
-                </div>
+            {/* The Solution */}
+            <div className="bg-emerald-50 dark:bg-emerald-950/20 p-6 rounded-xl border border-emerald-200 dark:border-emerald-800">
+              <div className="flex items-start justify-between gap-4 mb-3">
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  Flag → Sync → Done
+                </h3>
+                <span className="flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+                  Our solution
+                </span>
               </div>
-              <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 tracking-tight">
-                Save Hours Every Month
-              </h3>
-              <div className="grid md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
-                  <div className="text-3xl font-bold text-red-600 mb-2">5 min</div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Per transaction manually</p>
-                </div>
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
-                  <div className="text-3xl font-bold text-blue-600 mb-2">2 sec</div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">With our automation</p>
-                </div>
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
-                  <div className="text-3xl font-bold text-green-600 mb-2">150x</div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Faster processing</p>
-                </div>
-              </div>
-              <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-100 to-blue-100 dark:from-green-900/50 dark:to-blue-900/50 text-green-800 dark:text-green-200 rounded-full text-base font-medium">
-                <span className="mr-2">🎯</span>
-                More time for what matters, perfect expense tracking guaranteed
-              </div>
-            </CardContent>
-          </Card> */}
+              <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                Keep your detailed categories. Skip the data entry. Flag with a
+                color—we create the Splitwise expense <em>and</em> the YNAB
+                adjustment. Same category, correct amount. Works whether your
+                partner uses YNAB or not.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* FAQs */}
-      <section className="bg-white dark:bg-gray-900 py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12 tracking-tight">
-            Frequently Asked Questions
+      {/* Final CTA */}
+      <section className="py-16 sm:py-24 bg-gray-900 dark:bg-black">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl md:text-4xl font-serif text-white mb-6">
+            Finally, accurate category spending.
           </h2>
-
-          <div className="space-y-8">
-            <Card className="border-0 shadow-md overflow-hidden bg-white dark:bg-gray-800">
-              <CardContent className="p-8">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
-                  What if my partner already uses YNAB?
-                </h3>
-                <p className="text-base text-gray-600 dark:text-gray-300 leading-relaxed">
-                  This still works perfectly! You and your partner can both
-                  connect to the same Splitwise group, and we&apos;ll sync your
-                  transactions automatically.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-md overflow-hidden bg-white dark:bg-gray-800">
-              <CardContent className="p-8">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
-                  What if an expense isn&apos;t split evenly?
-                </h3>
-                <p className="text-base text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-                  Enter it directly in the Splitwise app with custom splits. Our
-                  system will respect the split ratios you set there.
-                </p>
-                <p className="text-base text-gray-600 dark:text-gray-300 leading-relaxed">
-                  <strong className="font-medium">Common scenario:</strong> When
-                  you front a full purchase for your partner, add an expense in
-                  Splitwise where you&apos;re owed the full amount. Both
-                  transactions will cancel out in YNAB - perfect for a
-                  &quot;Reimbursements&quot; category.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="bg-blue-600 dark:bg-blue-800 py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-white mb-6 tracking-tight">
-            Ready to Automate Your Shared Expenses?
-          </h2>
-          <p className="text-xl text-blue-100 dark:text-blue-200 mb-10 leading-relaxed">
-            Join YNAB users who&apos;ve eliminated manual data entry and gained
-            perfect expense tracking.
+          <p className="text-lg text-gray-400 mb-10 max-w-xl mx-auto">
+            See what you <em>actually</em> spend—not what you fronted for
+            someone else. Connect in 2 minutes.
           </p>
-          <SignInButton variant="white" />
-          {/* <p className="text-blue-200 dark:text-blue-300 mt-6 text-sm">
-            No credit card required • 14-day free trial • Cancel anytime
-          </p> */}
+          <SignInButton variant="dark" />
         </div>
       </section>
 

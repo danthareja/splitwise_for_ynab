@@ -4,8 +4,22 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ToasterProvider } from "@/components/ui/toaster-provider";
 import type { Metadata } from "next";
+import { Instrument_Serif, DM_Sans } from "next/font/google";
 
 import "./globals.css";
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-serif",
+  display: "swap",
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -114,7 +128,9 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body>
+      <body
+        className={`${instrumentSerif.variable} ${dmSans.variable} font-sans antialiased`}
+      >
         <SessionProvider>
           {children}
           <ToasterProvider />

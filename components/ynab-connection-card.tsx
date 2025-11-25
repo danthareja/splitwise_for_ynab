@@ -169,38 +169,46 @@ export function YNABConnectionCard({
             ) : (
               <div className="space-y-4">
                 {settings?.budgetName && (
-                  <div className="space-y-2 border rounded-md p-3 bg-gray-50 dark:bg-gray-900">
+                  <div className="space-y-2 border border-gray-200 dark:border-gray-700 rounded-xl p-3 bg-gray-50 dark:bg-gray-900/50">
                     <div>
-                      <span className="text-sm font-medium">Budget: </span>
-                      <span className="text-sm">{settings.budgetName}</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        Budget:{" "}
+                      </span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {settings.budgetName}
+                      </span>
                     </div>
                     <div>
-                      <span className="text-sm font-medium">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
                         Splitwise Account:{" "}
                       </span>
-                      <span className="text-sm">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
                         {settings.splitwiseAccountName}
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <span className="text-sm font-medium">Manual Flag: </span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        Manual Flag:{" "}
+                      </span>
                       <YNABFlag
                         colorId={settings.manualFlagColor || "blue"}
                         size="sm"
                         className="mr-1"
                       />
-                      <span className="text-sm">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
                         {getColorName(settings.manualFlagColor || "blue")}
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <span className="text-sm font-medium">Synced Flag: </span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        Synced Flag:{" "}
+                      </span>
                       <YNABFlag
                         colorId={settings.syncedFlagColor || "green"}
                         size="sm"
                         className="mr-1"
                       />
-                      <span className="text-sm">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
                         {getColorName(settings.syncedFlagColor || "green")}
                       </span>
                     </div>
@@ -211,7 +219,7 @@ export function YNABConnectionCard({
                     variant="outline"
                     size="sm"
                     onClick={() => setShowSettings(true)}
-                    className="flex items-center gap-1"
+                    className="flex items-center gap-1 rounded-full"
                   >
                     <Settings className="h-3.5 w-3.5" />
                     Update YNAB Settings
@@ -221,7 +229,7 @@ export function YNABConnectionCard({
                       variant="outline"
                       size="sm"
                       onClick={handleDisconnectYNAB}
-                      className="flex items-center gap-1 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+                      className="flex items-center gap-1 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-full"
                     >
                       <RefreshCw className="h-3.5 w-3.5" />
                       Reconnect
@@ -235,6 +243,7 @@ export function YNABConnectionCard({
           <div className="space-y-4">
             <Button
               onClick={() => signIn("ynab", { callbackUrl: "/dashboard" })}
+              className="bg-gray-900 hover:bg-gray-800 text-white rounded-full"
             >
               <LogIn className="mr-2 h-4 w-4" />
               Sign in with YNAB

@@ -31,30 +31,30 @@ export const metadata: Metadata = {
 
 export default function TermsOfServicePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0f0f0f]">
       <Header />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
+          <h1 className="text-4xl font-serif text-gray-900 dark:text-white mb-4 tracking-tight">
             Terms of Service
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             Please read these terms carefully before using our service. By using
             Splitwise for YNAB, you agree to these terms.
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+          <p className="text-sm text-gray-500 dark:text-gray-500 mt-4">
             Last updated: {new Date().toLocaleDateString()}
           </p>
         </div>
 
         {/* Important Disclaimers - Required */}
-        <Card className="mb-8 border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20">
+        <Card className="mb-8 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 rounded-xl">
           <CardContent className="p-6">
             <div className="flex items-start">
-              <AlertTriangle className="h-6 w-6 text-yellow-600 dark:text-yellow-400 mt-1 mr-3 flex-shrink-0" />
+              <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400 mt-1 mr-3 flex-shrink-0" />
               <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                   Important Disclaimers
                 </h2>
                 <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
@@ -67,7 +67,7 @@ export default function TermsOfServicePage() {
                       href="https://www.ynab.com"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                      className="text-amber-700 dark:text-amber-500 hover:underline"
                     >
                       https://www.ynab.com
                     </a>
@@ -84,7 +84,7 @@ export default function TermsOfServicePage() {
                       href="https://www.splitwise.com"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                      className="text-amber-700 dark:text-amber-500 hover:underline"
                     >
                       https://www.splitwise.com
                     </a>
@@ -100,15 +100,15 @@ export default function TermsOfServicePage() {
 
         <div className="space-y-8">
           {/* Acceptance of Terms */}
-          <Card>
+          <Card className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl">
             <CardContent className="p-8">
               <div className="flex items-center mb-4">
-                <Scale className="h-6 w-6 text-blue-600 mr-3" />
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <Scale className="h-6 w-6 text-amber-600 dark:text-amber-500 mr-3" />
+                <h2 className="text-2xl font-serif text-gray-900 dark:text-white">
                   Acceptance of Terms
                 </h2>
               </div>
-              <div className="space-y-4 text-gray-600 dark:text-gray-300">
+              <div className="space-y-4 text-gray-600 dark:text-gray-400">
                 <p>
                   By accessing and using Splitwise for YNAB (&ldquo;the
                   Service&rdquo;), you accept and agree to be bound by the terms
@@ -125,12 +125,12 @@ export default function TermsOfServicePage() {
           </Card>
 
           {/* Description of Service */}
-          <Card>
+          <Card className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl">
             <CardContent className="p-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-2xl font-serif text-gray-900 dark:text-white mb-4">
                 Description of Service
               </h2>
-              <div className="space-y-4 text-gray-600 dark:text-gray-300">
+              <div className="space-y-4 text-gray-600 dark:text-gray-400">
                 <p>
                   Splitwise for YNAB is a third-party integration service that
                   automatically synchronizes flagged transactions between your
@@ -158,15 +158,15 @@ export default function TermsOfServicePage() {
           </Card>
 
           {/* User Responsibilities */}
-          <Card>
+          <Card className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl">
             <CardContent className="p-8">
               <div className="flex items-center mb-4">
-                <Users className="h-6 w-6 text-green-600 mr-3" />
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <Users className="h-6 w-6 text-emerald-600 dark:text-emerald-500 mr-3" />
+                <h2 className="text-2xl font-serif text-gray-900 dark:text-white">
                   User Responsibilities
                 </h2>
               </div>
-              <div className="space-y-4 text-gray-600 dark:text-gray-300">
+              <div className="space-y-4 text-gray-600 dark:text-gray-400">
                 <p>As a user of our Service, you agree to:</p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>
@@ -195,8 +195,8 @@ export default function TermsOfServicePage() {
                   </li>
                 </ul>
 
-                <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mt-6">
-                  <p className="text-blue-800 dark:text-blue-200 font-medium">
+                <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800 mt-6">
+                  <p className="text-amber-800 dark:text-amber-200 font-medium">
                     <strong>Important:</strong> You remain responsible for the
                     accuracy of your financial data in both YNAB and Splitwise.
                     Our Service is a convenience tool and does not replace your
@@ -208,12 +208,12 @@ export default function TermsOfServicePage() {
           </Card>
 
           {/* API Usage and Limitations */}
-          <Card>
+          <Card className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl">
             <CardContent className="p-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-2xl font-serif text-gray-900 dark:text-white mb-4">
                 API Usage and Limitations
               </h2>
-              <div className="space-y-4 text-gray-600 dark:text-gray-300">
+              <div className="space-y-4 text-gray-600 dark:text-gray-400">
                 <p>
                   Our Service operates within the constraints of third-party
                   APIs:
@@ -245,20 +245,20 @@ export default function TermsOfServicePage() {
           </Card>
 
           {/* Privacy and Data Protection */}
-          <Card>
+          <Card className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl">
             <CardContent className="p-8">
               <div className="flex items-center mb-4">
-                <Shield className="h-6 w-6 text-purple-600 mr-3" />
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <Shield className="h-6 w-6 text-amber-600 dark:text-amber-500 mr-3" />
+                <h2 className="text-2xl font-serif text-gray-900 dark:text-white">
                   Privacy and Data Protection
                 </h2>
               </div>
-              <div className="space-y-4 text-gray-600 dark:text-gray-300">
+              <div className="space-y-4 text-gray-600 dark:text-gray-400">
                 <p>
                   Your privacy is important to us. Please review our{" "}
                   <Link
                     href="/privacy"
-                    className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                    className="text-amber-700 dark:text-amber-500 hover:underline font-medium"
                   >
                     Privacy Policy
                   </Link>{" "}
@@ -276,14 +276,14 @@ export default function TermsOfServicePage() {
           </Card>
 
           {/* Disclaimers and Limitations */}
-          <Card>
+          <Card className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl">
             <CardContent className="p-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-2xl font-serif text-gray-900 dark:text-white mb-4">
                 Disclaimers and Limitations
               </h2>
-              <div className="space-y-4 text-gray-600 dark:text-gray-300">
-                <div className="bg-red-50 dark:bg-red-900/30 p-4 rounded-lg">
-                  <h3 className="font-bold text-red-800 dark:text-red-200 mb-2">
+              <div className="space-y-4 text-gray-600 dark:text-gray-400">
+                <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-200 dark:border-red-800">
+                  <h3 className="font-semibold text-red-800 dark:text-red-200 mb-2">
                     Service Disclaimer:
                   </h3>
                   <p className="text-sm text-red-700 dark:text-red-300">
@@ -322,14 +322,14 @@ export default function TermsOfServicePage() {
           </Card>
 
           {/* Limitation of Liability */}
-          <Card>
+          <Card className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl">
             <CardContent className="p-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-2xl font-serif text-gray-900 dark:text-white mb-4">
                 Limitation of Liability
               </h2>
-              <div className="space-y-4 text-gray-600 dark:text-gray-300">
-                <div className="bg-yellow-50 dark:bg-yellow-900/30 p-4 rounded-lg">
-                  <p className="text-yellow-800 dark:text-yellow-200 font-medium text-sm">
+              <div className="space-y-4 text-gray-600 dark:text-gray-400">
+                <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800">
+                  <p className="text-amber-800 dark:text-amber-200 font-medium text-sm">
                     IN NO EVENT SHALL SPLITWISE FOR YNAB BE LIABLE FOR ANY
                     INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE
                     DAMAGES, INCLUDING WITHOUT LIMITATION, LOSS OF PROFITS,
@@ -347,12 +347,12 @@ export default function TermsOfServicePage() {
           </Card>
 
           {/* Termination */}
-          <Card>
+          <Card className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl">
             <CardContent className="p-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-2xl font-serif text-gray-900 dark:text-white mb-4">
                 Termination
               </h2>
-              <div className="space-y-4 text-gray-600 dark:text-gray-300">
+              <div className="space-y-4 text-gray-600 dark:text-gray-400">
                 <p>Either party may terminate this agreement at any time:</p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>
@@ -377,12 +377,12 @@ export default function TermsOfServicePage() {
           </Card>
 
           {/* Changes to Terms */}
-          <Card>
+          <Card className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl">
             <CardContent className="p-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-2xl font-serif text-gray-900 dark:text-white mb-4">
                 Changes to Terms
               </h2>
-              <div className="space-y-4 text-gray-600 dark:text-gray-300">
+              <div className="space-y-4 text-gray-600 dark:text-gray-400">
                 <p>
                   We reserve the right to modify these terms at any time. When
                   we do:
@@ -407,12 +407,12 @@ export default function TermsOfServicePage() {
           </Card>
 
           {/* Governing Law */}
-          <Card>
+          <Card className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl">
             <CardContent className="p-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-2xl font-serif text-gray-900 dark:text-white mb-4">
                 Governing Law
               </h2>
-              <div className="space-y-4 text-gray-600 dark:text-gray-300">
+              <div className="space-y-4 text-gray-600 dark:text-gray-400">
                 <p>
                   These terms shall be governed by and construed in accordance
                   with the laws of the jurisdiction where our company is
@@ -429,31 +429,35 @@ export default function TermsOfServicePage() {
           </Card>
 
           {/* Contact Information */}
-          <Card>
+          <Card className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl">
             <CardContent className="p-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-2xl font-serif text-gray-900 dark:text-white mb-4">
                 Contact Information
               </h2>
-              <div className="space-y-4 text-gray-600 dark:text-gray-300">
+              <div className="space-y-4 text-gray-600 dark:text-gray-400">
                 <p>
                   If you have any questions about these Terms of Service, please
                   contact us:
                 </p>
                 <ul className="space-y-2">
                   <li>
-                    <strong>Email:</strong>{" "}
+                    <strong className="text-gray-900 dark:text-white">
+                      Email:
+                    </strong>{" "}
                     <a
                       href="mailto:legal@splitwiseforynab.com"
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                      className="text-amber-700 dark:text-amber-500 hover:underline"
                     >
                       legal@splitwiseforynab.com
                     </a>
                   </li>
                   <li>
-                    <strong>Support:</strong>{" "}
+                    <strong className="text-gray-900 dark:text-white">
+                      Support:
+                    </strong>{" "}
                     <a
                       href="mailto:support@splitwiseforynab.com"
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                      className="text-amber-700 dark:text-amber-500 hover:underline"
                     >
                       support@splitwiseforynab.com
                     </a>
@@ -472,7 +476,7 @@ export default function TermsOfServicePage() {
         <div className="text-center mt-12">
           <Link
             href="/"
-            className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:underline font-medium"
+            className="inline-flex items-center text-amber-700 dark:text-amber-500 hover:underline font-medium"
           >
             ← Back to Home
           </Link>

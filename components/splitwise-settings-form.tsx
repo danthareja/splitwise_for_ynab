@@ -561,7 +561,7 @@ export function SplitwiseSettingsForm({
                 value={customSplitRatio}
                 onChange={(e) => setCustomSplitRatio(e.target.value)}
                 placeholder="Enter ratio like 2:3 or 5:2"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#141414] text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 pattern="^\d+:\d+$"
                 title="Please enter a ratio in the format X:Y (e.g., 2:1)"
                 required
@@ -667,6 +667,7 @@ export function SplitwiseSettingsForm({
               variant="outline"
               onClick={() => onSaveSuccess?.()}
               disabled={isSaving}
+              className="rounded-full"
             >
               Cancel
             </Button>
@@ -679,6 +680,7 @@ export function SplitwiseSettingsForm({
                 !selectedGroupId ||
                 !selectedCurrency
               }
+              className="rounded-full bg-gray-900 hover:bg-gray-800 text-white"
             >
               {isSaving ? (
                 <>

@@ -43,7 +43,7 @@ export function ManualSyncButton() {
       size="sm"
       onClick={handleSync}
       disabled={isSyncing}
-      className="flex items-center gap-1"
+      className="flex items-center gap-1 rounded-full"
     >
       <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
       {isSyncing ? "Syncing..." : "Sync Now"}

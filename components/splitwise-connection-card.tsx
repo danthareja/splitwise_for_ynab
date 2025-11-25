@@ -348,10 +348,14 @@ export function SplitwiseConnectionCard({
             ) : (
               <div className="space-y-4">
                 {settings?.groupName && (
-                  <div className="space-y-2 border rounded-md p-3 bg-gray-50 dark:bg-gray-900">
+                  <div className="space-y-2 border border-gray-200 dark:border-gray-700 rounded-xl p-3 bg-gray-50 dark:bg-gray-900/50">
                     <div>
-                      <span className="text-sm font-medium">Group: </span>
-                      <span className="text-sm">{settings.groupName}</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        Group:{" "}
+                      </span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {settings.groupName}
+                      </span>
                     </div>
                     {selectedGroup ? (
                       <GroupMembersDisplay
@@ -366,22 +370,32 @@ export function SplitwiseConnectionCard({
                       />
                     ) : null}
                     <div>
-                      <span className="text-sm font-medium">Currency: </span>
-                      <span className="text-sm">{settings.currencyCode}</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        Currency:{" "}
+                      </span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {settings.currencyCode}
+                      </span>
                     </div>
                     <div>
-                      <span className="text-sm font-medium">Sync Marker: </span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        Sync Marker:{" "}
+                      </span>
                       <span className="text-md">{settings.emoji || "✅"}</span>
                     </div>
                     <div>
-                      <span className="text-sm font-medium">Split Ratio: </span>
-                      <span className="text-sm">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        Split Ratio:{" "}
+                      </span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
                         {settings.defaultSplitRatio || "1:1"}
                       </span>
                     </div>
                     <div>
-                      <span className="text-sm font-medium">YNAB Payee: </span>
-                      <span className="text-sm">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        YNAB Payee:{" "}
+                      </span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
                         {(settings.useDescriptionAsPayee ?? true)
                           ? "Use Splitwise description"
                           : `${settings.customPayeeName || `Splitwise: ${settings.groupName}` || "Splitwise for YNAB"}`}
@@ -394,7 +408,7 @@ export function SplitwiseConnectionCard({
                     variant="outline"
                     size="sm"
                     onClick={() => setShowSettings(true)}
-                    className="flex items-center gap-1"
+                    className="flex items-center gap-1 rounded-full"
                   >
                     <Settings className="h-3.5 w-3.5" />
                     Update Splitwise Settings
@@ -403,7 +417,7 @@ export function SplitwiseConnectionCard({
                     variant="outline"
                     size="sm"
                     onClick={() => setShowDisconnectModal(true)}
-                    className="flex items-center gap-1 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+                    className="flex items-center gap-1 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-full"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Disconnect
@@ -423,7 +437,7 @@ export function SplitwiseConnectionCard({
           <Button
             onClick={handleConnectSplitwise}
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium"
+            className="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-full"
           >
             <LogIn className="mr-2 h-4 w-4" />
             {isLoading ? "Connecting..." : "Sign in with Splitwise"}

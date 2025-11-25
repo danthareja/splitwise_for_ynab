@@ -137,13 +137,13 @@ export function SplitwiseConnectForm({
               </span>
             </Button>
           </div>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             You can find your API key in the{" "}
             <a
               href="https://secure.splitwise.com/apps"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-500 hover:underline"
+              className="text-amber-700 dark:text-amber-500 hover:underline"
             >
               Splitwise Developer Portal
             </a>
@@ -153,7 +153,7 @@ export function SplitwiseConnectForm({
         <Collapsible
           open={isHelpOpen}
           onOpenChange={setIsHelpOpen}
-          className="border rounded-md p-3 bg-gray-50 dark:bg-gray-900"
+          className="border border-gray-200 dark:border-gray-700 rounded-xl p-3 bg-gray-50 dark:bg-gray-900/50"
         >
           <CollapsibleTrigger asChild>
             <Button
@@ -161,7 +161,7 @@ export function SplitwiseConnectForm({
               size="sm"
               className="flex w-full justify-between p-0"
             >
-              <div className="flex items-center text-sm text-blue-600">
+              <div className="flex items-center text-sm text-amber-700 dark:text-amber-500">
                 <HelpCircle className="h-4 w-4 mr-1" />
                 How to get your Splitwise API key
               </div>
@@ -172,7 +172,7 @@ export function SplitwiseConnectForm({
               )}
             </Button>
           </CollapsibleTrigger>
-          <CollapsibleContent className="mt-2 space-y-2 text-sm">
+          <CollapsibleContent className="mt-2 space-y-2 text-sm text-gray-600 dark:text-gray-400">
             <p>To get your Splitwise API key:</p>
             <ol className="list-decimal pl-5 space-y-2">
               <li>
@@ -181,7 +181,7 @@ export function SplitwiseConnectForm({
                   href="https://secure.splitwise.com/apps"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-500 hover:underline"
+                  className="text-amber-700 dark:text-amber-500 hover:underline"
                 >
                   https://secure.splitwise.com/apps
                 </a>
@@ -217,7 +217,11 @@ export function SplitwiseConnectForm({
           </Alert>
         )}
 
-        <Button type="submit" disabled={isLoading}>
+        <Button
+          type="submit"
+          disabled={isLoading}
+          className="rounded-full bg-gray-900 hover:bg-gray-800 text-white"
+        >
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

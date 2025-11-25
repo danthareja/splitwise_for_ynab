@@ -31,30 +31,30 @@ export const metadata: Metadata = {
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0f0f0f]">
       <Header />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
+          <h1 className="text-4xl font-serif text-gray-900 dark:text-white mb-4 tracking-tight">
             Privacy Policy
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             Your privacy and data security are our top priorities. This policy
             explains how we handle your information.
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+          <p className="text-sm text-gray-500 dark:text-gray-500 mt-4">
             Last updated: {new Date().toLocaleDateString()}
           </p>
         </div>
 
         {/* Important Disclaimers - Required */}
-        <Card className="mb-8 border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20">
+        <Card className="mb-8 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 rounded-xl">
           <CardContent className="p-6">
             <div className="flex items-start">
-              <AlertTriangle className="h-6 w-6 text-yellow-600 dark:text-yellow-400 mt-1 mr-3 flex-shrink-0" />
+              <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400 mt-1 mr-3 flex-shrink-0" />
               <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                   Important Disclaimers
                 </h2>
                 <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
@@ -67,7 +67,7 @@ export default function PrivacyPolicyPage() {
                       href="https://www.ynab.com"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                      className="text-amber-700 dark:text-amber-500 hover:underline"
                     >
                       https://www.ynab.com
                     </a>
@@ -84,7 +84,7 @@ export default function PrivacyPolicyPage() {
                       href="https://www.splitwise.com"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                      className="text-amber-700 dark:text-amber-500 hover:underline"
                     >
                       https://www.splitwise.com
                     </a>
@@ -100,11 +100,11 @@ export default function PrivacyPolicyPage() {
 
         <div className="space-y-8">
           {/* Data Collection and Usage */}
-          <Card>
+          <Card className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl">
             <CardContent className="p-8">
               <div className="flex items-center mb-4">
-                <Eye className="h-6 w-6 text-blue-600 mr-3" />
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <Eye className="h-6 w-6 text-amber-600 dark:text-amber-500 mr-3" />
+                <h2 className="text-2xl font-serif text-gray-900 dark:text-white">
                   What Data We Collect
                 </h2>
               </div>
@@ -138,11 +138,11 @@ export default function PrivacyPolicyPage() {
           </Card>
 
           {/* Data Handling and Storage */}
-          <Card>
+          <Card className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl">
             <CardContent className="p-8">
               <div className="flex items-center mb-4">
-                <Lock className="h-6 w-6 text-green-600 mr-3" />
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <Lock className="h-6 w-6 text-emerald-600 dark:text-emerald-500 mr-3" />
+                <h2 className="text-2xl font-serif text-gray-900 dark:text-white">
                   How We Handle and Store Your Data
                 </h2>
               </div>
@@ -182,8 +182,8 @@ export default function PrivacyPolicyPage() {
                   </li>
                 </ul>
 
-                <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mt-6">
-                  <p className="text-blue-800 dark:text-blue-200 font-medium">
+                <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800 mt-6">
+                  <p className="text-amber-800 dark:text-amber-200 font-medium">
                     <strong>Important:</strong> We do not directly request,
                     handle, or store any financial account credentials. We only
                     use OAuth access tokens obtained directly from YNAB and
@@ -191,11 +191,11 @@ export default function PrivacyPolicyPage() {
                   </p>
                 </div>
 
-                <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg mt-6">
-                  <h4 className="font-bold text-green-800 dark:text-green-200 mb-2">
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800 mt-6">
+                  <h4 className="font-semibold text-emerald-800 dark:text-emerald-200 mb-2">
                     Splitwise Data Handling:
                   </h4>
-                  <ul className="text-sm text-green-700 dark:text-green-300 space-y-1">
+                  <ul className="text-sm text-emerald-700 dark:text-emerald-300 space-y-1">
                     <li>
                       • We only access Splitwise data necessary for expense
                       synchronization
@@ -219,21 +219,21 @@ export default function PrivacyPolicyPage() {
           </Card>
 
           {/* Third-Party Data Sharing */}
-          <Card>
+          <Card className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl">
             <CardContent className="p-8">
               <div className="flex items-center mb-4">
-                <Shield className="h-6 w-6 text-purple-600 mr-3" />
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <Shield className="h-6 w-6 text-amber-600 dark:text-amber-500 mr-3" />
+                <h2 className="text-2xl font-serif text-gray-900 dark:text-white">
                   Third-Party Data Sharing
                 </h2>
               </div>
-              <div className="space-y-4 text-gray-600 dark:text-gray-300">
-                <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg">
+              <div className="space-y-4 text-gray-600 dark:text-gray-400">
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800">
                   <div className="space-y-2">
-                    <p className="text-green-800 dark:text-green-200 font-bold text-lg">
+                    <p className="text-emerald-800 dark:text-emerald-200 font-semibold text-lg">
                       Data Protection Guarantees:
                     </p>
-                    <ul className="text-sm text-green-700 dark:text-green-300 space-y-1">
+                    <ul className="text-sm text-emerald-700 dark:text-emerald-300 space-y-1">
                       <li>
                         • <strong>YNAB Data:</strong> Will not unknowingly be
                         passed to any third-party
@@ -282,11 +282,11 @@ export default function PrivacyPolicyPage() {
                   </li>
                 </ul>
 
-                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                  <h3 className="font-bold text-gray-900 dark:text-white mb-2">
+                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
                     Transparency Promise:
                   </h3>
-                  <p className="text-sm">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     Any data sharing will always be with your explicit consent
                     and for the direct purpose of providing our synchronization
                     service. You maintain full control over what data is shared
@@ -298,12 +298,12 @@ export default function PrivacyPolicyPage() {
           </Card>
 
           {/* Your Rights and Controls */}
-          <Card>
+          <Card className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl">
             <CardContent className="p-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-2xl font-serif text-gray-900 dark:text-white mb-4">
                 Your Rights and Controls
               </h2>
-              <div className="space-y-4 text-gray-600 dark:text-gray-300">
+              <div className="space-y-4 text-gray-600 dark:text-gray-400">
                 <p>You have complete control over your data:</p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>
@@ -336,7 +336,7 @@ export default function PrivacyPolicyPage() {
                   To exercise any of these rights, please contact us at{" "}
                   <a
                     href="mailto:privacy@splitwiseforynab.com"
-                    className="text-blue-600 dark:text-blue-400 hover:underline"
+                    className="text-amber-700 dark:text-amber-500 hover:underline"
                   >
                     privacy@splitwiseforynab.com
                   </a>
@@ -346,12 +346,12 @@ export default function PrivacyPolicyPage() {
           </Card>
 
           {/* Data Retention */}
-          <Card>
+          <Card className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl">
             <CardContent className="p-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-2xl font-serif text-gray-900 dark:text-white mb-4">
                 Data Retention
               </h2>
-              <div className="space-y-4 text-gray-600 dark:text-gray-300">
+              <div className="space-y-4 text-gray-600 dark:text-gray-400">
                 <ul className="list-disc pl-6 space-y-2">
                   <li>
                     <strong>Active Accounts:</strong> We retain your data as
@@ -378,12 +378,12 @@ export default function PrivacyPolicyPage() {
           </Card>
 
           {/* Security Measures */}
-          <Card>
+          <Card className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl">
             <CardContent className="p-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-2xl font-serif text-gray-900 dark:text-white mb-4">
                 Security Measures
               </h2>
-              <div className="space-y-4 text-gray-600 dark:text-gray-300">
+              <div className="space-y-4 text-gray-600 dark:text-gray-400">
                 <p>We implement industry-standard security measures:</p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>
@@ -420,31 +420,35 @@ export default function PrivacyPolicyPage() {
           </Card>
 
           {/* Contact Information */}
-          <Card>
+          <Card className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl">
             <CardContent className="p-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-2xl font-serif text-gray-900 dark:text-white mb-4">
                 Contact Us
               </h2>
-              <div className="space-y-4 text-gray-600 dark:text-gray-300">
+              <div className="space-y-4 text-gray-600 dark:text-gray-400">
                 <p>
                   If you have any questions about this Privacy Policy or our
                   data practices, please contact us:
                 </p>
                 <ul className="space-y-2">
                   <li>
-                    <strong>Email:</strong>{" "}
+                    <strong className="text-gray-900 dark:text-white">
+                      Email:
+                    </strong>{" "}
                     <a
                       href="mailto:privacy@splitwiseforynab.com"
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                      className="text-amber-700 dark:text-amber-500 hover:underline"
                     >
                       privacy@splitwiseforynab.com
                     </a>
                   </li>
                   <li>
-                    <strong>Support:</strong>{" "}
+                    <strong className="text-gray-900 dark:text-white">
+                      Support:
+                    </strong>{" "}
                     <a
                       href="mailto:support@splitwiseforynab.com"
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                      className="text-amber-700 dark:text-amber-500 hover:underline"
                     >
                       support@splitwiseforynab.com
                     </a>
@@ -460,12 +464,12 @@ export default function PrivacyPolicyPage() {
           </Card>
 
           {/* Changes to Policy */}
-          <Card>
+          <Card className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl">
             <CardContent className="p-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-2xl font-serif text-gray-900 dark:text-white mb-4">
                 Changes to This Policy
               </h2>
-              <div className="space-y-4 text-gray-600 dark:text-gray-300">
+              <div className="space-y-4 text-gray-600 dark:text-gray-400">
                 <p>
                   We may update this Privacy Policy from time to time. When we
                   do:
@@ -491,7 +495,7 @@ export default function PrivacyPolicyPage() {
         <div className="text-center mt-12">
           <Link
             href="/"
-            className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:underline font-medium"
+            className="inline-flex items-center text-amber-700 dark:text-amber-500 hover:underline font-medium"
           >
             ← Back to Home
           </Link>

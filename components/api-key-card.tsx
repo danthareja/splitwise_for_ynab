@@ -47,15 +47,17 @@ export function ApiKeyCard({
   const curlOneLine = `curl -H "Authorization: Bearer ${apiKey ?? "<YOUR_KEY>"}" ${baseUrl}/api/sync`;
 
   return (
-    <div className="border rounded-lg p-6 mt-8">
-      <h2 className="text-xl font-semibold mb-4">API Access</h2>
-      <p className="text-sm text-muted-foreground mt-2 mb-4">
+    <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-6 mt-8 bg-white dark:bg-[#141414]">
+      <h2 className="text-xl font-serif font-semibold mb-4 text-gray-900 dark:text-white">
+        API Access
+      </h2>
+      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 mb-4">
         A programmable manual sync for nerds who are into that sort of thing 🤓
       </p>
       {apiKey ? (
         <>
           <div className="flex items-center gap-2 mb-4 overflow-auto">
-            <code className="bg-gray-100 rounded px-2 py-1 text-sm break-all">
+            <code className="bg-gray-100 dark:bg-gray-800 rounded-lg px-2 py-1 text-sm break-all text-gray-900 dark:text-gray-100">
               {apiKey}
             </code>
             <Button
@@ -63,6 +65,7 @@ export function ApiKeyCard({
               size="icon"
               onClick={copy}
               aria-label="Copy API key"
+              className="rounded-full"
             >
               {copiedKey ? (
                 <Check className="h-4 w-4 text-green-600" />
@@ -73,25 +76,29 @@ export function ApiKeyCard({
           </div>
         </>
       ) : (
-        <p className="text-sm text-muted-foreground mb-4">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
           You don&apos;t have an API key yet.
         </p>
       )}
 
-      <Button onClick={regenerate} disabled={isPending} className="mb-6">
+      <Button
+        onClick={regenerate}
+        disabled={isPending}
+        className="mb-6 bg-gray-900 hover:bg-gray-800 text-white rounded-full"
+      >
         <RefreshCw className="h-4 w-4 mr-2" />
         {apiKey ? "Regenerate Key" : "Generate Key"}
       </Button>
 
-      <h3 className="font-medium mb-2">Usage</h3>
+      <h3 className="font-medium mb-2 text-gray-900 dark:text-white">Usage</h3>
       <div className="relative">
-        <pre className="bg-gray-50 p-3 rounded text-sm overflow-auto">
+        <pre className="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl text-sm overflow-auto text-gray-900 dark:text-gray-100">
           {curlPreview}
         </pre>
         <Button
           variant="secondary"
           size="icon"
-          className="absolute top-2 right-2"
+          className="absolute top-2 right-2 rounded-full"
           onClick={() => {
             navigator.clipboard.writeText(curlOneLine);
             setCopiedCurl(true);
@@ -107,10 +114,15 @@ export function ApiKeyCard({
         </Button>
       </div>
 
-      <p className="text-sm text-muted-foreground mt-4">
-        Rate limit: <strong>{maxRequests}</strong> sync requests every
-        <strong> {windowSeconds / 60}</strong> minutes. Shared with the
-        &quot;Sync Now&quot; button.
+      <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
+        Rate limit:{" "}
+        <strong className="text-gray-900 dark:text-white">{maxRequests}</strong>{" "}
+        sync requests every
+        <strong className="text-gray-900 dark:text-white">
+          {" "}
+          {windowSeconds / 60}
+        </strong>{" "}
+        minutes. Shared with the &quot;Sync Now&quot; button.
       </p>
     </div>
   );

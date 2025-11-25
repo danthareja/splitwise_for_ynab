@@ -35,14 +35,14 @@ export function SplitwiseConfirmModal({
 }: SplitwiseConfirmModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="font-serif text-gray-900 dark:text-white">
             {isUpdate
               ? "Update Splitwise Connection"
               : "Confirm Splitwise Connection"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-gray-600 dark:text-gray-400">
             {isUpdate
               ? "Update your Splitwise connection with this account?"
               : "Is this your Splitwise account? This will update your profile information."}
@@ -50,9 +50,9 @@ export function SplitwiseConfirmModal({
         </DialogHeader>
 
         {showResetWarning && (
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
+          <Alert className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertDescription className="text-amber-800 dark:text-amber-200">
               Updating your API key will reset your Splitwise settings. You will
               need to reconfigure your group and currency preferences.
             </AlertDescription>
@@ -71,15 +71,26 @@ export function SplitwiseConfirmModal({
             </div>
           )}
           <div className="text-center">
-            <h3 className="font-medium">{`${user.first_name} ${user.last_name}`}</h3>
-            <p className="text-sm text-gray-500">{user.email}</p>
+            <h3 className="font-medium text-gray-900 dark:text-white">{`${user.first_name} ${user.last_name}`}</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {user.email}
+            </p>
           </div>
         </div>
         <DialogFooter className="sm:justify-between">
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isLoading}
+            className="rounded-full"
+          >
             Cancel
           </Button>
-          <Button onClick={onConfirm} disabled={isLoading}>
+          <Button
+            onClick={onConfirm}
+            disabled={isLoading}
+            className="rounded-full bg-gray-900 hover:bg-gray-800 text-white"
+          >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

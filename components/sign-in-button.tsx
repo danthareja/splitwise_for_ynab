@@ -6,7 +6,7 @@ import { ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface SignInButtonProps {
-  variant?: "default" | "white";
+  variant?: "default" | "dark" | "outline";
 }
 
 export function SignInButton({ variant = "default" }: SignInButtonProps) {
@@ -18,15 +18,18 @@ export function SignInButton({ variant = "default" }: SignInButtonProps) {
     router.push("/auth/signin");
   };
 
-  const className =
-    variant === "white"
-      ? "text-base px-6 py-4 h-auto bg-white hover:bg-gray-50 text-blue-600 font-medium border-2 border-white hover:border-gray-200 transition-all"
-      : "text-base px-6 py-4 h-auto bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium";
+  const classNames = {
+    default:
+      "text-base px-8 py-6 h-auto bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-full transition-all shadow-sm hover:shadow-md",
+    dark: "text-base px-8 py-6 h-auto bg-white hover:bg-gray-50 text-gray-900 font-medium rounded-full transition-all shadow-sm hover:shadow-md",
+    outline:
+      "text-base px-8 py-6 h-auto bg-transparent hover:bg-gray-100 text-gray-900 font-medium rounded-full border-2 border-gray-900 transition-all",
+  };
 
   return (
     <Button
       size="lg"
-      className={className}
+      className={classNames[variant]}
       onClick={handleClick}
       disabled={isLoading}
     >
@@ -37,7 +40,7 @@ export function SignInButton({ variant = "default" }: SignInButtonProps) {
         </>
       ) : (
         <>
-          Sign in with YNAB
+          Get started
           <ArrowRight className="ml-2 h-5 w-5" />
         </>
       )}

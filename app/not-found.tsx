@@ -17,24 +17,28 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0f0f0f]">
       <Header />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center">
-          <div className="text-6xl font-bold text-gray-300 dark:text-gray-600 mb-8">
+          <div className="text-6xl font-serif text-gray-300 dark:text-gray-600 mb-8">
             404
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
+          <h1 className="text-4xl font-serif text-gray-900 dark:text-white mb-4 tracking-tight">
             Page Not Found
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 dark:text-gray-400 mb-12 max-w-2xl mx-auto">
             Sorry, we couldn&apos;t find the page you&apos;re looking for. It
             might have been moved, deleted, or you may have mistyped the URL.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button asChild size="lg" className="min-w-[200px]">
+            <Button
+              asChild
+              size="lg"
+              className="min-w-[200px] bg-gray-900 hover:bg-gray-800 text-white rounded-full"
+            >
               <Link href="/">
                 <Home className="mr-2 h-5 w-5" />
                 Back to Home
@@ -43,42 +47,42 @@ export default function NotFound() {
           </div>
 
           <div className="mt-16 text-center">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-2xl font-serif text-gray-900 dark:text-white mb-4">
               Popular Pages
             </h2>
             <div className="grid grid-cols-3 gap-4 max-w-3xl mx-auto">
               <Link
                 href="/"
-                className="p-4 rounded-lg border hover:border-blue-200 dark:hover:border-blue-800 transition-colors"
+                className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141414] hover:border-amber-300 dark:hover:border-amber-700 transition-colors"
               >
                 <div className="font-medium text-gray-900 dark:text-white">
                   Home
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-300">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
                   Learn about our service
                 </div>
               </Link>
 
               <Link
                 href="/privacy"
-                className="p-4 rounded-lg border hover:border-blue-200 dark:hover:border-blue-800 transition-colors"
+                className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141414] hover:border-amber-300 dark:hover:border-amber-700 transition-colors"
               >
                 <div className="font-medium text-gray-900 dark:text-white">
                   Privacy
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-300">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
                   How we protect your data
                 </div>
               </Link>
 
               <Link
                 href="/terms"
-                className="p-4 rounded-lg border hover:border-blue-200 dark:hover:border-blue-800 transition-colors"
+                className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141414] hover:border-amber-300 dark:hover:border-amber-700 transition-colors"
               >
                 <div className="font-medium text-gray-900 dark:text-white">
                   Terms
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-300">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
                   Terms of service
                 </div>
               </Link>

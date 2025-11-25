@@ -86,12 +86,12 @@ export default async function DashboardPage() {
     ynabSettings;
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-[#FDFBF7] dark:bg-[#0f0f0f]">
       <AppHeader />
 
       <main className="flex-1">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold mb-6">
+          <h1 className="text-3xl font-serif text-gray-900 dark:text-white mb-6">
             {getUserFirstName(user)
               ? `Welcome back, ${getUserFirstName(user)}!`
               : "Welcome!"}
@@ -106,26 +106,26 @@ export default async function DashboardPage() {
           )}
 
           {/* Need Help Banner */}
-          <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <div className="mb-6 bg-white dark:bg-[#141414] border border-gray-200 dark:border-gray-800 rounded-xl p-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex items-center gap-3 flex-1">
-                <HelpCircle className="h-5 w-5 text-gray-600 flex-shrink-0" />
+                <HelpCircle className="h-5 w-5 text-amber-600 dark:text-amber-500 flex-shrink-0" />
                 <div className="flex-1">
-                  <h3 className="text-sm font-medium text-gray-900">
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                     Having trouble?
                   </h3>
-                  <p className="text-sm text-gray-700 mt-1">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     We&apos;re here to help! Check the {""}
                     <a
                       href="#faq"
-                      className="text-gray-900 underline hover:text-gray-700"
+                      className="text-amber-700 dark:text-amber-500 hover:underline"
                     >
                       FAQ
                     </a>{" "}
                     below or email us at{" "}
                     <a
                       href="mailto:support@splitwiseforynab.com?subject=Help!"
-                      className="text-gray-900 underline hover:text-gray-700"
+                      className="text-amber-700 dark:text-amber-500 hover:underline"
                     >
                       support@splitwiseforynab.com
                     </a>
@@ -136,11 +136,11 @@ export default async function DashboardPage() {
                 asChild
                 variant="outline"
                 size="sm"
-                className="sm:flex-shrink-0"
+                className="sm:flex-shrink-0 rounded-full"
               >
                 <div className="flex items-center gap-2">
                   <a href="#faq">View FAQ</a>
-                  <span className="text-gray-300">|</span>
+                  <span className="text-gray-300 dark:text-gray-600">|</span>
                   <a
                     href="mailto:support@splitwiseforynab.com?subject=Help!"
                     className="flex items-center gap-2"
@@ -167,9 +167,11 @@ export default async function DashboardPage() {
             />
           </div>
 
-          <div className="mt-8 border rounded-lg p-6">
+          <div className="mt-8 bg-white dark:bg-[#141414] border border-gray-200 dark:border-gray-800 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Recent Activity</h2>
+              <h2 className="text-xl font-serif text-gray-900 dark:text-white">
+                Recent Activity
+              </h2>
               {isFullyConfigured && <ManualSyncButton />}
             </div>
 
@@ -220,10 +222,17 @@ export default async function DashboardPage() {
           )}
 
           {/* FAQ Section */}
-          <Card id="faq" className="mt-8">
+          <Card
+            id="faq"
+            className="mt-8 bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl"
+          >
             <CardHeader>
-              <CardTitle>FAQ</CardTitle>
-              <CardDescription>Frequently Asked Questions</CardDescription>
+              <CardTitle className="font-serif text-gray-900 dark:text-white">
+                FAQ
+              </CardTitle>
+              <CardDescription className="text-gray-600 dark:text-gray-400">
+                Frequently Asked Questions
+              </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
               <Accordion type="single" collapsible className="w-full">
@@ -307,26 +316,28 @@ export default async function DashboardPage() {
                     No—changes made in Splitwise after the initial sync do not
                     sync back to YNAB. For one‑off expenses with a different
                     split ratio, create the expense manually in Splitwise.
-                    <div className="mt-4 bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
-                      <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                    <div className="mt-4 bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800">
+                      <h4 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
                         Example: You front the full cost ($200)
                       </h4>
-                      <p className="text-sm text-blue-900 dark:text-blue-100 mb-2">
+                      <p className="text-sm text-amber-900 dark:text-amber-100 mb-2">
                         Assume a $200 purchase that your partner will fully
                         reimburse.
                       </p>
                       <div className="grid sm:grid-cols-2 gap-4 text-sm">
                         <div>
-                          <p className="font-medium mb-1">In YNAB:</p>
-                          <ul className="list-disc pl-5 space-y-1">
+                          <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">
+                            In YNAB:
+                          </p>
+                          <ul className="list-disc pl-5 space-y-1 text-amber-800 dark:text-amber-200">
                             <li>$-200 → Reimbursements (original outflow)</li>
                           </ul>
                         </div>
                         <div>
-                          <p className="font-medium mb-1">
+                          <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">
                             In Splitwise (manual expense):
                           </p>
-                          <ul className="list-disc pl-5 space-y-1">
+                          <ul className="list-disc pl-5 space-y-1 text-amber-800 dark:text-amber-200">
                             <li>
                               Partner owes you $200 (100% of the purchase)
                             </li>
@@ -335,18 +346,20 @@ export default async function DashboardPage() {
                       </div>
                       <div className="mt-3 grid sm:grid-cols-2 gap-4 text-sm">
                         <div>
-                          <p className="font-medium mb-1">
+                          <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">
                             When the inflow syncs back to YNAB:
                           </p>
-                          <ul className="list-disc pl-5 space-y-1">
+                          <ul className="list-disc pl-5 space-y-1 text-amber-800 dark:text-amber-200">
                             <li>
                               $+200 → Reimbursements (Splitwise account inflow)
                             </li>
                           </ul>
                         </div>
                         <div>
-                          <p className="font-medium mb-1">Result after sync:</p>
-                          <ul className="list-disc pl-5 space-y-1">
+                          <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">
+                            Result after sync:
+                          </p>
+                          <ul className="list-disc pl-5 space-y-1 text-amber-800 dark:text-amber-200">
                             <li>Reimbursements nets to $0</li>
                             <li>Your spending categories remain unchanged</li>
                           </ul>
@@ -384,20 +397,20 @@ export default async function DashboardPage() {
                         Splitwise inflow can be categorized back to
                         reimbursements and the shared category to keep
                         everything accurate.
-                        <div className="mt-4 bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
-                          <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                        <div className="mt-4 bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800">
+                          <h4 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
                             Example: $600 Costco trip
                           </h4>
-                          <p className="text-sm text-blue-900 dark:text-blue-100 mb-2">
+                          <p className="text-sm text-amber-900 dark:text-amber-100 mb-2">
                             Assume $600 total: $200 partner&apos;s clothes, $100
                             your items, $300 shared groceries.
                           </p>
                           <div className="grid sm:grid-cols-2 gap-4 text-sm">
                             <div>
-                              <p className="font-medium mb-1">
+                              <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">
                                 In YNAB (split the original outflow):
                               </p>
-                              <ul className="list-disc pl-5 space-y-1">
+                              <ul className="list-disc pl-5 space-y-1 text-amber-800 dark:text-amber-200">
                                 <li>
                                   $-200 → Reimbursements (partner&apos;s
                                   clothes)
@@ -407,10 +420,10 @@ export default async function DashboardPage() {
                               </ul>
                             </div>
                             <div>
-                              <p className="font-medium mb-1">
+                              <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">
                                 In Splitwise (manual expense):
                               </p>
-                              <ul className="list-disc pl-5 space-y-1">
+                              <ul className="list-disc pl-5 space-y-1 text-amber-800 dark:text-amber-200">
                                 <li>
                                   Partner owes you $350 ($200 + half of $300
                                   groceries = $150)
@@ -420,19 +433,19 @@ export default async function DashboardPage() {
                           </div>
                           <div className="mt-3 grid sm:grid-cols-2 gap-4 text-sm">
                             <div>
-                              <p className="font-medium mb-1">
+                              <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">
                                 YNAB categorization of the synced inflow:
                               </p>
-                              <ul className="list-disc pl-5 space-y-1">
+                              <ul className="list-disc pl-5 space-y-1 text-amber-800 dark:text-amber-200">
                                 <li>$+200 → Reimbursements</li>
                                 <li>$+150 → Groceries</li>
                               </ul>
                             </div>
                             <div>
-                              <p className="font-medium mb-1">
+                              <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">
                                 Result after sync:
                               </p>
-                              <ul className="list-disc pl-5 space-y-1">
+                              <ul className="list-disc pl-5 space-y-1 text-amber-800 dark:text-amber-200">
                                 <li>Reimbursements nets to $0</li>
                                 <li>Groceries shows $-150 (your half)</li>
                               </ul>

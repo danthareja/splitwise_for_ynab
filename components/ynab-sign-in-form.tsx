@@ -19,7 +19,7 @@ export function YnabSignInForm({ signInAction }: YnabSignInFormProps) {
       }}
     >
       <Button
-        className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium cursor-pointer"
+        className="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium cursor-pointer rounded-full"
         size="lg"
         type="submit"
         disabled={isLoading}

@@ -94,15 +94,18 @@ export function ScheduledSyncInfo() {
   }, []);
 
   return (
-    <div className="mb-4 bg-gray-50 border border-gray-200 rounded-lg p-3">
+    <div className="mb-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl p-3">
       <div className="flex items-center gap-2">
-        <Clock className="h-5 w-5 text-gray-600" />
-        <p className="text-sm text-gray-700">
-          <span className="font-medium">Automatic sync:</span> Daily between{" "}
+        <Clock className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        <p className="text-sm text-gray-700 dark:text-gray-300">
+          <span className="font-medium text-gray-900 dark:text-white">
+            Automatic sync:
+          </span>{" "}
+          Daily between{" "}
           {isClient && localTimeRange ? (
             localTimeRange
           ) : (
-            <span className="inline-block h-4 bg-gray-200 rounded animate-pulse w-32 align-middle"></span>
+            <span className="inline-block h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32 align-middle"></span>
           )}
         </p>
       </div>

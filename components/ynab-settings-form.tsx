@@ -458,6 +458,7 @@ export function YNABSettingsForm({
               variant="outline"
               onClick={() => onSaveSuccess?.()}
               disabled={isSaving}
+              className="rounded-full"
             >
               Cancel
             </Button>
@@ -469,6 +470,7 @@ export function YNABSettingsForm({
                 !selectedAccountId ||
                 isFlagColorConflict
               }
+              className="rounded-full bg-gray-900 hover:bg-gray-800 text-white"
             >
               {isSaving ? (
                 <>
@@ -487,10 +489,12 @@ export function YNABSettingsForm({
           open={showCreateAccountDialog}
           onOpenChange={setShowCreateAccountDialog}
         >
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800">
             <DialogHeader>
-              <DialogTitle>Create Splitwise Account</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="font-serif text-gray-900 dark:text-white">
+                Create Splitwise Account
+              </DialogTitle>
+              <DialogDescription className="text-gray-600 dark:text-gray-400">
                 Create a new account in your YNAB budget to track your Splitwise
                 balance.
               </DialogDescription>
@@ -503,8 +507,9 @@ export function YNABSettingsForm({
                   value={newAccountName}
                   onChange={(e) => setNewAccountName(e.target.value)}
                   placeholder="🤝 Splitwise"
+                  className="rounded-xl"
                 />
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   This account will be used to track your Splitwise balance in
                   YNAB.
                 </p>
@@ -516,6 +521,7 @@ export function YNABSettingsForm({
                 variant="outline"
                 onClick={() => setShowCreateAccountDialog(false)}
                 disabled={isCreatingAccount}
+                className="rounded-full"
               >
                 Cancel
               </Button>
@@ -523,6 +529,7 @@ export function YNABSettingsForm({
                 type="button"
                 onClick={handleCreateAccount}
                 disabled={isCreatingAccount || !newAccountName.trim()}
+                className="rounded-full bg-gray-900 hover:bg-gray-800 text-white"
               >
                 {isCreatingAccount ? (
                   <>

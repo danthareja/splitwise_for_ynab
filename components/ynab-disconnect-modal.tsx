@@ -45,20 +45,25 @@ export function YNABDisconnectModal({
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent>
+      <AlertDialogContent className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800">
         <AlertDialogHeader>
-          <AlertDialogTitle>Reconnect YNAB Account?</AlertDialogTitle>
-          <AlertDialogDescription>
+          <AlertDialogTitle className="font-serif text-gray-900 dark:text-white">
+            Reconnect YNAB Account?
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-gray-600 dark:text-gray-400">
             We&apos;ll reconnect your YNAB account and preserve your YNAB
             settings (budget, account, and flag colors).
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading} className="rounded-full">
+            Cancel
+          </AlertDialogCancel>
           <Button
             variant="destructive"
             onClick={handleDisconnectAndReconnect}
             disabled={isLoading}
+            className="rounded-full"
           >
             {isLoading ? (
               <>

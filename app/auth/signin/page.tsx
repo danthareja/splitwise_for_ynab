@@ -43,12 +43,12 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-[#FDFBF7] dark:bg-[#0f0f0f]">
       <div className="flex flex-1 flex-col items-center justify-center p-4">
         <Button
           asChild
           variant="ghost"
-          className="absolute left-4 top-4 md:left-8 md:top-8 gap-1"
+          className="absolute left-4 top-4 md:left-8 md:top-8 gap-1 rounded-full"
         >
           <Link href="/">
             <ArrowLeft className="h-4 w-4" />
@@ -56,10 +56,12 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
           </Link>
         </Button>
 
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl shadow-sm">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl">Connect Your Accounts</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-2xl font-serif text-gray-900 dark:text-white">
+              Connect Your Accounts
+            </CardTitle>
+            <CardDescription className="text-gray-600 dark:text-gray-400">
               Connect your YNAB and Splitwise accounts to get started
             </CardDescription>
           </CardHeader>
@@ -72,31 +74,36 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
             />
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
+                <span className="w-full border-t border-gray-200 dark:border-gray-800" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
+                <span className="bg-white dark:bg-[#141414] px-2 text-gray-500 dark:text-gray-400">
                   Then
                 </span>
               </div>
             </div>
-            <Button className="w-full" variant="outline" size="lg" disabled>
+            <Button
+              className="w-full rounded-full text-gray-500 dark:text-gray-400"
+              variant="outline"
+              size="lg"
+              disabled
+            >
               Connect Splitwise (After YNAB)
             </Button>
           </CardContent>
           <CardFooter className="flex flex-col items-center justify-center gap-2">
-            <p className="text-center text-sm text-gray-500">
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400">
               By connecting your accounts, you agree to our{" "}
               <Link
                 href="/terms"
-                className="underline underline-offset-4 hover:text-primary"
+                className="text-amber-700 dark:text-amber-500 hover:underline"
               >
                 Terms of Service
               </Link>{" "}
               and{" "}
               <Link
                 href="/privacy"
-                className="underline underline-offset-4 hover:text-primary"
+                className="text-amber-700 dark:text-amber-500 hover:underline"
               >
                 Privacy Policy
               </Link>

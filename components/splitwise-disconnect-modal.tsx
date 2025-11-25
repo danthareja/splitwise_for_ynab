@@ -43,20 +43,25 @@ export function SplitwiseDisconnectModal({
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent>
+      <AlertDialogContent className="bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800">
         <AlertDialogHeader>
-          <AlertDialogTitle>Disconnect Splitwise Account?</AlertDialogTitle>
-          <AlertDialogDescription>
+          <AlertDialogTitle className="font-serif text-gray-900 dark:text-white">
+            Disconnect Splitwise Account?
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-gray-600 dark:text-gray-400">
             This will remove your Splitwise connection and stop syncing between
             YNAB and Splitwise. You can reconnect at any time.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading} className="rounded-full">
+            Cancel
+          </AlertDialogCancel>
           <Button
             variant="destructive"
             onClick={handleDisconnect}
             disabled={isLoading}
+            className="rounded-full"
           >
             {isLoading ? (
               <>

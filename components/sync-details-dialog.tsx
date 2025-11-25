@@ -52,9 +52,9 @@ export function SyncDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 font-serif text-gray-900 dark:text-white">
             Sync Details
             <Badge
               variant={
@@ -85,7 +85,7 @@ export function SyncDetailsDialog({
         </DialogHeader>
 
         {sync.status === "error" && sync.errorMessage && (
-          <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-sm">
+          <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
             <p className="font-medium">Error:</p>
             <p>{sync.errorMessage}</p>
           </div>
@@ -124,7 +124,7 @@ export function SyncDetailsDialog({
 
           <TabsContent value="ynab" className="mt-4">
             {ynabTransactions.length > 0 ? (
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-50 dark:bg-gray-900">
@@ -198,7 +198,7 @@ export function SyncDetailsDialog({
 
           <TabsContent value="splitwise" className="mt-4">
             {splitwiseExpenses.length > 0 ? (
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-50 dark:bg-gray-900">
@@ -272,7 +272,11 @@ export function SyncDetailsDialog({
         </Tabs>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="rounded-full"
+          >
             Close
           </Button>
         </DialogFooter>
