@@ -596,6 +596,526 @@ export async function getPartnerEmoji(groupId: string) {
   }
 }
 
+// Detect if there's an existing primary user for a given Splitwise group
+// Used during onboarding to show "Join [Partner]'s household?" prompt
+export async function detectPotentialPrimary(groupId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  try {
+    // Find another user with the same group who is a primary (not a secondary)
+    const potentialPrimary = await prisma.user.findFirst({
+      where: {
+        id: {
+          not: session.user.id,
+        },
+        // Must have SplitwiseSettings with this group
+        splitwiseSettings: {
+          groupId: groupId,
+        },
+        // Must be a primary (no primaryUserId set)
+        primaryUserId: null,
+        // Must be a dual user
+        persona: "dual",
+        // Must have completed onboarding
+        onboardingComplete: true,
+      },
+      select: {
+        id: true,
+        firstName: true,
+        name: true,
+        email: true,
+        image: true,
+        splitwiseSettings: {
+          select: {
+            currencyCode: true,
+            emoji: true,
+            defaultSplitRatio: true,
+            useDescriptionAsPayee: true,
+            customPayeeName: true,
+          },
+        },
+      },
+    });
+
+    if (potentialPrimary) {
+      return {
+        primaryId: potentialPrimary.id,
+        primaryName: getUserFirstName(potentialPrimary) || "Your partner",
+        primaryEmail: potentialPrimary.email,
+        primaryImage: potentialPrimary.image,
+        settings: potentialPrimary.splitwiseSettings,
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Error detecting potential primary:", error);
+    Sentry.captureException(error);
+    return null;
+  }
+}
+
+// Join an existing household as a secondary user
+export async function joinHousehold(primaryUserId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: "You must be logged in" };
+  }
+
+  try {
+    // Verify the primary user exists and is valid
+    const primaryUser = await prisma.user.findUnique({
+      where: { id: primaryUserId },
+      select: {
+        id: true,
+        primaryUserId: true,
+        persona: true,
+        onboardingComplete: true,
+        splitwiseSettings: true,
+        secondaryUser: true,
+      },
+    });
+
+    if (!primaryUser) {
+      return { success: false, error: "Primary user not found" };
+    }
+
+    if (primaryUser.primaryUserId) {
+      return { success: false, error: "This user is already a secondary" };
+    }
+
+    if (primaryUser.secondaryUser) {
+      return { success: false, error: "This household already has a partner" };
+    }
+
+    if (!primaryUser.splitwiseSettings) {
+      return {
+        success: false,
+        error: "Primary user has not configured Splitwise",
+      };
+    }
+
+    // Link current user as secondary
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        primaryUserId: primaryUserId,
+        persona: "dual",
+      },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error joining household:", error);
+    Sentry.captureException(error);
+    return { success: false, error: "Failed to join household" };
+  }
+}
+
+// Generate a partner invite token for streamlined secondary setup
+// Can accept settings directly (for onboarding when not yet saved) or read from DB
+export async function createPartnerInvite(settings?: {
+  groupId: string;
+  groupName?: string | null;
+  currencyCode: string;
+  emoji: string;
+  defaultSplitRatio?: string;
+}) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: {
+        splitwiseSettings: true,
+        secondaryUser: true,
+      },
+    });
+
+    if (!user) {
+      return { success: false, error: "User not found" };
+    }
+
+    // Must be a dual user who is primary (no primaryUserId)
+    // Skip this check if settings are provided directly (during onboarding)
+    if (!settings && user.persona !== "dual") {
+      return {
+        success: false,
+        error: `Only dual users can create partner invites (current: ${user.persona || "none"})`,
+      };
+    }
+
+    if (user.secondaryUser) {
+      return { success: false, error: "You already have a partner connected" };
+    }
+
+    // Use provided settings or fall back to database
+    const effectiveSettings = settings || user.splitwiseSettings;
+
+    if (
+      !effectiveSettings?.groupId ||
+      !effectiveSettings?.currencyCode ||
+      !effectiveSettings?.emoji
+    ) {
+      const missing = [];
+      if (!effectiveSettings?.groupId) missing.push("groupId");
+      if (!effectiveSettings?.currencyCode) missing.push("currency");
+      if (!effectiveSettings?.emoji) missing.push("emoji");
+      return {
+        success: false,
+        error: `Missing settings: ${missing.join(", ")}`,
+      };
+    }
+
+    // Generate a short URL-friendly token
+    const { nanoid } = await import("nanoid");
+    const token = nanoid(12); // 12 character alphanumeric token
+
+    // Check for existing pending invites and expire them
+    await prisma.partnerInvite.updateMany({
+      where: {
+        primaryUserId: session.user.id,
+        status: "pending",
+      },
+      data: {
+        status: "expired",
+      },
+    });
+
+    // Get split ratio from settings or database
+    const splitRatio =
+      settings?.defaultSplitRatio ||
+      user.splitwiseSettings?.defaultSplitRatio ||
+      "1:1";
+
+    // Create new invite (expires in 7 days)
+    const invite = await prisma.partnerInvite.create({
+      data: {
+        token,
+        primaryUserId: session.user.id,
+        groupId: effectiveSettings.groupId,
+        groupName: effectiveSettings.groupName || null,
+        currencyCode: effectiveSettings.currencyCode,
+        defaultSplitRatio: splitRatio,
+        primaryEmoji: effectiveSettings.emoji,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      },
+    });
+
+    return {
+      success: true,
+      token: invite.token,
+      expiresAt: invite.expiresAt,
+    };
+  } catch (error) {
+    console.error("Error creating partner invite:", error);
+    Sentry.captureException(error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    return {
+      success: false,
+      error: `Failed to create invite: ${errorMessage}`,
+    };
+  }
+}
+
+// Get an existing pending invite for the current user
+export async function getExistingInvite() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  try {
+    const invite = await prisma.partnerInvite.findFirst({
+      where: {
+        primaryUserId: session.user.id,
+        status: "pending",
+        expiresAt: { gt: new Date() },
+      },
+      select: {
+        token: true,
+        expiresAt: true,
+      },
+    });
+
+    return invite;
+  } catch (error) {
+    console.error("Error getting existing invite:", error);
+    return null;
+  }
+}
+
+// Validate and get invite details by token
+export async function getInviteByToken(token: string) {
+  try {
+    const invite = await prisma.partnerInvite.findUnique({
+      where: { token },
+    });
+
+    if (!invite) {
+      return { success: false, error: "Invite not found" };
+    }
+
+    if (invite.status !== "pending") {
+      return { success: false, error: "This invite has already been used" };
+    }
+
+    if (invite.expiresAt < new Date()) {
+      return { success: false, error: "This invite has expired" };
+    }
+
+    // Get primary user's CURRENT info and settings (not just cached invite values)
+    const primaryUser = await prisma.user.findUnique({
+      where: { id: invite.primaryUserId },
+      select: {
+        firstName: true,
+        name: true,
+        email: true,
+        splitwiseSettings: {
+          select: {
+            groupId: true,
+            groupName: true,
+            currencyCode: true,
+            defaultSplitRatio: true,
+            emoji: true,
+          },
+        },
+      },
+    });
+
+    // Use primary's current settings, fall back to cached invite values
+    const currentSettings = primaryUser?.splitwiseSettings;
+
+    return {
+      success: true,
+      invite: {
+        primaryUserId: invite.primaryUserId,
+        primaryName: getUserFirstName(primaryUser) || "Your partner",
+        primaryEmail: primaryUser?.email,
+        // Prefer current settings over cached invite values
+        groupId: currentSettings?.groupId || invite.groupId,
+        groupName: currentSettings?.groupName || invite.groupName,
+        currencyCode: currentSettings?.currencyCode || invite.currencyCode,
+        defaultSplitRatio:
+          currentSettings?.defaultSplitRatio || invite.defaultSplitRatio,
+        primaryEmoji: currentSettings?.emoji || invite.primaryEmoji,
+      },
+    };
+  } catch (error) {
+    console.error("Error getting invite:", error);
+    Sentry.captureException(error);
+    return { success: false, error: "Failed to validate invite" };
+  }
+}
+
+// Accept an invite and become secondary
+export async function acceptInvite(token: string, emoji: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  try {
+    const invite = await prisma.partnerInvite.findUnique({
+      where: { token },
+    });
+
+    if (!invite) {
+      return { success: false, error: "Invite not found" };
+    }
+
+    if (invite.status !== "pending") {
+      return { success: false, error: "This invite has already been used" };
+    }
+
+    if (invite.expiresAt < new Date()) {
+      return { success: false, error: "This invite has expired" };
+    }
+
+    // Verify primary still exists, doesn't have a secondary, and has settings
+    const primaryUser = await prisma.user.findUnique({
+      where: { id: invite.primaryUserId },
+      include: {
+        secondaryUser: true,
+        splitwiseSettings: true,
+      },
+    });
+
+    if (!primaryUser) {
+      return { success: false, error: "Primary user no longer exists" };
+    }
+
+    if (primaryUser.secondaryUser) {
+      return { success: false, error: "This household already has a partner" };
+    }
+
+    // Get primary's CURRENT settings (not cached invite values)
+    const primarySettings = primaryUser.splitwiseSettings;
+    if (!primarySettings?.groupId || !primarySettings?.currencyCode) {
+      return {
+        success: false,
+        error: "Primary user's settings are incomplete",
+      };
+    }
+
+    // Check emoji conflict against primary's CURRENT emoji
+    const primaryEmoji = primarySettings.emoji || invite.primaryEmoji;
+    if (emoji === primaryEmoji) {
+      return {
+        success: false,
+        error: `Please choose a different emoji - your partner is using ${primaryEmoji}`,
+      };
+    }
+
+    // Link current user as secondary and mark invite as accepted
+    // Use primary's CURRENT settings, not cached invite values
+    // Don't mark onboarding complete - they still need to configure YNAB (step 2)
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: session.user.id },
+        data: {
+          primaryUserId: invite.primaryUserId,
+          persona: "dual",
+          onboardingComplete: false, // Still need YNAB config
+          onboardingStep: 2, // Step 2 = Configure YNAB
+        },
+      }),
+      // Create SplitwiseSettings for secondary with shared settings + their own emoji
+      // Note: customPayeeName and useDescriptionAsPayee are NOT copied - each user manages their own
+      prisma.splitwiseSettings.upsert({
+        where: { userId: session.user.id },
+        create: {
+          userId: session.user.id,
+          groupId: primarySettings.groupId,
+          groupName: primarySettings.groupName,
+          currencyCode: primarySettings.currencyCode,
+          defaultSplitRatio: primarySettings.defaultSplitRatio || "1:1",
+          emoji: emoji,
+          // useDescriptionAsPayee defaults to true
+          // customPayeeName stays null - user can configure their own
+        },
+        update: {
+          groupId: primarySettings.groupId,
+          groupName: primarySettings.groupName,
+          currencyCode: primarySettings.currencyCode,
+          defaultSplitRatio: primarySettings.defaultSplitRatio || "1:1",
+          emoji: emoji,
+        },
+      }),
+      prisma.partnerInvite.update({
+        where: { token },
+        data: {
+          status: "accepted",
+          acceptedByUserId: session.user.id,
+          acceptedAt: new Date(),
+        },
+      }),
+    ]);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error accepting invite:", error);
+    Sentry.captureException(error);
+    return { success: false, error: "Failed to accept invite" };
+  }
+}
+
+// Link user as secondary via invite - they'll go through normal onboarding
+// SplitwiseSettings are NOT created here - they're created in step 3 after verifying group access
+export async function linkAsSecondary(token: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  try {
+    const invite = await prisma.partnerInvite.findUnique({
+      where: { token },
+    });
+
+    if (!invite) {
+      return { success: false, error: "Invite not found" };
+    }
+
+    if (invite.status !== "pending") {
+      return { success: false, error: "This invite has already been used" };
+    }
+
+    if (invite.expiresAt < new Date()) {
+      return { success: false, error: "This invite has expired" };
+    }
+
+    // Verify primary still exists and doesn't have a secondary
+    const primaryUser = await prisma.user.findUnique({
+      where: { id: invite.primaryUserId },
+      include: {
+        secondaryUser: true,
+        splitwiseSettings: true,
+      },
+    });
+
+    if (!primaryUser) {
+      return { success: false, error: "Primary user no longer exists" };
+    }
+
+    if (primaryUser.secondaryUser) {
+      return { success: false, error: "This household already has a partner" };
+    }
+
+    // Verify primary has settings configured
+    const primarySettings = primaryUser.splitwiseSettings;
+    if (!primarySettings?.groupId || !primarySettings?.currencyCode) {
+      return {
+        success: false,
+        error: "Primary user's settings are incomplete",
+      };
+    }
+
+    // Link current user as secondary and mark invite as accepted
+    // They start at step 0 (Connect Splitwise) and go through normal onboarding
+    // SplitwiseSettings will be created in step 3 after we verify they have group access
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: session.user.id },
+        data: {
+          primaryUserId: invite.primaryUserId,
+          persona: "dual",
+          onboardingComplete: false,
+          onboardingStep: 0, // Start at step 0 (Connect Splitwise)
+        },
+      }),
+      // Don't create SplitwiseSettings yet - created in step 3 after group access verification
+      prisma.partnerInvite.update({
+        where: { token },
+        data: {
+          status: "accepted",
+          acceptedByUserId: session.user.id,
+          acceptedAt: new Date(),
+        },
+      }),
+    ]);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error linking as secondary:", error);
+    Sentry.captureException(error);
+    return { success: false, error: "Failed to join household" };
+  }
+}
+
 // Check if settings were recently synced by partner
 export async function checkPartnerSyncStatus() {
   const session = await auth();

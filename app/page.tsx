@@ -118,13 +118,14 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8 sm:mb-12">
             <h2 className="text-3xl md:text-4xl font-serif text-gray-900 dark:text-white mb-6">
-              The secret: a "Phantom" Splitwise account
+              The secret: a &ldquo;Phantom&rdquo; Splitwise account
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
-              Create a "phantom" cash account in YNAB—it&apos;s not a real bank
-              account, just an IOU ledger that reconciles with your Splitwise
-              app balance. Positive balance means you&apos;re owed money.
-              Negative means you owe. When you settle up, it goes to zero.
+              Create a &ldquo;phantom&rdquo; cash account in YNAB—it&apos;s not
+              a real bank account, just an IOU ledger that reconciles with your
+              Splitwise app balance. Positive balance means you&apos;re owed
+              money. Negative means you owe. When you settle up, it goes to
+              zero.
             </p>
           </div>
 

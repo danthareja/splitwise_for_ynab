@@ -15,6 +15,7 @@ import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { disconnectSplitwiseAccount } from "@/app/actions/splitwise";
+import Image from "next/image";
 
 interface StepSplitwiseProps {
   authError?: string;
@@ -27,7 +28,7 @@ interface StepSplitwiseProps {
 
 export function StepSplitwise({ authError, userProfile }: StepSplitwiseProps) {
   const router = useRouter();
-  const { nextStep, hasSplitwiseConnection, isNavigating } =
+  const { nextStep, hasSplitwiseConnection, isNavigating, isSecondary } =
     useOnboardingStep();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
@@ -76,14 +77,28 @@ export function StepSplitwise({ authError, userProfile }: StepSplitwiseProps) {
         title="Splitwise Connected!"
         description="Confirm this is the right account before continuing."
       >
+        {/* Secondary user context */}
+        {isSecondary && (
+          <Alert className="mb-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+            <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <AlertDescription className="text-blue-800 dark:text-blue-200">
+              Make sure this Splitwise account has access to your
+              household&apos;s shared group.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Profile card */}
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6">
           <div className="flex items-center gap-4">
             {userProfile?.image ? (
-              <img
+              <Image
                 src={userProfile.image}
                 alt=""
+                width={56}
+                height={56}
                 className="h-14 w-14 rounded-full object-cover"
+                unoptimized
               />
             ) : (
               <div className="h-14 w-14 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">

@@ -6,7 +6,6 @@ import { StepSplitwise } from "@/components/onboarding/step-splitwise";
 import { StepPersona } from "@/components/onboarding/step-persona";
 import { StepYnab } from "@/components/onboarding/step-ynab";
 import { StepSplitwiseConfig } from "@/components/onboarding/step-splitwise-config";
-import { StepPartner } from "@/components/onboarding/step-partner";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -50,8 +49,14 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
   if (!onboardingData.hasSplitwiseConnection && effectiveStep > 0) {
     effectiveStep = 0;
   }
-  // If has connection but no persona, should be at step 1
+  // Secondary users skip step 1 (persona) - they're already set to "dual"
+  // If secondary is at step 1, move them to step 2
+  else if (onboardingData.isSecondary && effectiveStep === 1) {
+    effectiveStep = 2;
+  }
+  // If has connection but no persona (primary/solo only), should be at step 1
   else if (
+    !onboardingData.isSecondary &&
     onboardingData.hasSplitwiseConnection &&
     !onboardingData.persona &&
     effectiveStep > 1
@@ -70,6 +75,15 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
   else if (
     onboardingData.hasYnabSettings &&
     !onboardingData.hasSplitwiseSettings &&
+    effectiveStep > 3
+  ) {
+    effectiveStep = 3;
+  }
+  // Secondary users with Splitwise settings but no emoji should be at step 3
+  else if (
+    onboardingData.isSecondary &&
+    onboardingData.hasYnabSettings &&
+    !onboardingData.splitwiseSettings?.emoji &&
     effectiveStep > 3
   ) {
     effectiveStep = 3;
@@ -94,10 +108,11 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
           <StepSplitwiseConfig
             initialSettings={onboardingData.splitwiseSettings}
             budgetId={onboardingData.ynabSettings?.budgetId}
+            isSecondary={onboardingData.isSecondary}
+            primarySettings={onboardingData.primarySettings}
+            primaryName={onboardingData.primaryName}
           />
         );
-      case 4:
-        return <StepPartner />;
       default:
         return <StepSplitwise />;
     }
@@ -110,6 +125,7 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
       hasSplitwiseConnection={onboardingData.hasSplitwiseConnection}
       hasYnabSettings={onboardingData.hasYnabSettings}
       hasSplitwiseSettings={onboardingData.hasSplitwiseSettings}
+      isSecondary={onboardingData.isSecondary}
     >
       {renderStepContent()}
     </OnboardingWizard>

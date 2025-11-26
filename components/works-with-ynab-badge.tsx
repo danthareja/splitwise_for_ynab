@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 export function WorksWithYnabBadge() {
   const [isHovered, setIsHovered] = useState(false);
@@ -11,7 +12,14 @@ export function WorksWithYnabBadge() {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <img src="/works_with_ynab.svg" alt="Works with YNAB" className="h-10" />
+      <Image
+        src="/works_with_ynab.svg"
+        alt="Works with YNAB"
+        width={120}
+        height={40}
+        className="h-10 w-auto"
+        priority
+      />
       {isHovered && (
         <span
           className="absolute text-xl pointer-events-none animate-party-emoji"

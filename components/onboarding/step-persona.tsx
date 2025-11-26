@@ -39,7 +39,8 @@ export function StepPersona() {
       id: "solo" as const,
       emoji: "👤",
       title: "I use YNAB, my partner doesn't",
-      details: "I'll track shared expenses that my partner adds to Splitwise",
+      details:
+        "I want to track shared expenses that my partner adds to Splitwise",
     },
     {
       id: "dual" as const,
@@ -64,7 +65,7 @@ export function StepPersona() {
               key={p.id}
               onClick={() => setSelectedPersona(p.id)}
               className={cn(
-                "relative text-left p-5 rounded-xl border-2 transition-all",
+                "relative text-left p-5 rounded-xl border-2 transition-all cursor-pointer bg-white/50 hover:bg-white/80",
                 isSelected
                   ? "border-amber-500 bg-amber-50 dark:bg-amber-900/20"
                   : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600",
@@ -97,13 +98,6 @@ export function StepPersona() {
             </button>
           );
         })}
-      </div>
-
-      {/* Info banner - consistent with homepage style */}
-      <div className="mt-6 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-        <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-          You can change this anytime in settings.
-        </p>
       </div>
 
       <div className="mt-8 flex justify-between">

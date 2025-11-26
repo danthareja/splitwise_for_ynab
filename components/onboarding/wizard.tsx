@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,7 @@ import { updateOnboardingStep, completeOnboarding } from "@/app/actions/user";
 import type { Persona } from "@/app/actions/user";
 
 // Step definitions
+// Step 4 (Partner Setup) has been removed - joining a household now happens in Step 3
 export const ONBOARDING_STEPS = [
   {
     id: 0,
@@ -25,11 +26,6 @@ export const ONBOARDING_STEPS = [
     title: "Configure Splitwise",
     description: "Select your group and currency",
   },
-  {
-    id: 4,
-    title: "Partner Setup",
-    description: "Verify your partner (dual only)",
-  },
 ] as const;
 
 interface OnboardingWizardProps {
@@ -38,6 +34,7 @@ interface OnboardingWizardProps {
   hasSplitwiseConnection: boolean;
   hasYnabSettings: boolean;
   hasSplitwiseSettings: boolean;
+  isSecondary: boolean;
   children: React.ReactNode;
 }
 
@@ -47,22 +44,24 @@ export function OnboardingWizard({
   hasSplitwiseConnection,
   hasYnabSettings,
   hasSplitwiseSettings,
+  isSecondary,
   children,
 }: OnboardingWizardProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [isNavigating, setIsNavigating] = useState(false);
 
-  // Determine which steps to show based on persona
-  const visibleSteps =
-    persona === "dual"
-      ? ONBOARDING_STEPS
-      : ONBOARDING_STEPS.filter((step) => step.id !== 4);
+  // Secondary users skip step 1 (persona) since they're already set to "dual"
+  const visibleSteps = isSecondary
+    ? ONBOARDING_STEPS.filter((step) => step.id !== 1)
+    : ONBOARDING_STEPS;
 
   // Calculate completion status for each step
   const getStepStatus = (
     stepId: number,
   ): "completed" | "current" | "upcoming" => {
+    // For secondary users, treat step 1 as completed (they skip it)
+    if (isSecondary && stepId === 1) return "completed";
     if (stepId < currentStep) return "completed";
     if (stepId === currentStep) return "current";
     return "upcoming";
@@ -84,18 +83,15 @@ export function OnboardingWizard({
   };
 
   const nextStep = async () => {
-    const nextStepIndex = currentStep + 1;
+    let nextStepIndex = currentStep + 1;
 
-    // Skip partner step for solo users
-    if (persona === "solo" && nextStepIndex === 4) {
-      // Complete onboarding for solo users after step 3
-      await completeOnboarding();
-      router.push("/dashboard");
-      return;
+    // Secondary users skip step 1 (persona selection) - go from 0 to 2
+    if (isSecondary && nextStepIndex === 1) {
+      nextStepIndex = 2;
     }
 
-    // Check if we're done
-    if (nextStepIndex > 4 || (persona === "dual" && nextStepIndex === 5)) {
+    // All users complete after step 3 (Configure Splitwise)
+    if (nextStepIndex > 3) {
       await completeOnboarding();
       router.push("/dashboard");
       return;
@@ -106,17 +102,20 @@ export function OnboardingWizard({
   };
 
   const previousStep = async () => {
-    if (currentStep > 0) {
-      await goToStep(currentStep - 1);
+    let prevStepIndex = currentStep - 1;
+
+    // Secondary users skip step 1 (persona selection) - go from 2 to 0
+    if (isSecondary && prevStepIndex === 1) {
+      prevStepIndex = 0;
+    }
+
+    if (prevStepIndex >= 0) {
+      await goToStep(prevStepIndex);
       router.refresh();
     }
   };
 
   // Get current step info for mobile display
-  const currentStepInfo = visibleSteps.find((_, idx) => {
-    const step = visibleSteps[idx];
-    return step && getStepStatus(step.id) === "current";
-  });
   const currentStepIndex = visibleSteps.findIndex((_, idx) => {
     const step = visibleSteps[idx];
     return step && getStepStatus(step.id) === "current";
@@ -208,6 +207,7 @@ export function OnboardingWizard({
             hasSplitwiseConnection,
             hasYnabSettings,
             hasSplitwiseSettings,
+            isSecondary,
           }}
         >
           {children}
@@ -230,6 +230,7 @@ interface OnboardingStepContextValue {
   hasSplitwiseConnection: boolean;
   hasYnabSettings: boolean;
   hasSplitwiseSettings: boolean;
+  isSecondary: boolean;
 }
 
 const OnboardingStepContext = createContext<OnboardingStepContextValue | null>(

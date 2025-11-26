@@ -41,7 +41,6 @@ import {
   Plus,
   ChevronDown,
   AlertCircle,
-  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -261,7 +260,9 @@ export function StepYnab({ initialSettings }: StepYnabProps) {
         {/* Account selector */}
         {selectedBudgetId && (
           <div className="space-y-2">
-            <Label htmlFor="splitwiseAccountId">Your "Phantom" Account</Label>
+            <Label htmlFor="splitwiseAccountId">
+              Your &ldquo;Phantom&rdquo; Account
+            </Label>
             <Select
               value={selectedAccountId}
               onValueChange={(value) => {

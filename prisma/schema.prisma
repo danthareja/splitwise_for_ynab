@@ -36,8 +36,17 @@ model User {
   
   // Onboarding fields
   persona            String?        // "solo" | "dual" - changeable anytime
-  onboardingStep     Int            @default(0) // 0-5, enables resume on bounce
+  onboardingStep     Int            @default(0) // 0-4, enables resume on bounce
   onboardingComplete Boolean        @default(false)
+  
+  // Partner relationship (for dual accounts)
+  // If primaryUserId is set, this user is a "secondary" and inherits SplitwiseSettings from primary
+  primaryUserId      String?        @unique
+  primaryUser        User?          @relation("PrimarySecondary", fields: [primaryUserId], references: [id], onDelete: SetNull)
+  secondaryUser      User?          @relation("PrimarySecondary")
+  
+  // Splitwise user ID (for partner detection when selecting same group)
+  splitwiseUserId    String?
   
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
@@ -178,4 +187,26 @@ model RateLimit {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, key])
+}
+
+// Partner invite tokens for streamlined secondary user setup
+model PartnerInvite {
+  id              String    @id @default(cuid())
+  token           String    @unique // Short URL-friendly token
+  primaryUserId   String
+  
+  // Cached settings from primary at invite time (shared settings only)
+  groupId         String
+  groupName       String?
+  currencyCode    String
+  defaultSplitRatio String  @default("1:1") // Shared between partners
+  primaryEmoji    String    // To check for conflicts
+  
+  // Status
+  status          String    @default("pending") // pending, accepted, expired
+  acceptedByUserId String?  // User who accepted (becomes secondary)
+  
+  expiresAt       DateTime
+  createdAt       DateTime  @default(now())
+  acceptedAt      DateTime?
 }
