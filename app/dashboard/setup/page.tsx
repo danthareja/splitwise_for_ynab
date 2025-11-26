@@ -93,6 +93,7 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
         return (
           <StepSplitwiseConfig
             initialSettings={onboardingData.splitwiseSettings}
+            budgetId={onboardingData.ynabSettings?.budgetId}
           />
         );
       case 4:
