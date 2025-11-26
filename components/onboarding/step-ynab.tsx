@@ -261,7 +261,7 @@ export function StepYnab({ initialSettings }: StepYnabProps) {
         {/* Account selector */}
         {selectedBudgetId && (
           <div className="space-y-2">
-            <Label htmlFor="splitwiseAccountId">Phantom Account</Label>
+            <Label htmlFor="splitwiseAccountId">Your "Phantom" Account</Label>
             <Select
               value={selectedAccountId}
               onValueChange={(value) => {

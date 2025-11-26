@@ -17,13 +17,14 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   getSplitwiseGroupsForUser,
   saveSplitwiseSettings,
   getPartnerEmoji,
 } from "@/app/actions/splitwise";
-import { EmojiPicker } from "@/components/emoji-picker";
+import { getYNABBudgetsForUser } from "@/app/actions/ynab";
 import type { SplitwiseGroup } from "@/types/splitwise";
 import {
   ArrowRight,
@@ -32,7 +33,6 @@ import {
   ChevronDown,
   AlertCircle,
   Info,
-  Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -49,6 +49,13 @@ const CURRENCY_OPTIONS = [
 
 const SUGGESTED_EMOJIS = ["🤴", "👸", "🤑", "😸", "💰", "💸", "🌚", "🌞"];
 
+const SPLIT_RATIO_PRESETS = [
+  { value: "1:1", label: "Equal Split (1:1)" },
+  { value: "2:1", label: "You Pay More (2:1)" },
+  { value: "1:2", label: "Partner Pays More (1:2)" },
+  { value: "custom", label: "Custom Split..." },
+];
+
 interface StepSplitwiseConfigProps {
   initialSettings?: {
     groupId?: string | null;
@@ -59,23 +66,12 @@ interface StepSplitwiseConfigProps {
     useDescriptionAsPayee?: boolean | null;
     customPayeeName?: string | null;
   } | null;
-}
-
-// Premium badge component
-function PremiumBadge() {
-  return (
-    <Badge
-      variant="secondary"
-      className="ml-2 text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
-    >
-      <Crown className="h-3 w-3 mr-1" />
-      Premium
-    </Badge>
-  );
+  budgetId?: string | null;
 }
 
 export function StepSplitwiseConfig({
   initialSettings,
+  budgetId,
 }: StepSplitwiseConfigProps) {
   const { nextStep, previousStep, persona, isNavigating } = useOnboardingStep();
 
@@ -85,6 +81,7 @@ export function StepSplitwiseConfig({
 
   const [validGroups, setValidGroups] = useState<SplitwiseGroup[]>([]);
   const [invalidGroups, setInvalidGroups] = useState<SplitwiseGroup[]>([]);
+  const [budgetCurrency, setBudgetCurrency] = useState<string | null>(null);
 
   const [selectedGroupId, setSelectedGroupId] = useState(
     initialSettings?.groupId || "",
@@ -97,6 +94,28 @@ export function StepSplitwiseConfig({
   );
   const [selectedEmoji, setSelectedEmoji] = useState(
     initialSettings?.emoji || "✅",
+  );
+  const [selectedSplitRatio, setSelectedSplitRatio] = useState(() => {
+    const initial = initialSettings?.defaultSplitRatio || "1:1";
+    // Check if it's a preset or custom
+    if (SPLIT_RATIO_PRESETS.find((p) => p.value === initial)) {
+      return initial;
+    }
+    return "custom";
+  });
+  const [customSplitRatio, setCustomSplitRatio] = useState(() => {
+    const initial = initialSettings?.defaultSplitRatio || "1:1";
+    // If not a preset, it's a custom value
+    if (!SPLIT_RATIO_PRESETS.find((p) => p.value === initial)) {
+      return initial;
+    }
+    return "";
+  });
+  const [payeeMode, setPayeeMode] = useState<"description" | "custom">(
+    initialSettings?.useDescriptionAsPayee === false ? "custom" : "description",
+  );
+  const [customPayeeName, setCustomPayeeName] = useState(
+    initialSettings?.customPayeeName || "",
   );
 
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -132,12 +151,31 @@ export function StepSplitwiseConfig({
     setIsLoading(true);
     setError(null);
     try {
-      const result = await getSplitwiseGroupsForUser();
-      if (result.success) {
-        setValidGroups(result.validGroups || []);
-        setInvalidGroups(result.invalidGroups || []);
+      // Fetch groups and budget currency in parallel
+      const [groupsResult, budgetsResult] = await Promise.all([
+        getSplitwiseGroupsForUser(),
+        budgetId
+          ? getYNABBudgetsForUser()
+          : Promise.resolve({ success: false, budgets: [] }),
+      ]);
+
+      if (groupsResult.success) {
+        setValidGroups(groupsResult.validGroups || []);
+        setInvalidGroups(groupsResult.invalidGroups || []);
       } else {
-        setError(result.error || "Failed to load groups");
+        setError(groupsResult.error || "Failed to load groups");
+      }
+
+      // Auto-default currency from YNAB budget
+      if (budgetsResult.success && budgetId) {
+        const budget = budgetsResult.budgets.find((b) => b.id === budgetId);
+        if (budget?.currency_format?.iso_code) {
+          setBudgetCurrency(budget.currency_format.iso_code);
+          // Only auto-set if no currency is currently selected and no initial setting
+          if (!selectedCurrency && !initialSettings?.currencyCode) {
+            setSelectedCurrency(budget.currency_format.iso_code);
+          }
+        }
       }
     } catch (err) {
       setError(
@@ -196,10 +234,17 @@ export function StepSplitwiseConfig({
       formData.set("groupName", selectedGroupName);
       formData.set("currencyCode", selectedCurrency);
       formData.set("emoji", selectedEmoji);
-      // Use defaults for premium features (free tier)
-      formData.set("splitRatio", "1:1");
-      formData.set("useDescriptionAsPayee", "true");
-      formData.set("customPayeeName", "");
+      const finalSplitRatio =
+        selectedSplitRatio === "custom" ? customSplitRatio : selectedSplitRatio;
+      formData.set("splitRatio", finalSplitRatio || "1:1");
+      formData.set(
+        "useDescriptionAsPayee",
+        payeeMode === "description" ? "true" : "false",
+      );
+      formData.set(
+        "customPayeeName",
+        payeeMode === "custom" ? customPayeeName : "",
+      );
 
       const result = await saveSplitwiseSettings(formData);
 
@@ -242,12 +287,13 @@ export function StepSplitwiseConfig({
       title="Configure Splitwise"
       description="Select your group and currency"
     >
-      <div className="space-y-6">
+      {/* Form card */}
+      <div className="bg-white dark:bg-[#141414] border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-6">
         {/* Group selector */}
         <div className="space-y-2">
           <Label htmlFor="groupId">Splitwise Group</Label>
           <Select value={selectedGroupId} onValueChange={handleGroupChange}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700">
               <SelectValue placeholder="Select a group" />
             </SelectTrigger>
             <SelectContent>
@@ -313,17 +359,23 @@ export function StepSplitwiseConfig({
         <div className="space-y-2">
           <Label htmlFor="currencyCode">Currency</Label>
           <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700">
               <SelectValue placeholder="Select currency" />
             </SelectTrigger>
             <SelectContent>
               {CURRENCY_OPTIONS.map((currency) => (
                 <SelectItem key={currency.value} value={currency.value}>
                   {currency.label}
+                  {currency.value === budgetCurrency && " (from YNAB)"}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {budgetCurrency && selectedCurrency === budgetCurrency && (
+            <p className="text-sm text-gray-500">
+              ✓ Matches your YNAB budget currency
+            </p>
+          )}
           {partnerInfo?.currencyCode && (
             <p className="text-sm text-gray-500">
               Currency will sync with {partnerInfo.partnerName}
@@ -331,14 +383,36 @@ export function StepSplitwiseConfig({
           )}
         </div>
 
-        {/* Emoji picker */}
-        <div className="space-y-2">
-          <EmojiPicker
-            label="Sync Marker Emoji"
-            value={selectedEmoji}
-            onChange={setSelectedEmoji}
-            description="We use an emoji to mark synced expenses in Splitwise"
-          />
+        {/* Sync marker emoji */}
+        <div className="space-y-3">
+          <div>
+            <Label>Your Sync Marker</Label>
+            <p className="text-sm text-gray-500 mt-1">
+              We add this emoji to Splitwise expenses to track which ones are
+              synced. Pick something unique so it doesn&apos;t conflict with
+              your partner.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {SUGGESTED_EMOJIS.filter((e) => e !== partnerInfo?.emoji).map(
+              (emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => setSelectedEmoji(emoji)}
+                  className={cn(
+                    "h-10 w-10 rounded-lg text-xl flex items-center justify-center transition-all",
+                    selectedEmoji === emoji
+                      ? "bg-amber-100 dark:bg-amber-900/40 ring-2 ring-amber-500"
+                      : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700",
+                  )}
+                >
+                  {emoji}
+                </button>
+              ),
+            )}
+          </div>
 
           {partnerInfo && (
             <Alert variant={isEmojiConflict ? "destructive" : "default"}>
@@ -349,32 +423,14 @@ export function StepSplitwiseConfig({
               )}
               <AlertDescription>
                 {isEmojiConflict
-                  ? `Emoji conflict! ${partnerInfo.partnerName} is using "${partnerInfo.emoji}". Please choose a different emoji.`
-                  : `${partnerInfo.partnerName} is using "${partnerInfo.emoji}" as their sync marker.`}
+                  ? `Choose a different emoji—${partnerInfo.partnerName} is using "${partnerInfo.emoji}".`
+                  : `${partnerInfo.partnerName} uses "${partnerInfo.emoji}" as their marker.`}
               </AlertDescription>
             </Alert>
           )}
-
-          <div className="flex flex-wrap gap-2 mt-2">
-            <p className="text-sm text-gray-500 w-full">Suggested:</p>
-            {SUGGESTED_EMOJIS.filter((e) => e !== partnerInfo?.emoji).map(
-              (emoji) => (
-                <Button
-                  key={emoji}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 w-8 p-0 text-lg"
-                  onClick={() => setSelectedEmoji(emoji)}
-                >
-                  {emoji}
-                </Button>
-              ),
-            )}
-          </div>
         </div>
 
-        {/* Advanced settings (premium features - disabled for free tier) */}
+        {/* Advanced settings */}
         <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
           <CollapsibleTrigger asChild>
             <Button
@@ -391,48 +447,101 @@ export function StepSplitwiseConfig({
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-4 space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            {/* Split ratio - Premium */}
-            <div className="space-y-2 opacity-60">
-              <div className="flex items-center">
-                <Label>Split Ratio</Label>
-                <PremiumBadge />
-              </div>
-              <Select disabled defaultValue="1:1">
-                <SelectTrigger>
-                  <SelectValue>Equal Split (1:1)</SelectValue>
+            {/* Split ratio */}
+            <div className="space-y-2">
+              <Label>Split Ratio</Label>
+              <Select
+                value={selectedSplitRatio}
+                onValueChange={(value) => {
+                  setSelectedSplitRatio(value);
+                  if (value !== "custom") {
+                    setCustomSplitRatio("");
+                  }
+                }}
+              >
+                <SelectTrigger className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700">
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1:1">Equal Split (1:1)</SelectItem>
+                  {SPLIT_RATIO_PRESETS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {selectedSplitRatio === "custom" && (
+                <Input
+                  value={customSplitRatio}
+                  onChange={(e) => setCustomSplitRatio(e.target.value)}
+                  placeholder="Enter ratio like 3:2 or 5:3"
+                  pattern="^\d+:\d+$"
+                  className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+                />
+              )}
               <p className="text-sm text-gray-500">
-                Custom split ratios are available with a premium subscription
+                How expenses are split between you and your partner
               </p>
             </div>
 
-            {/* Payee mapping - Premium */}
-            <div className="space-y-2 opacity-60">
-              <div className="flex items-center">
-                <Label>YNAB Payee Mapping</Label>
-                <PremiumBadge />
-              </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl text-sm text-gray-600 dark:text-gray-400">
-                Using Splitwise description as YNAB payee name (default)
-              </div>
-              <p className="text-sm text-gray-500">
-                Custom payee mapping is available with a premium subscription
-              </p>
+            {/* Payee mapping */}
+            <div className="space-y-3">
+              <Label>YNAB Payee Name</Label>
+              <RadioGroup
+                value={payeeMode}
+                onValueChange={(v) =>
+                  setPayeeMode(v as "description" | "custom")
+                }
+                className="space-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="description" id="payee-description" />
+                  <Label
+                    htmlFor="payee-description"
+                    className="font-normal cursor-pointer"
+                  >
+                    Use Splitwise description as payee name (recommended)
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="custom" id="payee-custom" />
+                  <Label
+                    htmlFor="payee-custom"
+                    className="font-normal cursor-pointer"
+                  >
+                    Use custom payee name, put description in memo
+                  </Label>
+                </div>
+              </RadioGroup>
+              {payeeMode === "custom" && (
+                <>
+                  <Input
+                    value={customPayeeName}
+                    onChange={(e) => setCustomPayeeName(e.target.value)}
+                    placeholder="e.g., Splitwise Settlement"
+                    className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    This will be{" "}
+                    <strong>
+                      the payee name for every Splitwise transaction
+                    </strong>{" "}
+                    we send to YNAB. The original Splitwise description will be
+                    added to the memo field.
+                  </p>
+                </>
+              )}
             </div>
           </CollapsibleContent>
         </Collapsible>
-
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
       </div>
+
+      {error && (
+        <Alert variant="destructive" className="mt-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="mt-8 flex justify-between">
         <Button
