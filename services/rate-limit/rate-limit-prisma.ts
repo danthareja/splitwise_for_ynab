@@ -66,4 +66,41 @@ export class PrismaRateLimit implements RateLimit {
       return { allowed, retryAfterSeconds };
     });
   }
+
+  async status(
+    userId: string,
+    key: string,
+    maxRequests: number,
+    windowSeconds: number,
+  ): Promise<{ remaining: number; resetInSeconds: number }> {
+    const now = new Date();
+    const windowStartThreshold = new Date(now.getTime() - windowSeconds * 1000);
+
+    const existing = await prisma.rateLimit.findUnique({
+      where: {
+        userId_key: {
+          userId,
+          key,
+        },
+      },
+    });
+
+    // No record means full capacity
+    if (!existing) {
+      return { remaining: maxRequests, resetInSeconds: windowSeconds };
+    }
+
+    // If window expired, full capacity
+    if (existing.windowStart < windowStartThreshold) {
+      return { remaining: maxRequests, resetInSeconds: windowSeconds };
+    }
+
+    // Calculate remaining requests and time until reset
+    const remaining = Math.max(0, maxRequests - existing.count);
+    const resetInSeconds = Math.ceil(
+      windowSeconds - (now.getTime() - existing.windowStart.getTime()) / 1000,
+    );
+
+    return { remaining, resetInSeconds };
+  }
 }

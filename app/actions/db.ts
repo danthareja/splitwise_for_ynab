@@ -65,3 +65,56 @@ export async function isUserFullyConfigured(userId: string) {
     return false;
   }
 }
+
+export async function getUserOnboardingData() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: {
+        accounts: true,
+        splitwiseSettings: true,
+        ynabSettings: true,
+      },
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    const hasSplitwiseConnection = user.accounts.some(
+      (account) => account.provider === "splitwise",
+    );
+
+    const hasYnabSettings = !!(
+      user.ynabSettings?.budgetId && user.ynabSettings?.splitwiseAccountId
+    );
+
+    const hasSplitwiseSettings = !!(
+      user.splitwiseSettings?.groupId && user.splitwiseSettings?.currencyCode
+    );
+
+    return {
+      persona: user.persona as "solo" | "dual" | null,
+      onboardingStep: user.onboardingStep,
+      onboardingComplete: user.onboardingComplete,
+      hasSplitwiseConnection,
+      hasYnabSettings,
+      hasSplitwiseSettings,
+      ynabSettings: user.ynabSettings,
+      splitwiseSettings: user.splitwiseSettings,
+      userProfile: {
+        name: user.name,
+        email: user.email,
+        image: user.image,
+      },
+    };
+  } catch (error) {
+    console.error("Failed to fetch user onboarding data:", error);
+    return null;
+  }
+}

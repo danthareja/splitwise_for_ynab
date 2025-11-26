@@ -9,6 +9,16 @@ export interface RateLimit {
     maxRequests: number,
     windowSeconds: number,
   ): Promise<{ allowed: boolean; retryAfterSeconds: number }>;
+
+  /**
+   * Check the current rate limit status without incrementing the counter.
+   */
+  status(
+    userId: string,
+    key: string,
+    maxRequests: number,
+    windowSeconds: number,
+  ): Promise<{ remaining: number; resetInSeconds: number }>;
 }
 
 export type RateLimitOptions = Record<string, never>;

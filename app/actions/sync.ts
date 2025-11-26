@@ -5,8 +5,15 @@ import * as Sentry from "@sentry/nextjs";
 import { syncUserData } from "@/services/sync";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/db"; // Declare the prisma variable
-import { enforcePerUserRateLimit } from "@/services/rate-limit";
-import { getRateLimitOptions } from "@/lib/rate-limit";
+import {
+  enforcePerUserRateLimit,
+  getRateLimitStatus,
+} from "@/services/rate-limit";
+import {
+  getRateLimitOptions,
+  MAX_REQUESTS,
+  WINDOW_SECONDS,
+} from "@/lib/rate-limit";
 import { Prisma } from "@/prisma/generated/client";
 import { isUserFullyConfigured } from "./db";
 
@@ -114,5 +121,29 @@ export async function getSyncHistory(limit = 7) {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
     };
+  }
+}
+
+export async function getSyncRateLimitStatus() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  try {
+    const rateLimitOpts = getRateLimitOptions();
+    const status = await getRateLimitStatus(session.user.id, rateLimitOpts);
+
+    return {
+      remaining: status.remaining,
+      resetInSeconds: status.resetInSeconds,
+      maxRequests: MAX_REQUESTS,
+      windowSeconds: WINDOW_SECONDS,
+    };
+  } catch (error) {
+    console.error("Get rate limit status error:", error);
+    Sentry.captureException(error);
+    return null;
   }
 }

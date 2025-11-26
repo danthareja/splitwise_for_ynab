@@ -1,25 +1,19 @@
 import { auth } from "@/auth";
-import { getUserWithAccounts } from "@/app/actions/db";
-import type { Account } from "@/prisma/generated/client";
+import { getUserWithAccounts, getUserOnboardingData } from "@/app/actions/db";
 import { AppHeader } from "@/components/header";
 import { Footer } from "@/components/footer";
-import { SplitwiseConnectionCard } from "@/components/splitwise-connection-card";
-import { YNABConnectionCard } from "@/components/ynab-connection-card";
 import { getSplitwiseSettings } from "@/app/actions/splitwise";
 import { getYNABSettings } from "@/app/actions/ynab";
-import { getSyncHistory } from "@/app/actions/sync";
+import { getSyncHistory, getSyncRateLimitStatus } from "@/app/actions/sync";
 import { SyncHistory } from "@/components/sync-history";
-import { ManualSyncButton } from "@/components/manual-sync-button";
-import { RefreshCw, HelpCircle, Mail } from "lucide-react";
-import { YNABFlag } from "@/components/ynab-flag";
+import { SyncHeroCard, type SyncHeroState } from "@/components/sync-hero-card";
+import { HelpCircle, Mail, Settings, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScheduledSyncInfo } from "@/components/scheduled-sync-info";
-import { ApiKeyCard } from "@/components/api-key-card";
 import type { Metadata } from "next";
 import { MAX_REQUESTS, WINDOW_SECONDS } from "@/lib/rate-limit";
 import { redirect } from "next/navigation";
-import { DisabledAccountAlert } from "@/components/disabled-account-alert";
 import { getUserFirstName } from "@/lib/utils";
+import Link from "next/link";
 import {
   Card,
   CardHeader,
@@ -44,7 +38,7 @@ export const metadata: Metadata = {
   },
 };
 
-const MAX_SYNC_HISTORY_ITEMS = 7; // A week of automatic syncs
+const MAX_SYNC_HISTORY_ITEMS = 7;
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -53,21 +47,20 @@ export default async function DashboardPage() {
     redirect("/");
   }
 
-  // Call the server action to get user data
+  // Get onboarding state
+  const onboardingData = await getUserOnboardingData();
+
+  // Redirect to setup if onboarding is not complete
+  if (!onboardingData?.onboardingComplete) {
+    redirect("/dashboard/setup");
+  }
+
+  // Get user data
   const user = await getUserWithAccounts();
 
   if (!user) {
-    // Handle the case where user data could not be fetched (e.g., show an error message)
     return <p>Error loading user data.</p>;
   }
-
-  // Check if the user has a Splitwise account connected
-  const hasSplitwiseConnected = user.accounts.some(
-    (account: Account) => account.provider === "splitwise",
-  );
-  const hasYNABConnected = user.accounts.some(
-    (account: Account) => account.provider === "ynab",
-  );
 
   const splitwiseSettings = await getSplitwiseSettings();
   const ynabSettings = await getYNABSettings();
@@ -78,36 +71,95 @@ export default async function DashboardPage() {
     ? syncHistoryResult.syncHistory || []
     : [];
 
-  // Check if user is fully configured
-  const isFullyConfigured =
-    hasSplitwiseConnected &&
-    hasYNABConnected &&
-    splitwiseSettings &&
-    ynabSettings;
+  // Get rate limit status
+  const rateLimitStatus = await getSyncRateLimitStatus();
+
+  // Determine SyncHeroCard state
+  let syncHeroState: SyncHeroState = "ready";
+
+  if (user.disabled) {
+    syncHeroState = "disabled";
+  } else if (syncHistory.length === 0) {
+    syncHeroState = "empty";
+  } else if (rateLimitStatus && rateLimitStatus.remaining === 0) {
+    syncHeroState = "rate_limited";
+  }
+
+  // Get last sync time
+  const firstSync = syncHistory[0];
+  const lastSyncTime = firstSync
+    ? new Date(firstSync.completedAt || firstSync.startedAt)
+    : null;
 
   return (
     <div className="flex min-h-screen flex-col bg-[#FDFBF7] dark:bg-[#0f0f0f]">
       <AppHeader />
 
       <main className="flex-1">
-        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-serif text-gray-900 dark:text-white mb-6">
-            {getUserFirstName(user)
-              ? `Welcome back, ${getUserFirstName(user)}!`
-              : "Welcome!"}
-          </h1>
+        <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+          {/* Header with welcome and settings */}
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-serif text-gray-900 dark:text-white">
+              {getUserFirstName(user)
+                ? `Welcome back, ${getUserFirstName(user)}!`
+                : "Welcome!"}
+            </h1>
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+            >
+              <Link href="/dashboard/settings">
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </Link>
+            </Button>
+          </div>
 
-          {/* Disabled Account Alert */}
-          {user.disabled && user.disabledReason && (
-            <DisabledAccountAlert
-              disabledReason={user.disabledReason}
-              suggestedFix={user.suggestedFix}
-            />
-          )}
+          {/* Sync Hero Card - Main CTA */}
+          <SyncHeroCard
+            initialState={syncHeroState}
+            lastSyncTime={lastSyncTime}
+            manualFlagColor={ynabSettings?.manualFlagColor || "blue"}
+            disabledReason={user.disabledReason}
+            suggestedFix={user.suggestedFix}
+            initialRateLimitRemaining={
+              rateLimitStatus?.remaining ?? MAX_REQUESTS
+            }
+            initialRateLimitResetSeconds={
+              rateLimitStatus?.resetInSeconds ?? WINDOW_SECONDS
+            }
+            maxRequests={MAX_REQUESTS}
+            windowMinutes={WINDOW_SECONDS / 60}
+          />
 
-          {/* Need Help Banner */}
-          <Card className="mb-6">
+          {/* Sync History */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+            </CardHeader>
             <CardContent>
+              {syncHistory && syncHistory.length > 0 ? (
+                <SyncHistory
+                  syncHistory={syncHistory}
+                  currencyCode={splitwiseSettings?.currencyCode || undefined}
+                />
+              ) : (
+                <div className="text-center py-8">
+                  <RefreshCw className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+                  <p className="text-sm text-muted-foreground">
+                    No sync history yet. Flag a transaction and sync to get
+                    started!
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Help Banner */}
+          <Card className="mt-6">
+            <CardContent className="pt-6">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 <div className="flex items-center gap-3 flex-1">
                   <HelpCircle className="h-5 w-5 text-amber-600 dark:text-amber-500 flex-shrink-0" />
@@ -116,14 +168,14 @@ export default async function DashboardPage() {
                       Having trouble?
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      We&apos;re here to help! Check the {""}
+                      Check the{" "}
                       <a
                         href="#faq"
                         className="text-amber-700 dark:text-amber-500 hover:underline"
                       >
                         FAQ
                       </a>{" "}
-                      below or email us at{" "}
+                      below or email{" "}
                       <a
                         href="mailto:support@splitwiseforynab.com?subject=Help!"
                         className="text-amber-700 dark:text-amber-500 hover:underline"
@@ -139,96 +191,25 @@ export default async function DashboardPage() {
                   size="sm"
                   className="sm:flex-shrink-0 rounded-full"
                 >
-                  <div className="flex items-center gap-2">
-                    <a href="#faq">View FAQ</a>
-                    <span className="text-gray-300 dark:text-gray-600">|</span>
-                    <a
-                      href="mailto:support@splitwiseforynab.com?subject=Help!"
-                      className="flex items-center gap-2"
-                    >
-                      <Mail className="h-4 w-4" />
-                      Contact Support
-                    </a>
-                  </div>
+                  <a
+                    href="mailto:support@splitwiseforynab.com?subject=Help!"
+                    className="flex items-center gap-2"
+                  >
+                    <Mail className="h-4 w-4" />
+                    Contact Support
+                  </a>
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <YNABConnectionCard
-              isConnected={!!hasYNABConnected}
-              settings={ynabSettings}
-              isUserDisabled={user.disabled}
-              suggestedFix={user.suggestedFix}
-            />
-
-            <SplitwiseConnectionCard
-              isConnected={!!hasSplitwiseConnected}
-              settings={splitwiseSettings}
-            />
-          </div>
-
-          <Card className="mt-8">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Recent Activity</CardTitle>
-                {isFullyConfigured && <ManualSyncButton />}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {/* Scheduled Sync Info for fully configured users */}
-              {isFullyConfigured && <ScheduledSyncInfo />}
-
-              {syncHistory && syncHistory.length > 0 ? (
-                <SyncHistory
-                  syncHistory={syncHistory}
-                  currencyCode={splitwiseSettings?.currencyCode || undefined}
-                />
-              ) : (
-                <div className="text-center py-8">
-                  <RefreshCw className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                  <p className="text-sm text-muted-foreground mb-2">
-                    No sync history yet
-                  </p>
-                  {isFullyConfigured ? (
-                    <div className="text-md">
-                      To start, flag a transaction in your{" "}
-                      <span className="font-semibold">
-                        {ynabSettings.budgetName}
-                      </span>{" "}
-                      plan with{" "}
-                      <YNABFlag
-                        colorId={ynabSettings.manualFlagColor}
-                        size="sm"
-                      />{" "}
-                      and press <span className="font-semibold">Sync Now</span>
-                    </div>
-                  ) : (
-                    <p className="text-md">
-                      Complete your configuration to start syncing
-                    </p>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* API Key Section */}
-          {isFullyConfigured && !user.disabled && (
-            <ApiKeyCard
-              initialApiKey={user.apiKey ?? null}
-              maxRequests={MAX_REQUESTS}
-              windowSeconds={WINDOW_SECONDS}
-              baseUrl={process.env.NEXT_PUBLIC_BASE_URL}
-            />
-          )}
-
           {/* FAQ Section */}
-          <Card id="faq" className="mt-8">
+          <Card id="faq" className="mt-6">
             <CardHeader>
-              <CardTitle>FAQ</CardTitle>
-              <CardDescription>Frequently Asked Questions</CardDescription>
+              <CardTitle>Frequently Asked Questions</CardTitle>
+              <CardDescription>
+                Common questions about syncing expenses
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Accordion type="single" collapsible className="w-full">
@@ -243,11 +224,7 @@ export default async function DashboardPage() {
                     automatically to all flagged expenses.
                     <div className="mt-3 text-sm text-gray-600 dark:text-gray-300">
                       For one‑off special ratios, enter the expense directly in
-                      Splitwise with custom splits. When you front a full
-                      purchase for your partner, add an expense in Splitwise
-                      where you&apos;re owed the full amount; the synchronized
-                      flows will net out cleanly in YNAB (works well with a
-                      reimbursements category).
+                      Splitwise with custom splits.
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -258,7 +235,7 @@ export default async function DashboardPage() {
                   </AccordionTrigger>
                   <AccordionContent>
                     You and your partner can both create a Splitwise for YNAB
-                    acccount and connect to the same Splitwise group. We&apos;ll
+                    account and connect to the same Splitwise group. We&apos;ll
                     sync each person&apos;s flagged transactions automatically.
                   </AccordionContent>
                 </AccordionItem>
@@ -269,15 +246,11 @@ export default async function DashboardPage() {
                   </AccordionTrigger>
                   <AccordionContent>
                     Splitwise only supports expenses (outflows), so inflows do
-                    not sync. Flagged inflows will fail with an error like:
-                    “Splitwise can&apos;t create expense (equal split) for
-                    amount -500: Cost must be greater than or equal to 0”.
+                    not sync. Flagged inflows will fail with an error.
                     <div className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-                      Tip: For proceeds you receive (e.g., selling an item you
-                      and your partner owned), split the inflow inside YNAB.
+                      Tip: For money you receive, split the inflow inside YNAB.
                       Allocate your share to your normal category and your
-                      partner’s share to a reimbursements category, then settle
-                      outside of Splitwise.
+                      partner&apos;s share to a reimbursements category.
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -293,17 +266,6 @@ export default async function DashboardPage() {
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="q-remove-flag">
-                  <AccordionTrigger>
-                    What happens if I remove the success flag in YNAB?
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    Nothing happens immediately. If you later re‑apply your sync
-                    flag to that same transaction, it will be treated as new and
-                    synced again, creating a duplicate in Splitwise.
-                  </AccordionContent>
-                </AccordionItem>
-
                 <AccordionItem value="q-edits-after-sync">
                   <AccordionTrigger>
                     Do updates in Splitwise sync back to YNAB?
@@ -312,151 +274,17 @@ export default async function DashboardPage() {
                     No—changes made in Splitwise after the initial sync do not
                     sync back to YNAB. For one‑off expenses with a different
                     split ratio, create the expense manually in Splitwise.
-                    <div className="mt-4 bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800">
-                      <h4 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
-                        Example: You front the full cost ($200)
-                      </h4>
-                      <p className="text-sm text-amber-900 dark:text-amber-100 mb-2">
-                        Assume a $200 purchase that your partner will fully
-                        reimburse.
-                      </p>
-                      <div className="grid sm:grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">
-                            In YNAB:
-                          </p>
-                          <ul className="list-disc pl-5 space-y-1 text-amber-800 dark:text-amber-200">
-                            <li>$-200 → Reimbursements (original outflow)</li>
-                          </ul>
-                        </div>
-                        <div>
-                          <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">
-                            In Splitwise (manual expense):
-                          </p>
-                          <ul className="list-disc pl-5 space-y-1 text-amber-800 dark:text-amber-200">
-                            <li>
-                              Partner owes you $200 (100% of the purchase)
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                      <div className="mt-3 grid sm:grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">
-                            When the inflow syncs back to YNAB:
-                          </p>
-                          <ul className="list-disc pl-5 space-y-1 text-amber-800 dark:text-amber-200">
-                            <li>
-                              $+200 → Reimbursements (Splitwise account inflow)
-                            </li>
-                          </ul>
-                        </div>
-                        <div>
-                          <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">
-                            Result after sync:
-                          </p>
-                          <ul className="list-disc pl-5 space-y-1 text-amber-800 dark:text-amber-200">
-                            <li>Reimbursements nets to $0</li>
-                            <li>Your spending categories remain unchanged</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
                   </AccordionContent>
                 </AccordionItem>
 
                 <AccordionItem value="q-settle-up">
                   <AccordionTrigger>
-                    How does Splitwise “Settle Up” show up in YNAB?
+                    How does Splitwise &quot;Settle Up&quot; show up in YNAB?
                   </AccordionTrigger>
                   <AccordionContent>
-                    Settling up adds a transaction in your Splitwise cash
-                    account in the appropriate direction. You can then match it
-                    to the imported e‑transfer from your bank as a transfer
-                    to/from your real account to keep everything reconciled.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="q-split-transactions">
-                  <AccordionTrigger>
-                    How can I handle complex “Costco‑style” split transactions?
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    There are two approaches:
-                    <ol className="list-decimal pl-5 mt-2 space-y-2">
-                      <li>
-                        Calculate what your partner owes for their items plus
-                        their share of shared items, and create a manual expense
-                        in Splitwise for that amount. In YNAB, split the
-                        original outflow into separate lines for reimbursements,
-                        your personal items, and shared items. The synced
-                        Splitwise inflow can be categorized back to
-                        reimbursements and the shared category to keep
-                        everything accurate.
-                        <div className="mt-4 bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800">
-                          <h4 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
-                            Example: $600 Costco trip
-                          </h4>
-                          <p className="text-sm text-amber-900 dark:text-amber-100 mb-2">
-                            Assume $600 total: $200 partner&apos;s clothes, $100
-                            your items, $300 shared groceries.
-                          </p>
-                          <div className="grid sm:grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">
-                                In YNAB (split the original outflow):
-                              </p>
-                              <ul className="list-disc pl-5 space-y-1 text-amber-800 dark:text-amber-200">
-                                <li>
-                                  $-200 → Reimbursements (partner&apos;s
-                                  clothes)
-                                </li>
-                                <li>$-100 → Your stuff</li>
-                                <li>$-300 → Groceries</li>
-                              </ul>
-                            </div>
-                            <div>
-                              <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">
-                                In Splitwise (manual expense):
-                              </p>
-                              <ul className="list-disc pl-5 space-y-1 text-amber-800 dark:text-amber-200">
-                                <li>
-                                  Partner owes you $350 ($200 + half of $300
-                                  groceries = $150)
-                                </li>
-                              </ul>
-                            </div>
-                          </div>
-                          <div className="mt-3 grid sm:grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">
-                                YNAB categorization of the synced inflow:
-                              </p>
-                              <ul className="list-disc pl-5 space-y-1 text-amber-800 dark:text-amber-200">
-                                <li>$+200 → Reimbursements</li>
-                                <li>$+150 → Groceries</li>
-                              </ul>
-                            </div>
-                            <div>
-                              <p className="font-medium text-amber-800 dark:text-amber-200 mb-1">
-                                Result after sync:
-                              </p>
-                              <ul className="list-disc pl-5 space-y-1 text-amber-800 dark:text-amber-200">
-                                <li>Reimbursements nets to $0</li>
-                                <li>Groceries shows $-150 (your half)</li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                      <li>
-                        Record separate transactions in YNAB (e.g., from
-                        multiple swipes or manual entries): one for your
-                        partner’s items, one for yours, and one for the shared
-                        portion. This can make categorization and syncing
-                        clearer.
-                      </li>
-                    </ol>
+                    Settling up adds a transaction in your Splitwise account in
+                    YNAB. You can match it to the imported e‑transfer from your
+                    bank as a transfer to keep everything reconciled.
                   </AccordionContent>
                 </AccordionItem>
 
@@ -465,10 +293,10 @@ export default async function DashboardPage() {
                     How many expenses can I sync at once?
                   </AccordionTrigger>
                   <AccordionContent>
-                    Because of YNAB API limits, large backfills may create only
-                    ~25 expenses per run today. For big catch‑up jobs, batch
-                    your flagged transactions (for example 20–30 at a time) and
-                    space runs a few minutes apart to avoid rate limits.
+                    Due to API limits, large backfills may create only ~25
+                    expenses per run. For big catch‑up jobs, batch your flagged
+                    transactions (20–30 at a time) and space runs a few minutes
+                    apart to avoid rate limits.
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>

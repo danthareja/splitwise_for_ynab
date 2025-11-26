@@ -14,4 +14,12 @@ export async function enforcePerUserRateLimit(
   return limiter.hit(userId, key, maxRequests, windowSeconds);
 }
 
+export async function getRateLimitStatus(
+  userId: string,
+  { maxRequests, windowSeconds, key }: UserRateLimitOptions,
+): Promise<{ remaining: number; resetInSeconds: number }> {
+  const limiter = await RateLimitFactory.create("prisma");
+  return limiter.status(userId, key, maxRequests, windowSeconds);
+}
+
 export { RateLimitFactory } from "./rate-limit";
