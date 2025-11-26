@@ -1,6 +1,7 @@
 "use server";
 
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import { prisma } from "@/db";
 import { sendWelcomeEmail } from "@/services/email";
@@ -11,18 +12,24 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const error = searchParams.get("error");
 
+  // Check for invite token in cookie
+  const cookieStore = await cookies();
+  const inviteToken = cookieStore.get("invite_token")?.value;
+
   // Handle OAuth errors (e.g., user cancelled)
   if (error) {
     const errorMessage = error === "access_denied" ? "cancelled" : "error";
-    return NextResponse.redirect(
-      new URL(`/dashboard/setup?auth_error=${errorMessage}`, request.url),
-    );
+    const redirectPath = inviteToken
+      ? `/invite/${inviteToken}?auth_error=${errorMessage}`
+      : `/dashboard/setup?auth_error=${errorMessage}`;
+    return NextResponse.redirect(new URL(redirectPath, request.url));
   }
 
   if (!code) {
-    return NextResponse.redirect(
-      new URL("/dashboard/setup?auth_error=missing_code", request.url),
-    );
+    const redirectPath = inviteToken
+      ? `/invite/${inviteToken}?auth_error=missing_code`
+      : "/dashboard/setup?auth_error=missing_code";
+    return NextResponse.redirect(new URL(redirectPath, request.url));
   }
 
   // Get the current session
@@ -132,6 +139,8 @@ export async function GET(request: NextRequest) {
         : userData.user.first_name,
       email: userData.user.email,
       image: userData.user.picture?.medium,
+      // Store Splitwise user ID for partner detection
+      splitwiseUserId: userData.user.id.toString(),
     },
     select: {
       onboardingComplete: true,
@@ -146,12 +155,32 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // Redirect based on onboarding status
-  if (user.onboardingComplete) {
-    // User is reconnecting after already completing onboarding
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  // Determine redirect path
+  // Priority: invite_token cookie > oauth_return_url cookie > default
+  const oauthReturnUrl = cookieStore.get("oauth_return_url")?.value;
+
+  let redirectPath: string;
+  if (inviteToken) {
+    redirectPath = `/invite/${inviteToken}`;
+  } else if (oauthReturnUrl) {
+    redirectPath = oauthReturnUrl;
+  } else if (user.onboardingComplete) {
+    redirectPath = "/dashboard";
   } else {
-    // Continue onboarding flow
-    return NextResponse.redirect(new URL("/dashboard/setup", request.url));
+    redirectPath = "/dashboard/setup";
   }
+
+  const redirectResponse = NextResponse.redirect(
+    new URL(redirectPath, request.url),
+  );
+
+  // Clear cookies that were used
+  if (inviteToken) {
+    redirectResponse.cookies.delete("invite_token");
+  }
+  if (oauthReturnUrl) {
+    redirectResponse.cookies.delete("oauth_return_url");
+  }
+
+  return redirectResponse;
 }

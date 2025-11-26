@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -71,6 +71,17 @@ export function SyncHeroCard({
     initialRateLimitResetSeconds,
   );
 
+  const refreshRateLimitStatus = useCallback(async () => {
+    const status = await getSyncRateLimitStatus();
+    if (status) {
+      setRateLimitRemaining(status.remaining);
+      setRateLimitResetSeconds(status.resetInSeconds);
+      if (status.remaining === 0 && state === "ready") {
+        setState("rate_limited");
+      }
+    }
+  }, [state]);
+
   // Countdown timer for rate-limited state
   useEffect(() => {
     if (state !== "rate_limited" || rateLimitResetSeconds <= 0) return;
@@ -88,18 +99,7 @@ export function SyncHeroCard({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [state, rateLimitResetSeconds]);
-
-  async function refreshRateLimitStatus() {
-    const status = await getSyncRateLimitStatus();
-    if (status) {
-      setRateLimitRemaining(status.remaining);
-      setRateLimitResetSeconds(status.resetInSeconds);
-      if (status.remaining === 0 && state === "ready") {
-        setState("rate_limited");
-      }
-    }
-  }
+  }, [state, rateLimitResetSeconds, refreshRateLimitStatus]);
 
   async function handleSync() {
     if (isSyncing || state === "disabled" || state === "rate_limited") return;

@@ -17,6 +17,75 @@ import {
 } from "./email";
 import { getUserFirstName } from "@/lib/utils";
 
+// Helper type for effective Splitwise settings
+interface EffectiveSplitwiseSettings {
+  groupId: string;
+  groupName: string | null;
+  currencyCode: string;
+  emoji: string;
+  defaultSplitRatio: string;
+  useDescriptionAsPayee: boolean;
+  customPayeeName: string | null;
+}
+
+// Get effective Splitwise settings for a user (checks for primary/secondary relationship)
+// Shared settings (groupId, groupName, currencyCode, defaultSplitRatio) come from primary
+// User-specific settings (emoji, useDescriptionAsPayee, customPayeeName) come from user's own settings
+async function getEffectiveSplitwiseSettings(
+  userId: string,
+): Promise<EffectiveSplitwiseSettings | null> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      splitwiseSettings: true,
+      primaryUser: {
+        include: {
+          splitwiseSettings: true,
+        },
+      },
+    },
+  });
+
+  if (!user) return null;
+
+  // If user is a secondary, merge primary's shared settings with user's own settings
+  if (user.primaryUserId && user.primaryUser?.splitwiseSettings) {
+    const primarySettings = user.primaryUser.splitwiseSettings;
+    const userSettings = user.splitwiseSettings;
+
+    if (!primarySettings.groupId || !primarySettings.currencyCode) return null;
+
+    return {
+      // Shared settings from primary
+      groupId: primarySettings.groupId,
+      groupName: primarySettings.groupName,
+      currencyCode: primarySettings.currencyCode,
+      defaultSplitRatio: primarySettings.defaultSplitRatio || "1:1",
+      // User-specific settings from secondary's own settings
+      emoji: userSettings?.emoji || "✅",
+      useDescriptionAsPayee: userSettings?.useDescriptionAsPayee ?? true,
+      customPayeeName: userSettings?.customPayeeName || null,
+    };
+  }
+
+  // Otherwise use user's own settings
+  if (user.splitwiseSettings) {
+    const ss = user.splitwiseSettings;
+    if (!ss.groupId || !ss.currencyCode) return null;
+    return {
+      groupId: ss.groupId,
+      groupName: ss.groupName,
+      currencyCode: ss.currencyCode,
+      emoji: ss.emoji || "✅",
+      defaultSplitRatio: ss.defaultSplitRatio || "1:1",
+      useDescriptionAsPayee: ss.useDescriptionAsPayee ?? true,
+      customPayeeName: ss.customPayeeName,
+    };
+  }
+
+  return null;
+}
+
 interface SyncResult {
   success: boolean;
   syncHistoryId?: string;
@@ -40,6 +109,9 @@ export async function syncAllUsers(): Promise<{
   results: Record<string, SyncResult>;
 }> {
   // Find all fully configured and enabled users
+  // Includes both:
+  // - Primary users with their own SplitwiseSettings
+  // - Secondary users who inherit from their primaryUser
   const configuredUsers = await prisma.user.findMany({
     where: {
       disabled: false,
@@ -48,21 +120,44 @@ export async function syncAllUsers(): Promise<{
           not: null,
         },
       },
-      splitwiseSettings: {
-        groupId: {
-          not: null,
+      OR: [
+        // Primary users with their own SplitwiseSettings
+        {
+          primaryUserId: null,
+          splitwiseSettings: {
+            groupId: { not: null },
+            currencyCode: { not: null },
+          },
         },
-        currencyCode: {
-          not: null,
+        // Secondary users with a valid primary
+        {
+          primaryUserId: { not: null },
+          primaryUser: {
+            disabled: false,
+            splitwiseSettings: {
+              groupId: { not: null },
+              currencyCode: { not: null },
+            },
+          },
         },
-      },
+      ],
     },
     select: {
       id: true,
       email: true,
+      primaryUserId: true,
       splitwiseSettings: {
         select: {
           groupId: true,
+        },
+      },
+      primaryUser: {
+        select: {
+          splitwiseSettings: {
+            select: {
+              groupId: true,
+            },
+          },
         },
       },
     },
@@ -71,11 +166,16 @@ export async function syncAllUsers(): Promise<{
   console.log(`Found ${configuredUsers.length} configured users to sync`);
 
   // Group users by Splitwise group
+  // Use effective groupId (from primary if secondary user)
   const groupMap = new Map<string, PairedGroup>();
   const singleUsers: Array<{ id: string; email: string | null }> = [];
 
   for (const user of configuredUsers) {
-    const groupId = user.splitwiseSettings?.groupId;
+    // Get effective groupId - from primary if secondary, otherwise own settings
+    const groupId = user.primaryUserId
+      ? user.primaryUser?.splitwiseSettings?.groupId
+      : user.splitwiseSettings?.groupId;
+
     if (groupId) {
       if (!groupMap.has(groupId)) {
         groupMap.set(groupId, {
@@ -186,21 +286,40 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
     where: { id: userId },
     include: {
       splitwiseSettings: true,
+      primaryUser: {
+        include: {
+          splitwiseSettings: true,
+        },
+      },
     },
   });
 
-  if (user?.splitwiseSettings?.groupId) {
+  // Get effective groupId (from primary if secondary)
+  const effectiveGroupId = user?.primaryUserId
+    ? user?.primaryUser?.splitwiseSettings?.groupId
+    : user?.splitwiseSettings?.groupId;
+
+  if (effectiveGroupId) {
     // Check if there are other users in the same group
+    // Include both primary users with this groupId and secondary users linked to primaries with this groupId
     const groupUsers = await prisma.user.findMany({
       where: {
-        splitwiseSettings: {
-          groupId: user.splitwiseSettings.groupId,
-        },
-        ynabSettings: {
-          splitwiseAccountId: {
-            not: null,
+        OR: [
+          // Primary users with this group
+          {
+            primaryUserId: null,
+            splitwiseSettings: { groupId: effectiveGroupId },
+            ynabSettings: { splitwiseAccountId: { not: null } },
           },
-        },
+          // Secondary users whose primary has this group
+          {
+            primaryUserId: { not: null },
+            primaryUser: {
+              splitwiseSettings: { groupId: effectiveGroupId },
+            },
+            ynabSettings: { splitwiseAccountId: { not: null } },
+          },
+        ],
       },
       select: {
         id: true,
@@ -212,7 +331,7 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
     // sync the entire group together
     if (groupUsers.length > 1) {
       const groupResults = await syncPairedGroup({
-        groupId: user.splitwiseSettings.groupId,
+        groupId: effectiveGroupId,
         users: groupUsers,
       });
 
@@ -251,6 +370,7 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
         ynabSettings: true,
         splitwiseSettings: true,
         accounts: true,
+        primaryUser: true, // For secondary users, check primary's status
       },
     });
 
@@ -258,19 +378,26 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
       throw new Error("User not found");
     }
 
-    if (!user.ynabSettings || !user.splitwiseSettings) {
-      throw new Error("User has not configured both YNAB and Splitwise");
+    if (!user.ynabSettings) {
+      throw new Error("User has not configured YNAB settings");
     }
 
     if (!user.ynabSettings.splitwiseAccountId) {
       throw new Error("Splitwise account not configured in YNAB settings");
     }
 
-    if (
-      !user.splitwiseSettings.groupId ||
-      !user.splitwiseSettings.currencyCode
-    ) {
-      throw new Error("Splitwise group or currency not configured");
+    // Get effective Splitwise settings (from primary if secondary user)
+    const effectiveSplitwiseSettings =
+      await getEffectiveSplitwiseSettings(userId);
+
+    if (!effectiveSplitwiseSettings) {
+      // Check if this is a secondary with an orphaned primary
+      if (user.primaryUserId && !user.primaryUser) {
+        throw new Error(
+          "Your partner's account is no longer active. Please reconfigure your settings.",
+        );
+      }
+      throw new Error("Splitwise settings not configured");
     }
 
     const ynabAccount = user.accounts.find(
@@ -293,10 +420,6 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
       );
     }
 
-    if (!user.splitwiseSettings.emoji) {
-      throw new Error("Splitwise emoji not configured");
-    }
-
     const syncState = await SyncStateFactory.create("prisma");
 
     const ynabService = new YNABService({
@@ -309,20 +432,20 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
       syncState,
     });
 
+    // Use effective Splitwise settings (from primary if this is a secondary user)
     const splitwiseService = new SplitwiseService({
       userId: user.id,
-      knownEmoji: user.splitwiseSettings.emoji,
+      knownEmoji: effectiveSplitwiseSettings.emoji,
       splitwiseUserId: Number(splitwiseAccount.providerAccountId),
-      groupId: user.splitwiseSettings.groupId,
-      currencyCode: user.splitwiseSettings.currencyCode,
+      groupId: effectiveSplitwiseSettings.groupId,
+      currencyCode: effectiveSplitwiseSettings.currencyCode,
       apiKey: splitwiseAccount.access_token,
       syncState,
-      defaultSplitRatio: user.splitwiseSettings.defaultSplitRatio || "1:1",
-      useDescriptionAsPayee:
-        user.splitwiseSettings.useDescriptionAsPayee ?? true,
+      defaultSplitRatio: effectiveSplitwiseSettings.defaultSplitRatio,
+      useDescriptionAsPayee: effectiveSplitwiseSettings.useDescriptionAsPayee,
       customPayeeName:
-        user.splitwiseSettings.customPayeeName ||
-        `Splitwise: ${user.splitwiseSettings.groupName}` ||
+        effectiveSplitwiseSettings.customPayeeName ||
+        `Splitwise: ${effectiveSplitwiseSettings.groupName}` ||
         "Splitwise for YNAB",
     });
 
@@ -432,7 +555,7 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
         userName: getUserFirstName(user),
         failedExpenses: createdFailedExpenseItems,
         failedTransactions: createdFailedTransactionItems,
-        currencyCode: user.splitwiseSettings.currencyCode,
+        currencyCode: effectiveSplitwiseSettings.currencyCode,
       });
     }
 
@@ -701,6 +824,7 @@ async function syncUserPhase(
         ynabSettings: true,
         splitwiseSettings: true,
         accounts: true,
+        primaryUser: true, // For secondary users
       },
     });
 
@@ -708,19 +832,25 @@ async function syncUserPhase(
       throw new Error("User not found");
     }
 
-    if (!user.ynabSettings || !user.splitwiseSettings) {
-      throw new Error("User has not configured both YNAB and Splitwise");
+    if (!user.ynabSettings) {
+      throw new Error("User has not configured YNAB settings");
     }
 
     if (!user.ynabSettings.splitwiseAccountId) {
       throw new Error("Splitwise account not configured in YNAB settings");
     }
 
-    if (
-      !user.splitwiseSettings.groupId ||
-      !user.splitwiseSettings.currencyCode
-    ) {
-      throw new Error("Splitwise group or currency not configured");
+    // Get effective Splitwise settings (from primary if secondary user)
+    const effectiveSplitwiseSettings =
+      await getEffectiveSplitwiseSettings(userId);
+
+    if (!effectiveSplitwiseSettings) {
+      if (user.primaryUserId && !user.primaryUser) {
+        throw new Error(
+          "Your partner's account is no longer active. Please reconfigure your settings.",
+        );
+      }
+      throw new Error("Splitwise settings not configured");
     }
 
     const ynabAccount = user.accounts.find(
@@ -743,10 +873,6 @@ async function syncUserPhase(
       );
     }
 
-    if (!user.splitwiseSettings.emoji) {
-      throw new Error("Splitwise emoji not configured");
-    }
-
     const syncState = await SyncStateFactory.create("prisma");
 
     const ynabService = new YNABService({
@@ -759,20 +885,20 @@ async function syncUserPhase(
       syncState,
     });
 
+    // Use effective Splitwise settings (from primary if this is a secondary user)
     const splitwiseService = new SplitwiseService({
       userId: user.id,
-      knownEmoji: user.splitwiseSettings.emoji,
+      knownEmoji: effectiveSplitwiseSettings.emoji,
       splitwiseUserId: Number(splitwiseAccount.providerAccountId),
-      groupId: user.splitwiseSettings.groupId,
-      currencyCode: user.splitwiseSettings.currencyCode,
+      groupId: effectiveSplitwiseSettings.groupId,
+      currencyCode: effectiveSplitwiseSettings.currencyCode,
       apiKey: splitwiseAccount.access_token,
       syncState,
-      defaultSplitRatio: user.splitwiseSettings.defaultSplitRatio || "1:1",
-      useDescriptionAsPayee:
-        user.splitwiseSettings.useDescriptionAsPayee ?? true,
+      defaultSplitRatio: effectiveSplitwiseSettings.defaultSplitRatio,
+      useDescriptionAsPayee: effectiveSplitwiseSettings.useDescriptionAsPayee,
       customPayeeName:
-        user.splitwiseSettings.customPayeeName ||
-        `Splitwise: ${user.splitwiseSettings.groupName}` ||
+        effectiveSplitwiseSettings.customPayeeName ||
+        `Splitwise: ${effectiveSplitwiseSettings.groupName}` ||
         "Splitwise for YNAB",
     });
 
@@ -781,7 +907,7 @@ async function syncUserPhase(
 
     console.log(`🔍 Starting ${phase} for user ${user.email || user.id}`);
     console.log(
-      `📊 Config - YNAB Budget: ${user.ynabSettings.budgetId}, Splitwise Group: ${user.splitwiseSettings.groupId}`,
+      `📊 Config - YNAB Budget: ${user.ynabSettings.budgetId}, Splitwise Group: ${effectiveSplitwiseSettings.groupId}`,
     );
 
     if (phase === "ynab_to_splitwise") {
@@ -928,7 +1054,7 @@ async function syncUserPhase(
           userName: getUserFirstName(user),
           failedExpenses: createdFailedExpenseItems,
           failedTransactions: createdFailedTransactionItems,
-          currencyCode: user.splitwiseSettings.currencyCode,
+          currencyCode: effectiveSplitwiseSettings.currencyCode,
         });
       }
     }
@@ -940,6 +1066,11 @@ async function syncUserPhase(
       syncedExpenses: createdExpenseItems,
     };
   } catch (error) {
+    // Fetch user info for error notifications
+    const errorUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
     if (
       (error instanceof YNABError && error.requires_action) ||
       (error instanceof SplitwiseError && error.requires_action)
@@ -948,7 +1079,7 @@ async function syncUserPhase(
         `🚨 ${error instanceof YNABError ? "YNAB" : "Splitwise"} error requires action: ${error.message}`,
       );
 
-      const user = await prisma.user.update({
+      await prisma.user.update({
         where: { id: userId },
         data: {
           disabled: true,
@@ -959,8 +1090,8 @@ async function syncUserPhase(
       });
 
       await sendSyncErrorRequiresActionEmail({
-        to: user.email || "support@splitwiseforynab.com",
-        userName: getUserFirstName(user),
+        to: errorUser?.email || "support@splitwiseforynab.com",
+        userName: getUserFirstName(errorUser),
         errorMessage: error.message,
         suggestedFix: error.suggestedFix || "Please contact support",
       });
@@ -968,13 +1099,9 @@ async function syncUserPhase(
       console.error(`Sync error for user ${userId}, phase ${phase}:`, error);
       Sentry.captureException(error);
 
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-      });
-
       await sendSyncErrorEmail({
-        to: user?.email || "support@splitwiseforynab.com",
-        userName: getUserFirstName(user),
+        to: errorUser?.email || "support@splitwiseforynab.com",
+        userName: getUserFirstName(errorUser),
         errorMessage: error instanceof Error ? error.message : "Unknown error",
       });
     }

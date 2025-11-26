@@ -15,6 +15,7 @@ export function ScheduledSyncInfo() {
     const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
     // Check if Temporal is available (using type assertion to avoid complex declarations)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (typeof (globalThis as any).Temporal !== "undefined") {
       try {
         calculateWithTemporal(userTimezone);
@@ -30,6 +31,7 @@ export function ScheduledSyncInfo() {
 
     function calculateWithTemporal(userTimezone: string) {
       // Use Temporal API for more precise timezone handling
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const Temporal = (globalThis as any).Temporal;
       const userTimeZone = Temporal.TimeZone.from(userTimezone);
 

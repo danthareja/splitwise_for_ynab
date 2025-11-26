@@ -65,7 +65,7 @@ describe("services/sync", () => {
       const result = await syncUserData(user.id);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("configured both YNAB and Splitwise");
+      expect(result.error).toContain("YNAB settings");
     });
 
     it("should create sync history record on error", async () => {

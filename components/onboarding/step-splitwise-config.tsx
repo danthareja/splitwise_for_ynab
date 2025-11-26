@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { StepContainer, useOnboardingStep } from "./wizard";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -23,8 +23,13 @@ import {
   getSplitwiseGroupsForUser,
   saveSplitwiseSettings,
   getPartnerEmoji,
+  detectPotentialPrimary,
+  joinHousehold,
+  createPartnerInvite,
+  getExistingInvite,
 } from "@/app/actions/splitwise";
 import { getYNABBudgetsForUser } from "@/app/actions/ynab";
+import { completeOnboarding } from "@/app/actions/user";
 import type { SplitwiseGroup } from "@/types/splitwise";
 import {
   ArrowRight,
@@ -33,7 +38,13 @@ import {
   ChevronDown,
   AlertCircle,
   Info,
+  Users,
+  Check,
+  Link2,
+  Copy,
+  Mail,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
@@ -56,6 +67,176 @@ const SPLIT_RATIO_PRESETS = [
   { value: "custom", label: "Custom Split..." },
 ];
 
+// Partner invite section for dual primaries
+function PartnerInviteSection({
+  selectedGroupId,
+  selectedGroupName,
+  selectedCurrency,
+  selectedEmoji,
+  defaultSplitRatio,
+}: {
+  selectedGroupId: string;
+  selectedGroupName: string;
+  selectedCurrency: string;
+  selectedEmoji: string;
+  defaultSplitRatio: string;
+}) {
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const inviteUrl = inviteToken
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/invite/${inviteToken}`
+    : null;
+
+  // Check for existing invite on mount
+  useEffect(() => {
+    async function checkExistingInvite() {
+      const existing = await getExistingInvite();
+      if (existing?.token) {
+        setInviteToken(existing.token);
+      }
+      setIsLoading(false);
+    }
+    checkExistingInvite();
+  }, []);
+
+  async function handleGenerateInvite() {
+    setIsGenerating(true);
+    setError(null);
+    try {
+      // Pass settings directly since they may not be saved to DB yet
+      const result = await createPartnerInvite({
+        groupId: selectedGroupId,
+        groupName: selectedGroupName,
+        currencyCode: selectedCurrency,
+        emoji: selectedEmoji,
+        defaultSplitRatio: defaultSplitRatio,
+      });
+      if (result.success && result.token) {
+        setInviteToken(result.token);
+      } else {
+        setError(result.error || "Failed to generate invite");
+      }
+    } catch (error) {
+      console.error("Failed to generate invite:", error);
+      setError("An unexpected error occurred");
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  async function handleCopyLink() {
+    if (inviteUrl) {
+      await navigator.clipboard.writeText(inviteUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
+
+  if (isLoading) {
+    return null;
+  }
+
+  return (
+    <div className="mt-6 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+      <div className="flex items-start gap-3">
+        <Users className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+        <div className="flex-1">
+          <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">
+            Invite your partner
+          </p>
+
+          {!inviteToken ? (
+            <>
+              <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                Generate a special invite link for your partner. They&apos;ll
+                skip the configuration steps and just need to connect their
+                accounts.
+              </p>
+              {error && (
+                <p className="text-sm text-red-600 dark:text-red-400 mb-3">
+                  {error}
+                </p>
+              )}
+              <Button
+                onClick={handleGenerateInvite}
+                disabled={isGenerating}
+                variant="outline"
+                size="sm"
+                className="rounded-full bg-white dark:bg-gray-900"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Link2 className="mr-2 h-4 w-4" />
+                    Generate invite link
+                  </>
+                )}
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                Share this link with your partner. They&apos;ll connect their
+                YNAB and Splitwise accounts, pick a sync marker, and be set up
+                instantly.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex-1 bg-white dark:bg-gray-900 rounded-lg border border-blue-200 dark:border-blue-700 px-3 py-2 text-sm font-mono break-all">
+                  {inviteUrl}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleCopyLink}
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full bg-white dark:bg-gray-900 flex-shrink-0"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="mr-2 h-4 w-4 text-green-600" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full bg-white dark:bg-gray-900 flex-shrink-0"
+                  >
+                    <a
+                      href={`mailto:?subject=Join me on Splitwise for YNAB&body=Hey! I've set up Splitwise for YNAB to sync our shared expenses. Click this link to get set up: ${inviteUrl}`}
+                    >
+                      <Mail className="mr-2 h-4 w-4" />
+                      Email
+                    </a>
+                  </Button>
+                </div>
+              </div>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                Link expires in 7 days. You can regenerate it anytime.
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface StepSplitwiseConfigProps {
   initialSettings?: {
     groupId?: string | null;
@@ -67,21 +248,49 @@ interface StepSplitwiseConfigProps {
     customPayeeName?: string | null;
   } | null;
   budgetId?: string | null;
+  isSecondary?: boolean;
+  // For secondary users - inherited from primary
+  primarySettings?: {
+    groupId?: string | null;
+    groupName?: string | null;
+    currencyCode?: string | null;
+    defaultSplitRatio?: string | null;
+    emoji?: string | null;
+  } | null;
+  primaryName?: string | null;
 }
 
 export function StepSplitwiseConfig({
   initialSettings,
   budgetId,
+  isSecondary = false,
+  primarySettings,
+  primaryName,
 }: StepSplitwiseConfigProps) {
-  const { nextStep, previousStep, persona, isNavigating } = useOnboardingStep();
+  const router = useRouter();
+  const { previousStep, persona, isNavigating } = useOnboardingStep();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [validGroups, setValidGroups] = useState<SplitwiseGroup[]>([]);
   const [invalidGroups, setInvalidGroups] = useState<SplitwiseGroup[]>([]);
   const [budgetCurrency, setBudgetCurrency] = useState<string | null>(null);
+
+  // Potential primary for "Join household" flow
+  const [potentialPrimary, setPotentialPrimary] = useState<{
+    primaryId: string;
+    primaryName: string;
+    primaryEmail: string | null;
+    primaryImage: string | null;
+    settings: {
+      currencyCode: string | null;
+      emoji: string | null;
+      defaultSplitRatio: string | null;
+    } | null;
+  } | null>(null);
 
   const [selectedGroupId, setSelectedGroupId] = useState(
     initialSettings?.groupId || "",
@@ -92,8 +301,10 @@ export function StepSplitwiseConfig({
   const [selectedCurrency, setSelectedCurrency] = useState(
     initialSettings?.currencyCode || "",
   );
+  // For dual users, require explicit emoji selection (no default)
+  // For solo users, default to ✅
   const [selectedEmoji, setSelectedEmoji] = useState(
-    initialSettings?.emoji || "✅",
+    initialSettings?.emoji || (persona === "solo" ? "✅" : ""),
   );
   const [selectedSplitRatio, setSelectedSplitRatio] = useState(() => {
     const initial = initialSettings?.defaultSplitRatio || "1:1";
@@ -126,18 +337,6 @@ export function StepSplitwiseConfig({
   } | null>(null);
   const [isEmojiConflict, setIsEmojiConflict] = useState(false);
 
-  // Load groups on mount
-  useEffect(() => {
-    loadGroups();
-  }, []);
-
-  // Check partner emoji when group changes
-  useEffect(() => {
-    if (selectedGroupId) {
-      checkPartnerEmoji(selectedGroupId);
-    }
-  }, [selectedGroupId]);
-
   // Check emoji conflict
   useEffect(() => {
     if (partnerInfo && selectedEmoji === partnerInfo.emoji) {
@@ -147,7 +346,7 @@ export function StepSplitwiseConfig({
     }
   }, [selectedEmoji, partnerInfo]);
 
-  async function loadGroups() {
+  const loadGroups = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -177,36 +376,51 @@ export function StepSplitwiseConfig({
           }
         }
       }
-    } catch (err) {
+    } catch (error) {
       setError(
-        err instanceof Error ? err.message : "An unexpected error occurred",
+        error instanceof Error ? error.message : "An unexpected error occurred",
       );
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [budgetId, initialSettings?.currencyCode, selectedCurrency]);
 
-  async function checkPartnerEmoji(groupId: string) {
-    try {
-      const data = await getPartnerEmoji(groupId);
-      if (data) {
-        setPartnerInfo(data);
-        // Auto-set currency from partner if not set
-        if (data.currencyCode && !selectedCurrency) {
-          setSelectedCurrency(data.currencyCode);
+  const checkPartnerEmoji = useCallback(
+    async (groupId: string) => {
+      try {
+        const data = await getPartnerEmoji(groupId);
+        if (data) {
+          setPartnerInfo(data);
+          // Auto-set currency from partner if not set
+          if (data.currencyCode && !selectedCurrency) {
+            setSelectedCurrency(data.currencyCode);
+          }
+          // Check for emoji conflict
+          if (selectedEmoji === data.emoji) {
+            setIsEmojiConflict(true);
+            suggestDifferentEmoji(data.emoji);
+          }
+        } else {
+          setPartnerInfo(null);
         }
-        // Check for emoji conflict
-        if (selectedEmoji === data.emoji) {
-          setIsEmojiConflict(true);
-          suggestDifferentEmoji(data.emoji);
-        }
-      } else {
-        setPartnerInfo(null);
+      } catch (error) {
+        console.error("Error checking partner emoji:", error);
       }
-    } catch (err) {
-      console.error("Error checking partner emoji:", err);
+    },
+    [selectedCurrency, selectedEmoji],
+  );
+
+  // Load groups on mount
+  useEffect(() => {
+    loadGroups();
+  }, [loadGroups]);
+
+  // Check partner emoji when group changes
+  useEffect(() => {
+    if (selectedGroupId) {
+      checkPartnerEmoji(selectedGroupId);
     }
-  }
+  }, [selectedGroupId, checkPartnerEmoji]);
 
   function suggestDifferentEmoji(partnerEmoji: string) {
     const available = SUGGESTED_EMOJIS.filter((e) => e !== partnerEmoji);
@@ -216,13 +430,96 @@ export function StepSplitwiseConfig({
     }
   }
 
-  function handleGroupChange(groupId: string) {
+  async function handleGroupChange(groupId: string) {
     const group = validGroups.find((g) => g.id.toString() === groupId);
     setSelectedGroupId(groupId);
     setSelectedGroupName(group?.name || "");
+
+    // Reset potential primary when changing group
+    setPotentialPrimary(null);
+
+    // For dual users, check if there's a potential primary to join
+    if (persona === "dual" && groupId) {
+      const primary = await detectPotentialPrimary(groupId);
+      if (primary) {
+        setPotentialPrimary(primary);
+      }
+    }
+  }
+
+  // Handle joining an existing household
+  async function handleJoinHousehold() {
+    if (!potentialPrimary) return;
+
+    setIsJoining(true);
+    setError(null);
+
+    try {
+      const result = await joinHousehold(potentialPrimary.primaryId);
+
+      if (result.success) {
+        // Complete onboarding and redirect to dashboard
+        await completeOnboarding();
+        router.push("/dashboard");
+      } else {
+        setError(result.error || "Failed to join household");
+      }
+    } catch (error) {
+      setError(
+        error instanceof Error ? error.message : "An unexpected error occurred",
+      );
+    } finally {
+      setIsJoining(false);
+    }
   }
 
   async function handleContinue() {
+    // Secondary users inherit from primary + set their own emoji and payee settings
+    if (isSecondary) {
+      if (!selectedEmoji || !primarySettings?.groupId) return;
+
+      setIsSaving(true);
+      setError(null);
+
+      try {
+        const formData = new FormData();
+        // Inherited settings from primary
+        formData.set("groupId", primarySettings.groupId);
+        formData.set("groupName", primarySettings.groupName || "");
+        formData.set("currencyCode", primarySettings.currencyCode || "USD");
+        formData.set("splitRatio", primarySettings.defaultSplitRatio || "1:1");
+        // User's own settings
+        formData.set("emoji", selectedEmoji);
+        formData.set(
+          "useDescriptionAsPayee",
+          payeeMode === "description" ? "true" : "false",
+        );
+        formData.set(
+          "customPayeeName",
+          payeeMode === "custom" ? customPayeeName : "",
+        );
+
+        const result = await saveSplitwiseSettings(formData);
+
+        if (result.success) {
+          await completeOnboarding();
+          router.push("/dashboard");
+        } else {
+          setError(result.error || "Failed to save settings");
+        }
+      } catch (error) {
+        setError(
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred",
+        );
+      } finally {
+        setIsSaving(false);
+      }
+      return;
+    }
+
+    // Primary/solo users - full settings
     if (!selectedGroupId || !selectedCurrency) return;
 
     setIsSaving(true);
@@ -249,7 +546,9 @@ export function StepSplitwiseConfig({
       const result = await saveSplitwiseSettings(formData);
 
       if (result.success) {
-        await nextStep();
+        // This is the last step - complete onboarding
+        await completeOnboarding();
+        router.push("/dashboard");
       } else {
         setError(result.error || "Failed to save settings");
         if (result.isEmojiConflict && partnerInfo?.emoji) {
@@ -257,16 +556,16 @@ export function StepSplitwiseConfig({
           suggestDifferentEmoji(partnerInfo.emoji);
         }
       }
-    } catch (err) {
+    } catch (error) {
       setError(
-        err instanceof Error ? err.message : "An unexpected error occurred",
+        error instanceof Error ? error.message : "An unexpected error occurred",
       );
     } finally {
       setIsSaving(false);
     }
   }
 
-  if (isLoading) {
+  if (isLoading && !isSecondary) {
     return (
       <StepContainer
         title="Configure Splitwise"
@@ -277,6 +576,192 @@ export function StepSplitwiseConfig({
           <span className="ml-3 text-gray-600 dark:text-gray-400">
             Loading groups...
           </span>
+        </div>
+      </StepContainer>
+    );
+  }
+
+  // Secondary user view - simplified with inherited settings
+  if (isSecondary) {
+    // Check if secondary user has access to primary's group
+    const primaryGroupId = primarySettings?.groupId;
+    const hasGroupAccess = validGroups.some(
+      (g) => g.id.toString() === primaryGroupId,
+    );
+    const isCheckingAccess = isLoading;
+
+    return (
+      <StepContainer
+        title="Your Splitwise Settings"
+        description="Pick your sync marker and payee preferences"
+      >
+        <div className="bg-white dark:bg-[#141414] border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-6">
+          {/* Loading state */}
+          {isCheckingAccess && (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+              <span className="ml-2 text-gray-500">
+                Verifying group access...
+              </span>
+            </div>
+          )}
+
+          {/* Group access error */}
+          {!isCheckingAccess && primaryGroupId && !hasGroupAccess && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Your Splitwise account doesn&apos;t have access to {primaryName}
+                &apos;s group ({primarySettings?.groupName || "Shared group"}).
+                Please disconnect and reconnect with the correct Splitwise
+                account.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Inherited settings (read-only) */}
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-3">
+              Shared with {primaryName || "your household"}
+            </p>
+            <div className="space-y-2 text-sm text-blue-700 dark:text-blue-300">
+              <div className="flex justify-between">
+                <span>Splitwise group:</span>
+                <span className="font-medium">
+                  {primarySettings?.groupName || "Shared group"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Currency:</span>
+                <span className="font-medium">
+                  {primarySettings?.currencyCode || "USD"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Split ratio:</span>
+                <span className="font-medium">
+                  {primarySettings?.defaultSplitRatio || "1:1"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Emoji picker */}
+          <div className="space-y-3">
+            <div>
+              <Label className="text-base">Your sync marker</Label>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                We add this emoji to expenses after syncing. Pick something
+                different from your partner&apos;s marker.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {SUGGESTED_EMOJIS.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => setSelectedEmoji(emoji)}
+                  className={cn(
+                    "h-12 w-12 rounded-lg text-2xl flex items-center justify-center transition-all",
+                    selectedEmoji === emoji
+                      ? "bg-amber-100 dark:bg-amber-900/40 ring-2 ring-amber-500"
+                      : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700",
+                  )}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+            {!selectedEmoji && (
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                Please select a sync marker
+              </p>
+            )}
+          </div>
+
+          {/* Payee settings */}
+          <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div>
+              <Label className="text-base">YNAB Payee Name</Label>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                How should expenses appear in YNAB?
+              </p>
+            </div>
+            <div className="space-y-3">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="payeeMode"
+                  checked={payeeMode === "description"}
+                  onChange={() => setPayeeMode("description")}
+                  className="h-4 w-4 text-amber-600"
+                />
+                <div>
+                  <span className="font-medium">Use Splitwise description</span>
+                  <span className="text-sm text-gray-500 ml-1">
+                    (recommended)
+                  </span>
+                </div>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="payeeMode"
+                  checked={payeeMode === "custom"}
+                  onChange={() => setPayeeMode("custom")}
+                  className="h-4 w-4 text-amber-600"
+                />
+                <span className="font-medium">Use a custom payee name</span>
+              </label>
+              {payeeMode === "custom" && (
+                <Input
+                  value={customPayeeName}
+                  onChange={(e) => setCustomPayeeName(e.target.value)}
+                  placeholder="e.g., Splitwise"
+                  className="ml-7 max-w-xs bg-gray-50 dark:bg-gray-900"
+                />
+              )}
+            </div>
+          </div>
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+        </div>
+
+        {/* Navigation */}
+        <div className="mt-8 flex justify-between">
+          <Button
+            variant="outline"
+            onClick={previousStep}
+            disabled={isNavigating || isSaving}
+            className="rounded-full"
+          >
+            Back
+          </Button>
+          <Button
+            onClick={handleContinue}
+            disabled={
+              isNavigating ||
+              isSaving ||
+              !selectedEmoji ||
+              isCheckingAccess ||
+              !hasGroupAccess
+            }
+            className="rounded-full bg-gray-900 hover:bg-gray-800 text-white dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Complete setup"
+            )}
+          </Button>
         </div>
       </StepContainer>
     );
@@ -355,185 +840,302 @@ export function StepSplitwiseConfig({
           </Alert>
         )}
 
-        {/* Currency selector */}
-        <div className="space-y-2">
-          <Label htmlFor="currencyCode">Currency</Label>
-          <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-            <SelectTrigger className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-              <SelectValue placeholder="Select currency" />
-            </SelectTrigger>
-            <SelectContent>
-              {CURRENCY_OPTIONS.map((currency) => (
-                <SelectItem key={currency.value} value={currency.value}>
-                  {currency.label}
-                  {currency.value === budgetCurrency && " (from YNAB)"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {budgetCurrency && selectedCurrency === budgetCurrency && (
-            <p className="text-sm text-gray-500">
-              ✓ Matches your YNAB budget currency
-            </p>
-          )}
-          {partnerInfo?.currencyCode && (
-            <p className="text-sm text-gray-500">
-              Currency will sync with {partnerInfo.partnerName}
-            </p>
-          )}
-        </div>
+        {/* Join existing household prompt - for dual users who select a group with an existing primary */}
+        {potentialPrimary && persona === "dual" && (
+          <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-5">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center flex-shrink-0">
+                <Users className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-gray-900 dark:text-white mb-1">
+                  Join {potentialPrimary.primaryName}&apos;s household?
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  {potentialPrimary.primaryName} has already set up this group.
+                  You can join their household and share their settings.
+                </p>
 
-        {/* Sync marker emoji */}
-        <div className="space-y-3">
-          <div>
-            <Label>Your Sync Marker</Label>
-            <p className="text-sm text-gray-500 mt-1">
-              We add this emoji to Splitwise expenses to track which ones are
-              synced. Pick something unique so it doesn&apos;t conflict with
-              your partner.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {SUGGESTED_EMOJIS.filter((e) => e !== partnerInfo?.emoji).map(
-              (emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  onClick={() => setSelectedEmoji(emoji)}
-                  className={cn(
-                    "h-10 w-10 rounded-lg text-xl flex items-center justify-center transition-all",
-                    selectedEmoji === emoji
-                      ? "bg-amber-100 dark:bg-amber-900/40 ring-2 ring-amber-500"
-                      : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700",
-                  )}
-                >
-                  {emoji}
-                </button>
-              ),
-            )}
-          </div>
-
-          {partnerInfo && (
-            <Alert variant={isEmojiConflict ? "destructive" : "default"}>
-              {isEmojiConflict ? (
-                <AlertCircle className="h-4 w-4" />
-              ) : (
-                <Info className="h-4 w-4" />
-              )}
-              <AlertDescription>
-                {isEmojiConflict
-                  ? `Choose a different emoji—${partnerInfo.partnerName} is using "${partnerInfo.emoji}".`
-                  : `${partnerInfo.partnerName} uses "${partnerInfo.emoji}" as their marker.`}
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
-
-        {/* Advanced settings */}
-        <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 p-0 h-auto hover:bg-transparent"
-            >
-              <ChevronDown
-                className={cn(
-                  "h-4 w-4 transition-transform",
-                  showAdvanced && "rotate-180",
+                {/* Show inherited settings preview */}
+                {potentialPrimary.settings && (
+                  <div className="bg-white dark:bg-gray-900/50 rounded-lg p-3 mb-4 text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 mb-2">
+                      You&apos;ll inherit:
+                    </p>
+                    <ul className="space-y-1 text-gray-700 dark:text-gray-300">
+                      <li>
+                        • Currency:{" "}
+                        {potentialPrimary.settings.currencyCode || "Not set"}
+                      </li>
+                      <li>
+                        • Split ratio:{" "}
+                        {potentialPrimary.settings.defaultSplitRatio || "1:1"}
+                      </li>
+                    </ul>
+                  </div>
                 )}
-              />
-              Advanced settings
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-4 space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            {/* Split ratio */}
+
+                <div className="flex gap-3">
+                  <Button
+                    onClick={handleJoinHousehold}
+                    disabled={isJoining}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
+                  >
+                    {isJoining ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Joining...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="mr-2 h-4 w-4" />
+                        Join household
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setPotentialPrimary(null)}
+                    disabled={isJoining}
+                    className="rounded-full"
+                  >
+                    Set up my own
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Rest of configuration - only show if not joining an existing household */}
+        {!potentialPrimary && (
+          <>
+            {/* Currency selector */}
             <div className="space-y-2">
-              <Label>Split Ratio</Label>
+              <Label htmlFor="currencyCode">Currency</Label>
               <Select
-                value={selectedSplitRatio}
-                onValueChange={(value) => {
-                  setSelectedSplitRatio(value);
-                  if (value !== "custom") {
-                    setCustomSplitRatio("");
-                  }
-                }}
+                value={selectedCurrency}
+                onValueChange={setSelectedCurrency}
               >
                 <SelectTrigger className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-                  <SelectValue />
+                  <SelectValue placeholder="Select currency" />
                 </SelectTrigger>
                 <SelectContent>
-                  {SPLIT_RATIO_PRESETS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
+                  {CURRENCY_OPTIONS.map((currency) => (
+                    <SelectItem key={currency.value} value={currency.value}>
+                      {currency.label}
+                      {currency.value === budgetCurrency && " (from YNAB)"}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {selectedSplitRatio === "custom" && (
-                <Input
-                  value={customSplitRatio}
-                  onChange={(e) => setCustomSplitRatio(e.target.value)}
-                  placeholder="Enter ratio like 3:2 or 5:3"
-                  pattern="^\d+:\d+$"
-                  className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
-                />
+              {budgetCurrency && selectedCurrency === budgetCurrency && (
+                <p className="text-sm text-gray-500">
+                  ✓ Matches your YNAB budget currency
+                </p>
               )}
-              <p className="text-sm text-gray-500">
-                How expenses are split between you and your partner
-              </p>
+              {partnerInfo?.currencyCode && (
+                <p className="text-sm text-gray-500">
+                  Currency will sync with {partnerInfo.partnerName}
+                </p>
+              )}
             </div>
 
-            {/* Payee mapping */}
-            <div className="space-y-3">
-              <Label>YNAB Payee Name</Label>
-              <RadioGroup
-                value={payeeMode}
-                onValueChange={(v) =>
-                  setPayeeMode(v as "description" | "custom")
-                }
-                className="space-y-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="description" id="payee-description" />
-                  <Label
-                    htmlFor="payee-description"
-                    className="font-normal cursor-pointer"
-                  >
-                    Use Splitwise description as payee name (recommended)
+            {/* Sync marker emoji - only show for dual users (important for partner conflict detection) */}
+            {persona === "dual" && (
+              <div className="space-y-3">
+                <div>
+                  <Label className="flex items-center gap-1">
+                    Your Sync Marker
                   </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="custom" id="payee-custom" />
-                  <Label
-                    htmlFor="payee-custom"
-                    className="font-normal cursor-pointer"
-                  >
-                    Use custom payee name, put description in memo
-                  </Label>
-                </div>
-              </RadioGroup>
-              {payeeMode === "custom" && (
-                <>
-                  <Input
-                    value={customPayeeName}
-                    onChange={(e) => setCustomPayeeName(e.target.value)}
-                    placeholder="e.g., Splitwise Settlement"
-                    className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    This will be{" "}
-                    <strong>
-                      the payee name for every Splitwise transaction
-                    </strong>{" "}
-                    we send to YNAB. The original Splitwise description will be
-                    added to the memo field.
+                  <p className="text-sm text-gray-500 mt-1">
+                    We add this emoji to Splitwise expenses to track which ones
+                    are synced. Pick something unique so it doesn&apos;t
+                    conflict with your partner.
                   </p>
-                </>
-              )}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {SUGGESTED_EMOJIS.filter((e) => e !== partnerInfo?.emoji).map(
+                    (emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => setSelectedEmoji(emoji)}
+                        className={cn(
+                          "h-10 w-10 rounded-lg text-xl flex items-center justify-center transition-all",
+                          selectedEmoji === emoji
+                            ? "bg-amber-100 dark:bg-amber-900/40 ring-2 ring-amber-500"
+                            : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700",
+                        )}
+                      >
+                        {emoji}
+                      </button>
+                    ),
+                  )}
+                </div>
+
+                {/* Show message if no emoji selected */}
+                {!selectedEmoji && !partnerInfo && (
+                  <p className="text-sm text-amber-600 dark:text-amber-400">
+                    👆 Please select your sync marker
+                  </p>
+                )}
+
+                {partnerInfo && (
+                  <Alert variant={isEmojiConflict ? "destructive" : "default"}>
+                    {isEmojiConflict ? (
+                      <AlertCircle className="h-4 w-4" />
+                    ) : (
+                      <Info className="h-4 w-4" />
+                    )}
+                    <AlertDescription>
+                      {isEmojiConflict
+                        ? `Choose a different emoji—${partnerInfo.partnerName} is using "${partnerInfo.emoji}".`
+                        : `${partnerInfo.partnerName} uses "${partnerInfo.emoji}" as their marker.`}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
+
+            {/* Advanced settings */}
+            <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 p-0 h-auto hover:bg-transparent"
+                >
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 transition-transform",
+                      showAdvanced && "rotate-180",
+                    )}
+                  />
+                  Advanced settings
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-4 space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                {/* Split ratio */}
+                <div className="space-y-2">
+                  <Label>Split Ratio</Label>
+                  <Select
+                    value={selectedSplitRatio}
+                    onValueChange={(value) => {
+                      setSelectedSplitRatio(value);
+                      if (value !== "custom") {
+                        setCustomSplitRatio("");
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SPLIT_RATIO_PRESETS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedSplitRatio === "custom" && (
+                    <Input
+                      value={customSplitRatio}
+                      onChange={(e) => setCustomSplitRatio(e.target.value)}
+                      placeholder="Enter ratio like 3:2 or 5:3"
+                      pattern="^\d+:\d+$"
+                      className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+                    />
+                  )}
+                  <p className="text-sm text-gray-500">
+                    How expenses are split between you and your partner
+                  </p>
+                </div>
+
+                {/* Payee mapping */}
+                <div className="space-y-3">
+                  <Label>YNAB Payee Name</Label>
+                  <RadioGroup
+                    value={payeeMode}
+                    onValueChange={(v) =>
+                      setPayeeMode(v as "description" | "custom")
+                    }
+                    className="space-y-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem
+                        value="description"
+                        id="payee-description"
+                      />
+                      <Label
+                        htmlFor="payee-description"
+                        className="font-normal cursor-pointer"
+                      >
+                        Use Splitwise description as payee name (recommended)
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="custom" id="payee-custom" />
+                      <Label
+                        htmlFor="payee-custom"
+                        className="font-normal cursor-pointer"
+                      >
+                        Use custom payee name, put description in memo
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                  {payeeMode === "custom" && (
+                    <>
+                      <Input
+                        value={customPayeeName}
+                        onChange={(e) => setCustomPayeeName(e.target.value)}
+                        placeholder="e.g., Splitwise Settlement"
+                        className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        This will be{" "}
+                        <strong>
+                          the payee name for every Splitwise transaction
+                        </strong>{" "}
+                        we send to YNAB. The original Splitwise description will
+                        be added to the memo field.
+                      </p>
+                    </>
+                  )}
+                </div>
+
+                {/* Sync marker emoji - for solo users, shown in Advanced */}
+                {persona === "solo" && (
+                  <div className="space-y-2">
+                    <Label>Sync Marker Emoji</Label>
+                    <p className="text-sm text-gray-500 -mt-1">
+                      We add this emoji to Splitwise expenses to track synced
+                      items
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {SUGGESTED_EMOJIS.map((emoji) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => setSelectedEmoji(emoji)}
+                          className={cn(
+                            "h-9 w-9 rounded-lg text-lg flex items-center justify-center transition-all",
+                            selectedEmoji === emoji
+                              ? "bg-amber-100 dark:bg-amber-900/40 ring-2 ring-amber-500"
+                              : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700",
+                          )}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+          </>
+        )}
       </div>
 
       {error && (
@@ -543,31 +1145,68 @@ export function StepSplitwiseConfig({
         </Alert>
       )}
 
-      <div className="mt-8 flex justify-between">
-        <Button
-          variant="outline"
-          onClick={previousStep}
-          disabled={isNavigating || isSaving}
-          className="rounded-full"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-        <Button
-          onClick={handleContinue}
-          disabled={
-            !selectedGroupId ||
-            !selectedCurrency ||
-            isEmojiConflict ||
-            isNavigating ||
-            isSaving
-          }
-          className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-6"
-        >
-          {isSaving ? "Saving..." : "Continue"}
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
+      {/* Partner invite for dual primaries - show after completing settings */}
+      {!potentialPrimary &&
+        persona === "dual" &&
+        selectedGroupId &&
+        selectedEmoji && (
+          <PartnerInviteSection
+            selectedGroupId={selectedGroupId}
+            selectedGroupName={selectedGroupName}
+            selectedCurrency={selectedCurrency}
+            selectedEmoji={selectedEmoji}
+            defaultSplitRatio={
+              selectedSplitRatio === "custom"
+                ? customSplitRatio
+                : selectedSplitRatio
+            }
+          />
+        )}
+
+      {/* Only show navigation when not in "join household" mode */}
+      {!potentialPrimary && (
+        <div className="mt-8 flex justify-between">
+          <Button
+            variant="outline"
+            onClick={previousStep}
+            disabled={isNavigating || isSaving}
+            className="rounded-full"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+          <Button
+            onClick={handleContinue}
+            disabled={
+              !selectedGroupId ||
+              !selectedCurrency ||
+              !selectedEmoji || // Emoji required for all users now
+              isEmojiConflict ||
+              isNavigating ||
+              isSaving
+            }
+            className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-6"
+          >
+            {isSaving ? "Completing..." : "Complete Setup"}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
+      {/* Simplified navigation when joining household - just a back button */}
+      {potentialPrimary && (
+        <div className="mt-8">
+          <Button
+            variant="outline"
+            onClick={previousStep}
+            disabled={isNavigating || isJoining}
+            className="rounded-full"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+        </div>
+      )}
     </StepContainer>
   );
 }
