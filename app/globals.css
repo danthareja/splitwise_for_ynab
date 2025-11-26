@@ -121,3 +121,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Party emoji animation for Works with YNAB badge */
+@keyframes party-fly {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -200%) scale(1.5) rotate(15deg);
+    opacity: 0;
+  }
+}
+
+.animate-party-emoji {
+  animation: party-fly 0.6s ease-out forwards;
+}

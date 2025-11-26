@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Github } from "lucide-react";
+import { WorksWithYnabBadge } from "@/components/works-with-ynab-badge";
 
 export function Footer() {
   return (
@@ -32,6 +33,11 @@ export function Footer() {
               Privacy
             </Link>
           </div>
+        </div>
+
+        {/* Works with YNAB Badge */}
+        <div className="mt-6 flex justify-center">
+          <WorksWithYnabBadge />
         </div>
 
         {/* YNAB Disclaimer */}

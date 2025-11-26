@@ -3,6 +3,13 @@
 import { useState, useTransition } from "react";
 import { regenerateApiKeyAction } from "@/app/actions/api-key";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
 import { Copy, RefreshCw, Check } from "lucide-react";
 import { toast } from "sonner";
 
@@ -47,15 +54,16 @@ export function ApiKeyCard({
   const curlOneLine = `curl -H "Authorization: Bearer ${apiKey ?? "<YOUR_KEY>"}" ${baseUrl}/api/sync`;
 
   return (
-    <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-6 mt-8 bg-white dark:bg-[#141414]">
-      <h2 className="text-xl font-serif font-semibold mb-4 text-gray-900 dark:text-white">
-        API Access
-      </h2>
-      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 mb-4">
-        A programmable manual sync for nerds who are into that sort of thing 🤓
-      </p>
-      {apiKey ? (
-        <>
+    <Card className="mt-8">
+      <CardHeader>
+        <CardTitle>API Access</CardTitle>
+        <CardDescription>
+          A programmable manual sync for nerds who are into that sort of thing
+          🤓
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {apiKey ? (
           <div className="flex items-center gap-2 mb-4 overflow-auto">
             <code className="bg-gray-100 dark:bg-gray-800 rounded-lg px-2 py-1 text-sm break-all text-gray-900 dark:text-gray-100">
               {apiKey}
@@ -74,56 +82,60 @@ export function ApiKeyCard({
               )}
             </Button>
           </div>
-        </>
-      ) : (
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          You don&apos;t have an API key yet.
-        </p>
-      )}
+        ) : (
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            You don&apos;t have an API key yet.
+          </p>
+        )}
 
-      <Button
-        onClick={regenerate}
-        disabled={isPending}
-        className="mb-6 bg-gray-900 hover:bg-gray-800 text-white rounded-full"
-      >
-        <RefreshCw className="h-4 w-4 mr-2" />
-        {apiKey ? "Regenerate Key" : "Generate Key"}
-      </Button>
-
-      <h3 className="font-medium mb-2 text-gray-900 dark:text-white">Usage</h3>
-      <div className="relative">
-        <pre className="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl text-sm overflow-auto text-gray-900 dark:text-gray-100">
-          {curlPreview}
-        </pre>
         <Button
-          variant="secondary"
-          size="icon"
-          className="absolute top-2 right-2 rounded-full"
-          onClick={() => {
-            navigator.clipboard.writeText(curlOneLine);
-            setCopiedCurl(true);
-            setTimeout(() => setCopiedCurl(false), 2000);
-          }}
-          aria-label="Copy cURL command"
+          onClick={regenerate}
+          disabled={isPending}
+          className="mb-6 bg-gray-900 hover:bg-gray-800 text-white rounded-full"
         >
-          {copiedCurl ? (
-            <Check className="h-4 w-4 text-green-600" />
-          ) : (
-            <Copy className="h-4 w-4" />
-          )}
+          <RefreshCw className="h-4 w-4 mr-2" />
+          {apiKey ? "Regenerate Key" : "Generate Key"}
         </Button>
-      </div>
 
-      <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
-        Rate limit:{" "}
-        <strong className="text-gray-900 dark:text-white">{maxRequests}</strong>{" "}
-        sync requests every
-        <strong className="text-gray-900 dark:text-white">
-          {" "}
-          {windowSeconds / 60}
-        </strong>{" "}
-        minutes. Shared with the &quot;Sync Now&quot; button.
-      </p>
-    </div>
+        <h3 className="font-medium mb-2 text-gray-900 dark:text-white">
+          Usage
+        </h3>
+        <div className="relative">
+          <pre className="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl text-sm overflow-auto text-gray-900 dark:text-gray-100">
+            {curlPreview}
+          </pre>
+          <Button
+            variant="secondary"
+            size="icon"
+            className="absolute top-2 right-2 rounded-full"
+            onClick={() => {
+              navigator.clipboard.writeText(curlOneLine);
+              setCopiedCurl(true);
+              setTimeout(() => setCopiedCurl(false), 2000);
+            }}
+            aria-label="Copy cURL command"
+          >
+            {copiedCurl ? (
+              <Check className="h-4 w-4 text-green-600" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
+          Rate limit:{" "}
+          <strong className="text-gray-900 dark:text-white">
+            {maxRequests}
+          </strong>{" "}
+          sync requests every
+          <strong className="text-gray-900 dark:text-white">
+            {" "}
+            {windowSeconds / 60}
+          </strong>{" "}
+          minutes. Shared with the &quot;Sync Now&quot; button.
+        </p>
+      </CardContent>
+    </Card>
   );
 }

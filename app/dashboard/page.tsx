@@ -106,52 +106,54 @@ export default async function DashboardPage() {
           )}
 
           {/* Need Help Banner */}
-          <div className="mb-6 bg-white dark:bg-[#141414] border border-gray-200 dark:border-gray-800 rounded-xl p-4">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <div className="flex items-center gap-3 flex-1">
-                <HelpCircle className="h-5 w-5 text-amber-600 dark:text-amber-500 flex-shrink-0" />
-                <div className="flex-1">
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-                    Having trouble?
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    We&apos;re here to help! Check the {""}
-                    <a
-                      href="#faq"
-                      className="text-amber-700 dark:text-amber-500 hover:underline"
-                    >
-                      FAQ
-                    </a>{" "}
-                    below or email us at{" "}
+          <Card className="mb-6">
+            <CardContent>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex items-center gap-3 flex-1">
+                  <HelpCircle className="h-5 w-5 text-amber-600 dark:text-amber-500 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                      Having trouble?
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      We&apos;re here to help! Check the {""}
+                      <a
+                        href="#faq"
+                        className="text-amber-700 dark:text-amber-500 hover:underline"
+                      >
+                        FAQ
+                      </a>{" "}
+                      below or email us at{" "}
+                      <a
+                        href="mailto:support@splitwiseforynab.com?subject=Help!"
+                        className="text-amber-700 dark:text-amber-500 hover:underline"
+                      >
+                        support@splitwiseforynab.com
+                      </a>
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="sm:flex-shrink-0 rounded-full"
+                >
+                  <div className="flex items-center gap-2">
+                    <a href="#faq">View FAQ</a>
+                    <span className="text-gray-300 dark:text-gray-600">|</span>
                     <a
                       href="mailto:support@splitwiseforynab.com?subject=Help!"
-                      className="text-amber-700 dark:text-amber-500 hover:underline"
+                      className="flex items-center gap-2"
                     >
-                      support@splitwiseforynab.com
+                      <Mail className="h-4 w-4" />
+                      Contact Support
                     </a>
-                  </p>
-                </div>
+                  </div>
+                </Button>
               </div>
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                className="sm:flex-shrink-0 rounded-full"
-              >
-                <div className="flex items-center gap-2">
-                  <a href="#faq">View FAQ</a>
-                  <span className="text-gray-300 dark:text-gray-600">|</span>
-                  <a
-                    href="mailto:support@splitwiseforynab.com?subject=Help!"
-                    className="flex items-center gap-2"
-                  >
-                    <Mail className="h-4 w-4" />
-                    Contact Support
-                  </a>
-                </div>
-              </Button>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           <div className="grid gap-6 md:grid-cols-2">
             <YNABConnectionCard
@@ -167,49 +169,50 @@ export default async function DashboardPage() {
             />
           </div>
 
-          <div className="mt-8 bg-white dark:bg-[#141414] border border-gray-200 dark:border-gray-800 rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-serif text-gray-900 dark:text-white">
-                Recent Activity
-              </h2>
-              {isFullyConfigured && <ManualSyncButton />}
-            </div>
-
-            {/* Scheduled Sync Info for fully configured users */}
-            {isFullyConfigured && <ScheduledSyncInfo />}
-
-            {syncHistory && syncHistory.length > 0 ? (
-              <SyncHistory
-                syncHistory={syncHistory}
-                currencyCode={splitwiseSettings?.currencyCode || undefined}
-              />
-            ) : (
-              <div className="text-center py-8">
-                <RefreshCw className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                <p className="text-sm text-muted-foreground mb-2">
-                  No sync history yet
-                </p>
-                {isFullyConfigured ? (
-                  <div className="text-md">
-                    To start, flag a transaction in your{" "}
-                    <span className="font-semibold">
-                      {ynabSettings.budgetName}
-                    </span>{" "}
-                    plan with{" "}
-                    <YNABFlag
-                      colorId={ynabSettings.manualFlagColor}
-                      size="sm"
-                    />{" "}
-                    and press <span className="font-semibold">Sync Now</span>
-                  </div>
-                ) : (
-                  <p className="text-md">
-                    Complete your configuration to start syncing
-                  </p>
-                )}
+          <Card className="mt-8">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Recent Activity</CardTitle>
+                {isFullyConfigured && <ManualSyncButton />}
               </div>
-            )}
-          </div>
+            </CardHeader>
+            <CardContent>
+              {/* Scheduled Sync Info for fully configured users */}
+              {isFullyConfigured && <ScheduledSyncInfo />}
+
+              {syncHistory && syncHistory.length > 0 ? (
+                <SyncHistory
+                  syncHistory={syncHistory}
+                  currencyCode={splitwiseSettings?.currencyCode || undefined}
+                />
+              ) : (
+                <div className="text-center py-8">
+                  <RefreshCw className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                  <p className="text-sm text-muted-foreground mb-2">
+                    No sync history yet
+                  </p>
+                  {isFullyConfigured ? (
+                    <div className="text-md">
+                      To start, flag a transaction in your{" "}
+                      <span className="font-semibold">
+                        {ynabSettings.budgetName}
+                      </span>{" "}
+                      plan with{" "}
+                      <YNABFlag
+                        colorId={ynabSettings.manualFlagColor}
+                        size="sm"
+                      />{" "}
+                      and press <span className="font-semibold">Sync Now</span>
+                    </div>
+                  ) : (
+                    <p className="text-md">
+                      Complete your configuration to start syncing
+                    </p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* API Key Section */}
           {isFullyConfigured && !user.disabled && (
@@ -222,19 +225,12 @@ export default async function DashboardPage() {
           )}
 
           {/* FAQ Section */}
-          <Card
-            id="faq"
-            className="mt-8 bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800 rounded-xl"
-          >
+          <Card id="faq" className="mt-8">
             <CardHeader>
-              <CardTitle className="font-serif text-gray-900 dark:text-white">
-                FAQ
-              </CardTitle>
-              <CardDescription className="text-gray-600 dark:text-gray-400">
-                Frequently Asked Questions
-              </CardDescription>
+              <CardTitle>FAQ</CardTitle>
+              <CardDescription>Frequently Asked Questions</CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent>
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="q-not-even-split">
                   <AccordionTrigger>
