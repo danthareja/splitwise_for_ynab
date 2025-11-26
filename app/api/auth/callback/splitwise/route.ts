@@ -9,11 +9,19 @@ export async function GET(request: NextRequest) {
   // Extract the authorization code from the query parameters
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
+  const error = searchParams.get("error");
+
+  // Handle OAuth errors (e.g., user cancelled)
+  if (error) {
+    const errorMessage = error === "access_denied" ? "cancelled" : "error";
+    return NextResponse.redirect(
+      new URL(`/dashboard/setup?auth_error=${errorMessage}`, request.url),
+    );
+  }
 
   if (!code) {
-    return NextResponse.json(
-      { error: "Authorization code not found" },
-      { status: 400 },
+    return NextResponse.redirect(
+      new URL("/dashboard/setup?auth_error=missing_code", request.url),
     );
   }
 
@@ -114,7 +122,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Update user information with Splitwise data
-  await prisma.user.update({
+  const user = await prisma.user.update({
     where: { id: session.user.id },
     data: {
       firstName: userData.user.first_name,
@@ -124,6 +132,9 @@ export async function GET(request: NextRequest) {
         : userData.user.first_name,
       email: userData.user.email,
       image: userData.user.picture?.medium,
+    },
+    select: {
+      onboardingComplete: true,
     },
   });
 
@@ -135,6 +146,12 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // Redirect to dashboard or success page
-  return NextResponse.redirect(new URL("/dashboard", request.url));
+  // Redirect based on onboarding status
+  if (user.onboardingComplete) {
+    // User is reconnecting after already completing onboarding
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  } else {
+    // Continue onboarding flow
+    return NextResponse.redirect(new URL("/dashboard/setup", request.url));
+  }
 }

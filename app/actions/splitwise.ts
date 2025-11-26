@@ -635,6 +635,61 @@ export async function checkPartnerSyncStatus() {
   }
 }
 
+// Check if another user is connected to the same Splitwise group
+export async function checkPartnerConnection() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  try {
+    // Get current user's Splitwise settings
+    const mySettings = await prisma.splitwiseSettings.findUnique({
+      where: { userId: session.user.id },
+      select: { groupId: true },
+    });
+
+    if (!mySettings?.groupId) {
+      return { partnerConnected: false };
+    }
+
+    // Check if there's another user with the same group ID
+    const partnerSettings = await prisma.splitwiseSettings.findFirst({
+      where: {
+        groupId: mySettings.groupId,
+        userId: { not: session.user.id },
+      },
+      select: {
+        user: {
+          select: {
+            firstName: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (partnerSettings) {
+      const partnerName =
+        partnerSettings.user.firstName ||
+        partnerSettings.user.name?.split(" ")[0] ||
+        null;
+
+      return {
+        partnerConnected: true,
+        partnerName,
+      };
+    }
+
+    return { partnerConnected: false };
+  } catch (error) {
+    console.error("Error checking partner connection:", error);
+    Sentry.captureException(error);
+    return null;
+  }
+}
+
 export async function getSplitwiseSettings() {
   const session = await auth();
 
