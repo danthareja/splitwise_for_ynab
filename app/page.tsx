@@ -16,7 +16,7 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-16 pb-12 sm:pb-20">
         <div className="text-center mb-4 sm:mb-6">
-          <p className="hidden sm:block text-sm uppercase tracking-[0.2em] text-amber-700 dark:text-amber-500 font-medium mb-8">
+          <p className="sm:text-sm text-xs uppercase tracking-[0.2em] text-amber-700 dark:text-amber-500 font-medium mb-4 sm:mb-8">
             For YNAB users who split expenses
           </p>
           <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-serif text-gray-900 dark:text-white leading-[1.1] tracking-tight mb-4 sm:mb-8">
@@ -121,10 +121,10 @@ export default function LandingPage() {
               The secret: a phantom Splitwise account
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
-              Create a &ldquo;Splitwise&rdquo; cash account in YNAB—it&apos;s
-              not a real bank account, just an IOU ledger. Positive balance
-              means you&apos;re owed money. Negative means you owe. When you
-              settle up, it goes to zero.
+              Create a Splitwise cash account in YNAB—it&apos;s not a real bank
+              account, just an IOU ledger. Positive balance means you&apos;re
+              owed money. Negative means you owe. When you settle up, it goes to
+              zero.
             </p>
           </div>
 
@@ -181,20 +181,16 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8 sm:mb-12">
             <h2 className="text-3xl md:text-4xl font-serif text-gray-900 dark:text-white mb-6">
-              What we automate
+              One flag. That&apos;s it.
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
-              Without this app, you&apos;d manually enter every expense in
-              Splitwise AND add adjustment transactions in YNAB. We do both
-              automatically.
+              Flag a shared expense in YNAB—we create the Splitwise entry and
+              the adjustment transaction automatically.
             </p>
           </div>
 
           {/* Flagging Example */}
-          <div className="mb-12">
-            <p className="text-sm uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 text-center font-medium">
-              Just flag the transaction
-            </p>
+          <div className="mb-10">
             <YNABTransaction
               flag="blue"
               account="💰 Checking"
@@ -205,50 +201,59 @@ export default function LandingPage() {
               highlightFlag
             />
             <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-3">
-              Click the flag → we handle the rest
+              👆 Click the flag to try it
             </p>
           </div>
 
-          {/* Steps */}
-          <div className="grid md:grid-cols-3 gap-6 text-center mb-10">
-            <div>
-              <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
-                <span className="font-serif text-amber-700 dark:text-amber-400">
-                  1
-                </span>
+          {/* What happens automatically */}
+          <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-gray-800 p-6 mb-10">
+            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4 font-medium">
+              We handle the rest
+            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+              <div className="flex items-center gap-3 flex-1">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                  <svg
+                    className="w-4 h-4 text-emerald-600 dark:text-emerald-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  Expense created in Splitwise
+                </p>
               </div>
-              <p className="font-medium text-gray-900 dark:text-white mb-1">
-                Flag the transaction
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Your only action
-              </p>
-            </div>
-            <div>
-              <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
-                <span className="font-serif text-amber-700 dark:text-amber-400">
-                  2
-                </span>
+              <div className="hidden sm:block text-gray-300 dark:text-gray-600">
+                +
               </div>
-              <p className="font-medium text-gray-900 dark:text-white mb-1">
-                We sync to Splitwise
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Expense created automatically
-              </p>
-            </div>
-            <div>
-              <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-4">
-                <span className="font-serif text-amber-700 dark:text-amber-400">
-                  3
-                </span>
+              <div className="flex items-center gap-3 flex-1">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                  <svg
+                    className="w-4 h-4 text-emerald-600 dark:text-emerald-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  Adjustment added to YNAB (same category)
+                </p>
               </div>
-              <p className="font-medium text-gray-900 dark:text-white mb-1">
-                YNAB stays accurate
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Adjustment added, same category
-              </p>
             </div>
           </div>
 
@@ -357,7 +362,7 @@ export default function LandingPage() {
             <div className="bg-emerald-50 dark:bg-emerald-950/20 p-6 rounded-xl border border-emerald-200 dark:border-emerald-800">
               <div className="flex items-start justify-between gap-4 mb-3">
                 <h3 className="font-semibold text-gray-900 dark:text-white">
-                  Flag → Sync → Done
+                  Splitwise cash account
                 </h3>
                 <span className="flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
                   Our solution

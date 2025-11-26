@@ -201,9 +201,9 @@ export function YNABTransaction({
 
   return (
     <div className="overflow-x-auto max-w-full">
-      <div className="bg-[#1e2b3a] rounded-lg overflow-hidden shadow-lg text-sm min-w-[560px]">
+      <div className="bg-[#1e2b3a] rounded-lg overflow-hidden shadow-lg text-[11px] sm:text-sm min-w-[440px] sm:min-w-[560px]">
         {/* Header */}
-        <div className="grid grid-cols-[32px_90px_80px_1fr_1fr_80px_80px] gap-1 px-3 py-2 bg-[#171f2b] border-b border-white/10 text-white/50 text-xs font-medium uppercase tracking-wider">
+        <div className="grid grid-cols-[24px_70px_65px_1fr_1fr_60px_60px] sm:grid-cols-[32px_90px_80px_1fr_1fr_80px_80px] gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-[#171f2b] border-b border-white/10 text-white/50 text-[9px] sm:text-xs font-medium uppercase tracking-wider">
           <div className="flex items-center justify-center">
             <YNABFlagIcon color="none" size="sm" />
           </div>
@@ -215,7 +215,7 @@ export function YNABTransaction({
           <div className="text-right">Inflow</div>
         </div>
         {/* Transaction Row */}
-        <div className="grid grid-cols-[32px_90px_80px_1fr_1fr_80px_80px] gap-1 px-3 py-3 items-center text-sm">
+        <div className="grid grid-cols-[24px_70px_65px_1fr_1fr_60px_60px] sm:grid-cols-[32px_90px_80px_1fr_1fr_80px_80px] gap-0.5 sm:gap-1 px-2 sm:px-3 py-2 sm:py-3 items-center">
           {/* Flag */}
           <div className="flex items-center justify-center">
             {interactive ? (
@@ -241,9 +241,9 @@ export function YNABTransaction({
           {/* Date */}
           <div className="text-white/70">{formatDate(date)}</div>
           {/* Payee */}
-          <div className="text-white font-medium truncate">{payee}</div>
+          <div className="text-white/70 font-medium truncate">{payee}</div>
           {/* Category */}
-          <div className="text-white/70 truncate">{category}</div>
+          <div className="text-white truncate">{category}</div>
           {/* Outflow */}
           <div className="text-right text-red-400 font-mono">
             {outflow || ""}
@@ -278,7 +278,7 @@ function YNABAccountRow({
 
   return (
     <div
-      className={`flex items-center justify-between px-4 py-3 ${highlight ? "bg-[#2a3a4d]" : ""}`}
+      className={`flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 ${highlight ? "bg-[#2a3a4d]" : ""}`}
     >
       <span className="text-white/90">{name}</span>
       <span className={`font-mono font-medium ${balanceColor}`}>{balance}</span>
@@ -300,15 +300,17 @@ export function YNABAccounts({
   title?: string;
 }) {
   return (
-    <div className="bg-[#1e2b3a] rounded-lg overflow-hidden shadow-lg text-sm">
-      <div className="px-4 py-2 bg-[#171f2b] border-b border-white/10">
-        <span className="text-white/50 text-xs font-medium uppercase tracking-wider">
-          {title}
-        </span>
+    <div className="max-w-md mx-auto">
+      <div className="bg-[#1e2b3a] rounded-lg overflow-hidden shadow-lg text-[11px] sm:text-sm">
+        <div className="px-3 py-1.5 sm:px-4 sm:py-2 bg-[#171f2b] border-b border-white/10">
+          <span className="text-white/50 text-[9px] sm:text-xs font-medium uppercase tracking-wider">
+            {title}
+          </span>
+        </div>
+        {accounts.map((account, i) => (
+          <YNABAccountRow key={i} {...account} />
+        ))}
       </div>
-      {accounts.map((account, i) => (
-        <YNABAccountRow key={i} {...account} />
-      ))}
     </div>
   );
 }
@@ -338,21 +340,21 @@ function YNABCategoryRow({
 
   return (
     <tr>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
-          <span className="text-base">{emoji}</span>
+      <td className="px-3 py-2 sm:px-4 sm:py-3">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <span className="text-sm sm:text-base">{emoji}</span>
           <span className="text-white font-medium">{name}</span>
         </div>
       </td>
-      <td className="text-right text-white/70 font-mono px-4 py-3">
+      <td className="text-right text-white/70 font-mono px-3 py-2 sm:px-4 sm:py-3">
         {assigned}
       </td>
-      <td className="hidden md:table-cell text-right text-white/70 font-mono px-4 py-3">
+      <td className="text-right text-white/70 font-mono px-3 py-2 sm:px-4 sm:py-3">
         {activity}
       </td>
-      <td className="text-right px-4 py-3">
+      <td className="text-right px-3 py-2 sm:px-4 sm:py-3">
         <span
-          className={`inline-flex items-center justify-center px-3 py-1 rounded-full font-bold text-sm ${colorClasses[availableColor]}`}
+          className={`inline-flex items-center justify-center px-2 py-0.5 sm:px-3 sm:py-1 rounded-full font-bold text-[10px] sm:text-sm ${colorClasses[availableColor]}`}
         >
           {available}
         </span>
@@ -378,20 +380,20 @@ export function YNABCategories({
 }) {
   return (
     <div className="overflow-x-auto max-w-full">
-      <div className="bg-[#1e2b3a] rounded-lg overflow-hidden shadow-lg text-sm min-w-[420px] sm:min-w-[480px]">
+      <div className="bg-[#1e2b3a] rounded-lg overflow-hidden shadow-lg text-[11px] sm:text-sm min-w-[320px] sm:min-w-[480px]">
         <table className="w-full">
           <thead>
             <tr className="border-b border-white/10 bg-[#171f2b]">
-              <th className="text-left text-white/50 text-xs font-medium uppercase tracking-wider px-4 py-2 whitespace-nowrap">
+              <th className="text-left text-white/50 text-[9px] sm:text-xs font-medium uppercase tracking-wider px-3 py-1.5 sm:px-4 sm:py-2 whitespace-nowrap">
                 {title}
               </th>
-              <th className="text-right text-white/50 text-xs font-medium uppercase tracking-wider px-4 py-2 w-24 whitespace-nowrap">
+              <th className="text-right text-white/50 text-[9px] sm:text-xs font-medium uppercase tracking-wider px-3 py-1.5 sm:px-4 sm:py-2 w-16 sm:w-24 whitespace-nowrap">
                 Assigned
               </th>
-              <th className="hidden md:table-cell text-right text-white/50 text-xs font-medium uppercase tracking-wider px-4 py-2 w-24 whitespace-nowrap">
+              <th className="text-right text-white/50 text-[9px] sm:text-xs font-medium uppercase tracking-wider px-3 py-1.5 sm:px-4 sm:py-2 w-16 sm:w-24 whitespace-nowrap">
                 Activity
               </th>
-              <th className="text-right text-white/50 text-xs font-medium uppercase tracking-wider px-4 py-2 w-28 whitespace-nowrap">
+              <th className="text-right text-white/50 text-[9px] sm:text-xs font-medium uppercase tracking-wider px-3 py-1.5 sm:px-4 sm:py-2 w-20 sm:w-28 whitespace-nowrap">
                 Available
               </th>
             </tr>
@@ -562,7 +564,7 @@ function SoloWalkthrough() {
       <WalkthroughStep
         number="2"
         title="Your partner pays $50 for electricity"
-        subtitle="They add it to Splitwise (no YNAB needed)"
+        subtitle="They just add it to your shared Splitwise group — no YNAB account needed"
         color="amber"
       >
         <div className="space-y-6">
