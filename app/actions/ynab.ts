@@ -77,7 +77,7 @@ export async function saveYNABSettings(formData: FormData) {
   if (!budgetId || !splitwiseAccountId) {
     return {
       success: false,
-      error: "Budget and Splitwise account are required",
+      error: "Plan and Splitwise account are required",
     };
   }
 

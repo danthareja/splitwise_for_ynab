@@ -19,7 +19,7 @@ export const ONBOARDING_STEPS = [
   {
     id: 2,
     title: "Configure YNAB",
-    description: "Select your budget and account",
+    description: "Select your plan and account",
   },
   {
     id: 3,

@@ -32,7 +32,7 @@ export const WelcomeEmail = ({ userName = "there" }: WelcomeEmailProps) => {
         <Text style={emailStyles.text}>
           <strong>Step 1: Configure Your YNAB Connection</strong>
           <br />
-          • Select which YNAB budget to use for syncing
+          • Select which YNAB plan to use for syncing
           <br />
           • Choose or create a &quot;Splitwise&quot; account in YNAB (this
           tracks your balance)

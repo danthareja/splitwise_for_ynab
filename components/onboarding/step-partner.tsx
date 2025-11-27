@@ -87,7 +87,7 @@ export function StepPartner() {
       <div className="space-y-6">
         {/* Requirements explanation */}
         <Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
-          <CardContent className="pt-6">
+          <CardContent>
             <h3 className="font-medium text-amber-900 dark:text-amber-100 mb-2 flex items-center gap-2">
               <Users className="h-5 w-5" />
               Dual Mode Requirements
@@ -118,7 +118,7 @@ export function StepPartner() {
         {/* Partner status */}
         {partnerConnected ? (
           <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-            <CardContent className="pt-6">
+            <CardContent>
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
                   <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -138,7 +138,7 @@ export function StepPartner() {
           </Card>
         ) : (
           <Card className="border-gray-200 dark:border-gray-700">
-            <CardContent className="pt-6">
+            <CardContent>
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                   <Clock className="h-5 w-5 text-gray-500" />

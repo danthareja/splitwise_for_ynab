@@ -148,12 +148,12 @@ export async function GET(request: NextRequest) {
   });
 
   // Send welcome email only for truly new Splitwise connections (never connected before)
-  if (!existingAccount && !existingSettings && userData.user.email) {
-    await sendWelcomeEmail({
-      to: userData.user.email,
-      userName: userData.user.first_name,
-    });
-  }
+  // if (!existingAccount && !existingSettings && userData.user.email) {
+  //   await sendWelcomeEmail({
+  //     to: userData.user.email,
+  //     userName: userData.user.first_name,
+  //   });
+  // }
 
   // Determine redirect path
   // Priority: invite_token cookie > oauth_return_url cookie > default

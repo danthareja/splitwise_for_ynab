@@ -31,7 +31,7 @@ export function YNABFlag({
   };
 
   return (
-    <div
+    <span
       className={`inline-block relative ${sizeClasses[size]} ${className}`}
       style={{
         backgroundColor: flagColor,

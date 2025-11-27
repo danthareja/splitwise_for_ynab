@@ -25,8 +25,6 @@ import {
   getPartnerEmoji,
   detectPotentialPrimary,
   joinHousehold,
-  createPartnerInvite,
-  getExistingInvite,
 } from "@/app/actions/splitwise";
 import { getYNABBudgetsForUser } from "@/app/actions/ynab";
 import { completeOnboarding } from "@/app/actions/user";
@@ -40,10 +38,8 @@ import {
   Info,
   Users,
   Check,
-  Link2,
-  Copy,
-  Mail,
 } from "lucide-react";
+import { PartnerInviteCard } from "@/components/partner-invite-card";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -66,176 +62,6 @@ const SPLIT_RATIO_PRESETS = [
   { value: "1:2", label: "Partner Pays More (1:2)" },
   { value: "custom", label: "Custom Split..." },
 ];
-
-// Partner invite section for dual primaries
-function PartnerInviteSection({
-  selectedGroupId,
-  selectedGroupName,
-  selectedCurrency,
-  selectedEmoji,
-  defaultSplitRatio,
-}: {
-  selectedGroupId: string;
-  selectedGroupName: string;
-  selectedCurrency: string;
-  selectedEmoji: string;
-  defaultSplitRatio: string;
-}) {
-  const [inviteToken, setInviteToken] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const inviteUrl = inviteToken
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/invite/${inviteToken}`
-    : null;
-
-  // Check for existing invite on mount
-  useEffect(() => {
-    async function checkExistingInvite() {
-      const existing = await getExistingInvite();
-      if (existing?.token) {
-        setInviteToken(existing.token);
-      }
-      setIsLoading(false);
-    }
-    checkExistingInvite();
-  }, []);
-
-  async function handleGenerateInvite() {
-    setIsGenerating(true);
-    setError(null);
-    try {
-      // Pass settings directly since they may not be saved to DB yet
-      const result = await createPartnerInvite({
-        groupId: selectedGroupId,
-        groupName: selectedGroupName,
-        currencyCode: selectedCurrency,
-        emoji: selectedEmoji,
-        defaultSplitRatio: defaultSplitRatio,
-      });
-      if (result.success && result.token) {
-        setInviteToken(result.token);
-      } else {
-        setError(result.error || "Failed to generate invite");
-      }
-    } catch (error) {
-      console.error("Failed to generate invite:", error);
-      setError("An unexpected error occurred");
-    } finally {
-      setIsGenerating(false);
-    }
-  }
-
-  async function handleCopyLink() {
-    if (inviteUrl) {
-      await navigator.clipboard.writeText(inviteUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  }
-
-  if (isLoading) {
-    return null;
-  }
-
-  return (
-    <div className="mt-6 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-      <div className="flex items-start gap-3">
-        <Users className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-        <div className="flex-1">
-          <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">
-            Invite your partner
-          </p>
-
-          {!inviteToken ? (
-            <>
-              <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                Generate a special invite link for your partner. They&apos;ll
-                skip the configuration steps and just need to connect their
-                accounts.
-              </p>
-              {error && (
-                <p className="text-sm text-red-600 dark:text-red-400 mb-3">
-                  {error}
-                </p>
-              )}
-              <Button
-                onClick={handleGenerateInvite}
-                disabled={isGenerating}
-                variant="outline"
-                size="sm"
-                className="rounded-full bg-white dark:bg-gray-900"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Link2 className="mr-2 h-4 w-4" />
-                    Generate invite link
-                  </>
-                )}
-              </Button>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                Share this link with your partner. They&apos;ll connect their
-                YNAB and Splitwise accounts, pick a sync marker, and be set up
-                instantly.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <div className="flex-1 bg-white dark:bg-gray-900 rounded-lg border border-blue-200 dark:border-blue-700 px-3 py-2 text-sm font-mono break-all">
-                  {inviteUrl}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleCopyLink}
-                    variant="outline"
-                    size="sm"
-                    className="rounded-full bg-white dark:bg-gray-900 flex-shrink-0"
-                  >
-                    {copied ? (
-                      <>
-                        <Check className="mr-2 h-4 w-4 text-green-600" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="mr-2 h-4 w-4" />
-                        Copy
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="sm"
-                    className="rounded-full bg-white dark:bg-gray-900 flex-shrink-0"
-                  >
-                    <a
-                      href={`mailto:?subject=Join me on Splitwise for YNAB&body=Hey! I've set up Splitwise for YNAB to sync our shared expenses. Click this link to get set up: ${inviteUrl}`}
-                    >
-                      <Mail className="mr-2 h-4 w-4" />
-                      Email
-                    </a>
-                  </Button>
-                </div>
-              </div>
-              <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                Link expires in 7 days. You can regenerate it anytime.
-              </p>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 interface StepSplitwiseConfigProps {
   initialSettings?: {
@@ -365,7 +191,7 @@ export function StepSplitwiseConfig({
         setError(groupsResult.error || "Failed to load groups");
       }
 
-      // Auto-default currency from YNAB budget
+      // Auto-default currency from YNAB plan
       if (budgetsResult.success && budgetId) {
         const budget = budgetsResult.budgets.find((b) => b.id === budgetId);
         if (budget?.currency_format?.iso_code) {
@@ -931,7 +757,7 @@ export function StepSplitwiseConfig({
               </Select>
               {budgetCurrency && selectedCurrency === budgetCurrency && (
                 <p className="text-sm text-gray-500">
-                  ✓ Matches your YNAB budget currency
+                  ✓ Matches your YNAB plan currency
                 </p>
               )}
               {partnerInfo?.currencyCode && (
@@ -1090,7 +916,7 @@ export function StepSplitwiseConfig({
                       <Input
                         value={customPayeeName}
                         onChange={(e) => setCustomPayeeName(e.target.value)}
-                        placeholder="e.g., Splitwise Settlement"
+                        placeholder={`Splitwise: ${selectedGroupName}`}
                         className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
                       />
                       <p className="text-sm text-muted-foreground">
@@ -1150,16 +976,19 @@ export function StepSplitwiseConfig({
         persona === "dual" &&
         selectedGroupId &&
         selectedEmoji && (
-          <PartnerInviteSection
-            selectedGroupId={selectedGroupId}
-            selectedGroupName={selectedGroupName}
-            selectedCurrency={selectedCurrency}
-            selectedEmoji={selectedEmoji}
-            defaultSplitRatio={
-              selectedSplitRatio === "custom"
-                ? customSplitRatio
-                : selectedSplitRatio
-            }
+          <PartnerInviteCard
+            variant="inline"
+            className="mt-6"
+            pendingSettings={{
+              groupId: selectedGroupId,
+              groupName: selectedGroupName,
+              currencyCode: selectedCurrency,
+              emoji: selectedEmoji,
+              defaultSplitRatio:
+                selectedSplitRatio === "custom"
+                  ? customSplitRatio
+                  : selectedSplitRatio,
+            }}
           />
         )}
 
