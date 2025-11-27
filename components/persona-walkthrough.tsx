@@ -4,19 +4,19 @@ import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChevronRight } from "lucide-react";
+import { YNABFlag } from "@/components/ynab-flag";
 
-// Flag colors matching YNAB
-const FLAG_COLORS = {
-  red: "#ef4444",
-  orange: "#f97316",
-  yellow: "#eab308",
-  green: "#22c55e",
-  blue: "#3b82f6",
-  purple: "#a855f7",
-  none: "transparent",
-};
+// Flag color types for the dropdown
+type FlagColor =
+  | "red"
+  | "orange"
+  | "yellow"
+  | "green"
+  | "blue"
+  | "purple"
+  | "none";
 
-const FLAG_NAMES: Record<keyof typeof FLAG_COLORS, string> = {
+const FLAG_NAMES: Record<FlagColor, string> = {
   red: "Red",
   orange: "Orange",
   yellow: "Yellow",
@@ -26,43 +26,53 @@ const FLAG_NAMES: Record<keyof typeof FLAG_COLORS, string> = {
   none: "None",
 };
 
-// YNAB-style Flag Icon (compact pill with notch)
+// Wrapper for YNABFlag that handles empty state and highlight
 function YNABFlagIcon({
   color,
   highlight,
   size = "sm",
 }: {
-  color?: keyof typeof FLAG_COLORS;
+  color?: FlagColor;
   highlight?: boolean;
   size?: "sm" | "md";
 }) {
-  const fillColor =
-    color && color !== "none" ? FLAG_COLORS[color] : "transparent";
   const isEmpty = !color || color === "none";
   const dimensions =
     size === "sm" ? { width: 16, height: 12 } : { width: 20, height: 14 };
 
+  // For empty state, show dashed outline
+  if (isEmpty) {
+    return (
+      <div className={`relative ${highlight ? "animate-pulse" : ""}`}>
+        {highlight && (
+          <div className="absolute -inset-1.5 bg-amber-400/30 rounded-sm" />
+        )}
+        <svg
+          width={dimensions.width}
+          height={dimensions.height}
+          viewBox="0 0 20 14"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="relative"
+        >
+          <path
+            d="M2 0 H16 L13 7 L16 14 H2 Q0 14 0 12 V2 Q0 0 2 0 Z"
+            fill="transparent"
+            stroke="rgba(255,255,255,0.5)"
+            strokeWidth="1.5"
+          />
+        </svg>
+      </div>
+    );
+  }
+
+  // For filled state, use the shared YNABFlag component
   return (
     <div className={`relative ${highlight ? "animate-pulse" : ""}`}>
       {highlight && (
         <div className="absolute -inset-1.5 bg-amber-400/30 rounded-sm" />
       )}
-      <svg
-        width={dimensions.width}
-        height={dimensions.height}
-        viewBox="0 0 20 14"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="relative"
-      >
-        {/* Flag shape: rounded rectangle with triangular notch on right */}
-        <path
-          d="M2 0 H16 L13 7 L16 14 H2 Q0 14 0 12 V2 Q0 0 2 0 Z"
-          fill={fillColor}
-          stroke={isEmpty ? "rgba(255,255,255,0.5)" : "none"}
-          strokeWidth={isEmpty ? "1.5" : "0"}
-        />
-      </svg>
+      <YNABFlag colorId={color} size={size} className="relative" />
     </div>
   );
 }
@@ -73,8 +83,8 @@ function YNABFlagDropdown({
   onSelect,
   highlight,
 }: {
-  selectedFlag?: keyof typeof FLAG_COLORS;
-  onSelect?: (flag: keyof typeof FLAG_COLORS) => void;
+  selectedFlag?: FlagColor;
+  onSelect?: (flag: FlagColor) => void;
   highlight?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -110,7 +120,7 @@ function YNABFlagDropdown({
     setIsOpen(!isOpen);
   };
 
-  const flagOptions: (keyof typeof FLAG_COLORS)[] = [
+  const flagOptions: FlagColor[] = [
     "red",
     "orange",
     "yellow",
@@ -185,7 +195,7 @@ export function YNABTransaction({
   highlightFlag,
   interactive = true,
 }: {
-  flag?: keyof typeof FLAG_COLORS;
+  flag?: FlagColor;
   account: string;
   date: Date | string;
   payee: string;
@@ -195,9 +205,7 @@ export function YNABTransaction({
   highlightFlag?: boolean;
   interactive?: boolean;
 }) {
-  const [flag, setFlag] = useState<keyof typeof FLAG_COLORS | undefined>(
-    initialFlag,
-  );
+  const [flag, setFlag] = useState<FlagColor | undefined>(initialFlag);
 
   return (
     <div className="overflow-x-auto max-w-full">

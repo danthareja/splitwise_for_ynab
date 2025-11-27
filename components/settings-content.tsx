@@ -183,7 +183,7 @@ export function SettingsContent({
             <div>
               <CardTitle>YNAB Configuration</CardTitle>
               <CardDescription>
-                Your YNAB budget and account settings
+                Your YNAB plan and account settings
               </CardDescription>
             </div>
             <Badge variant="success" className="flex items-center gap-1">
@@ -209,7 +209,7 @@ export function SettingsContent({
                 <div className="space-y-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4">
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-500 dark:text-gray-400">
-                      Budget
+                      Plan
                     </span>
                     <span className="text-sm font-medium text-gray-900 dark:text-white">
                       {ynabSettings.budgetName}

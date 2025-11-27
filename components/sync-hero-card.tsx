@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { syncUserDataAction, getSyncRateLimitStatus } from "@/app/actions/sync";
 import { reenableAccount } from "@/app/actions/user";
 import { YNABFlag } from "@/components/ynab-flag";
+import { YNABTransaction } from "@/components/persona-walkthrough";
 import {
   RefreshCw,
   AlertCircle,
@@ -39,6 +40,7 @@ interface SyncHeroCardProps {
   initialState: SyncHeroState;
   lastSyncTime?: Date | null;
   manualFlagColor?: string;
+  budgetName?: string;
   // Disabled state props
   disabledReason?: string | null;
   suggestedFix?: string | null;
@@ -53,6 +55,7 @@ export function SyncHeroCard({
   initialState,
   lastSyncTime,
   manualFlagColor = "blue",
+  budgetName,
   disabledReason,
   suggestedFix,
   initialRateLimitRemaining = 2,
@@ -89,9 +92,6 @@ export function SyncHeroCard({
     const timer = setInterval(() => {
       setRateLimitResetSeconds((prev) => {
         if (prev <= 1) {
-          // Reset to ready state and refresh rate limit status
-          setState("ready");
-          refreshRateLimitStatus();
           return 0;
         }
         return prev - 1;
@@ -99,6 +99,14 @@ export function SyncHeroCard({
     }, 1000);
 
     return () => clearInterval(timer);
+  }, [state, rateLimitResetSeconds]);
+
+  // Handle rate limit expiry - separate effect to avoid setState during render
+  useEffect(() => {
+    if (state === "rate_limited" && rateLimitResetSeconds === 0) {
+      setState("ready");
+      refreshRateLimitStatus();
+    }
   }, [state, rateLimitResetSeconds, refreshRateLimitStatus]);
 
   async function handleSync() {
@@ -145,10 +153,29 @@ export function SyncHeroCard({
     try {
       const result = await reenableAccount();
       if (result.success) {
-        setState("ready");
-        toast.success("Account re-enabled", {
-          description: "You can now sync your expenses again.",
-        });
+        // Check rate limit status before setting state
+        const status = await getSyncRateLimitStatus();
+        if (status) {
+          setRateLimitRemaining(status.remaining);
+          setRateLimitResetSeconds(status.resetInSeconds);
+          if (status.remaining === 0) {
+            setState("rate_limited");
+            toast.success("Account re-enabled", {
+              description:
+                "You're currently rate limited. Try syncing again soon.",
+            });
+          } else {
+            setState("ready");
+            toast.success("Account re-enabled", {
+              description: "You can now sync your expenses again.",
+            });
+          }
+        } else {
+          setState("ready");
+          toast.success("Account re-enabled", {
+            description: "You can now sync your expenses again.",
+          });
+        }
         router.refresh();
       }
     } catch (error) {
@@ -168,235 +195,233 @@ export function SyncHeroCard({
     return `${secs}s`;
   }
 
+  function formatWindowTime(minutes: number): string {
+    if (minutes === 60) return "hour";
+    if (minutes === 30) return "half hour";
+    return `${minutes} minutes`;
+  }
+
   // DISABLED STATE
   if (state === "disabled") {
     return (
-      <Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-4">
-            <div className="h-12 w-12 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
-              <AlertCircle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-lg font-semibold text-amber-900 dark:text-amber-100 mb-2">
-                Sync Disabled - Action Required
-              </h2>
-
-              <div className="space-y-3 text-sm">
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white mb-1">
-                    What happened:
-                  </p>
-                  <p className="text-gray-700 dark:text-gray-300">
-                    {disabledReason || "An error occurred during sync."}
-                  </p>
-                </div>
-
-                {suggestedFix && (
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white mb-1">
-                      Required action:
-                    </p>
-                    <p className="text-gray-700 dark:text-gray-300">
-                      {suggestedFix}
-                    </p>
-                  </div>
-                )}
-
-                <div className="pt-2">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        disabled={isReenabling}
-                        className="bg-gray-900 hover:bg-gray-800 text-white rounded-full"
-                      >
-                        {isReenabling ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Re-enabling...
-                          </>
-                        ) : (
-                          "Re-enable Sync"
-                        )}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="max-w-md bg-white dark:bg-[#141414]">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="font-serif">
-                          Ready to re-enable sync?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription className="space-y-4">
-                          <p>
-                            Before proceeding, make sure you&apos;ve completed
-                            the required action:
-                          </p>
-                          {suggestedFix && (
-                            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
-                              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                                {suggestedFix}
-                              </p>
-                            </div>
-                          )}
-                          <p>
-                            <strong className="text-gray-900 dark:text-white">
-                              Warning:
-                            </strong>{" "}
-                            If the underlying issue isn&apos;t resolved, your
-                            account will be disabled again the next time a sync
-                            is attempted.
-                          </p>
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel className="rounded-full">
-                          Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleReenableAccount}
-                          className="rounded-full bg-gray-900 hover:bg-gray-800 text-white"
-                        >
-                          Yes, I&apos;ve Fixed It
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
+      <Card className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30">
+        <CardContent className="py-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold text-amber-900 dark:text-amber-100 mb-1">
+                  Sync Paused
+                </h2>
+                <p className="text-sm text-amber-800 dark:text-amber-200">
+                  {disabledReason || "An error occurred during sync."}
+                  {suggestedFix && (
+                    <>
+                      {" "}
+                      <span className="font-medium">{suggestedFix}</span>
+                    </>
+                  )}
+                </p>
               </div>
             </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  disabled={isReenabling}
+                  variant="outline"
+                  className="rounded-full border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex-shrink-0"
+                >
+                  {isReenabling ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Re-enabling...
+                    </>
+                  ) : (
+                    "Re-enable Sync"
+                  )}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="max-w-md bg-white dark:bg-[#141414]">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="font-serif">
+                    Ready to re-enable sync?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription asChild>
+                    <div className="space-y-3">
+                      <p>
+                        Make sure you&apos;ve resolved the issue before
+                        re-enabling:
+                      </p>
+                      {suggestedFix && (
+                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                          <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                            {suggestedFix}
+                          </p>
+                        </div>
+                      )}
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        If the issue isn&apos;t fixed, sync will be paused again
+                        on the next attempt.
+                      </p>
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="rounded-full">
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleReenableAccount}
+                    className="rounded-full bg-gray-900 hover:bg-gray-800 text-white"
+                  >
+                    Re-enable Sync
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  // EMPTY STATE
-  if (state === "empty") {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center py-8">
-            <RefreshCw className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Ready to Sync
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-4 max-w-md mx-auto">
-              Flag a transaction in YNAB with{" "}
-              <YNABFlag
-                colorId={manualFlagColor}
-                size="sm"
-                className="inline mx-1"
-              />
-              and press <span className="font-semibold">Sync Now</span> to send
-              it to Splitwise.
-            </p>
-            <Button
-              onClick={handleSync}
-              disabled={isSyncing}
-              className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-8 h-12 text-base"
-            >
-              <RefreshCw
-                className={`mr-2 h-5 w-5 ${isSyncing ? "animate-spin" : ""}`}
-              />
-              {isSyncing ? "Syncing..." : "Sync Now"}
-            </Button>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
-              {rateLimitRemaining} of {maxRequests} syncs remaining this hour
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Shared layout for empty, ready, syncing, and rate_limited states
+  // This prevents layout shifts when state changes
+  const isRateLimited = state === "rate_limited";
+  const isSyncingState = state === "syncing" || isSyncing;
 
-  // RATE LIMITED STATE
-  if (state === "rate_limited") {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center py-8">
-            <div className="h-16 w-16 rounded-full bg-gray-100 dark:bg-gray-800 mx-auto mb-4 flex items-center justify-center">
-              <Clock className="h-8 w-8 text-gray-400" />
-            </div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Rate Limit Reached
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              You&apos;ve used all {maxRequests} syncs for this hour.
-            </p>
-            <div className="inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-full px-4 py-2 mb-4">
-              <Clock className="h-4 w-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Next sync available in {formatCountdown(rateLimitResetSeconds)}
-              </span>
-            </div>
-            <div>
-              <Button
-                disabled
-                className="rounded-full px-8 h-12 text-base opacity-50"
-              >
-                <RefreshCw className="mr-2 h-5 w-5" />
-                Sync Now
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // SYNCING STATE
-  if (state === "syncing" || isSyncing) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center py-8">
-            <div className="h-16 w-16 rounded-full bg-amber-100 dark:bg-amber-900/30 mx-auto mb-4 flex items-center justify-center">
-              <Loader2 className="h-8 w-8 text-amber-600 dark:text-amber-500 animate-spin" />
-            </div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Syncing...
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Transferring your expenses between YNAB and Splitwise
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // READY STATE (default)
   return (
     <Card>
-      <CardContent className="pt-6">
-        <div className="flex flex-col sm:flex-row items-center gap-6">
-          <div className="flex-1 text-center sm:text-left">
-            <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Manual Sync
+      <CardContent className="py-6">
+        <div className="space-y-5">
+          {/* Header section */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="text-center sm:text-left">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                Sync Shared Expenses
               </h2>
-              {lastSyncTime && (
-                <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+              {lastSyncTime && !isRateLimited && (
+                <div className="flex items-center justify-center sm:justify-start gap-1 text-xs text-gray-500 dark:text-gray-400 mb-2">
                   <CheckCircle className="h-3 w-3 text-green-500" />
                   Last sync {formatTimeAgo(lastSyncTime)}
                 </div>
               )}
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {isRateLimited ? (
+                  <>
+                    You&apos;ve used all {maxRequests} syncs in the last{" "}
+                    {formatWindowTime(windowMinutes)}. Try again soon.
+                  </>
+                ) : isSyncingState ? (
+                  <>Syncing your expenses between YNAB and Splitwise...</>
+                ) : (
+                  <>
+                    In YNAB, flag a shared expense with{" "}
+                    <YNABFlag
+                      colorId={manualFlagColor}
+                      size="sm"
+                      className="inline mx-0.5"
+                    />{" "}
+                    in{" "}
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {budgetName || "YNAB"}
+                    </span>{" "}
+                    and press &quot;Sync Now&quot; here.
+                  </>
+                )}
+              </p>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {rateLimitRemaining} of {maxRequests} syncs remaining • Resets
-              every {windowMinutes} minutes
-            </p>
+
+            {/* Sync button - hidden on mobile, shown on desktop */}
+            <div className="hidden sm:block flex-shrink-0">
+              {isRateLimited ? (
+                <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-full px-4 py-2.5 h-11">
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Available in {formatCountdown(rateLimitResetSeconds)}
+                  </span>
+                </div>
+              ) : (
+                <Button
+                  onClick={handleSync}
+                  disabled={isSyncingState || rateLimitRemaining === 0}
+                  className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-6 h-11 text-base"
+                >
+                  {isSyncingState ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Syncing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Sync Now
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
-          <Button
-            onClick={handleSync}
-            disabled={isSyncing || rateLimitRemaining === 0}
-            className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-8 h-12 text-base"
-          >
-            <RefreshCw
-              className={`mr-2 h-5 w-5 ${isSyncing ? "animate-spin" : ""}`}
-            />
-            {isSyncing ? "Syncing..." : "Sync Now"}
-          </Button>
+
+          {/* YNAB-style transaction example - always visible */}
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="px-4 sm:px-0">
+              <YNABTransaction
+                flag={
+                  manualFlagColor as
+                    | "red"
+                    | "orange"
+                    | "yellow"
+                    | "green"
+                    | "blue"
+                    | "purple"
+                }
+                account="💳 Credit Card"
+                date={new Date()}
+                payee="Whole Foods"
+                category="🛒 Groceries"
+                outflow="$150.00"
+                highlightFlag={!isRateLimited && !isSyncingState}
+                interactive={false}
+              />
+            </div>
+          </div>
+
+          {/* Sync button - mobile only, centered */}
+          <div className="sm:hidden">
+            {isRateLimited ? (
+              <div className="flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-full px-4 py-2.5 h-11">
+                <Clock className="h-4 w-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Available in {formatCountdown(rateLimitResetSeconds)}
+                </span>
+              </div>
+            ) : (
+              <Button
+                onClick={handleSync}
+                disabled={isSyncingState || rateLimitRemaining === 0}
+                className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-6 h-11 text-base w-full"
+              >
+                {isSyncingState ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Syncing...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Sync Now
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+
+          {/* Rate limit info */}
+          <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+            {rateLimitRemaining} of {maxRequests} syncs remaining • Resets every{" "}
+            {formatWindowTime(windowMinutes)}
+          </p>
         </div>
       </CardContent>
     </Card>

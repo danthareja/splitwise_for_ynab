@@ -129,7 +129,7 @@ export function YNABConnectionCard({
                     <div className="space-y-3">
                       <p className="font-medium">Configuration Required</p>
                       <p className="text-sm">
-                        Please configure your YNAB budget and account to start
+                        Please configure your YNAB plan and account to start
                         syncing expenses.
                       </p>
                     </div>
@@ -172,7 +172,7 @@ export function YNABConnectionCard({
                   <div className="space-y-2 border border-gray-200 dark:border-gray-700 rounded-xl p-3 bg-gray-50 dark:bg-gray-900/50">
                     <div>
                       <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        Budget:{" "}
+                        Plan:{" "}
                       </span>
                       <span className="text-sm text-gray-600 dark:text-gray-400">
                         {settings.budgetName}

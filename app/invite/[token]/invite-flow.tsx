@@ -93,7 +93,7 @@ export function InviteFlow({
                   <span className="flex-shrink-0 h-6 w-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium">
                     2
                   </span>
-                  <span>Choose your YNAB budget and account</span>
+                  <span>Choose your YNAB plan and account</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="flex-shrink-0 h-6 w-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-medium">

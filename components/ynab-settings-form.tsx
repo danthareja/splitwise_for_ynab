@@ -267,7 +267,7 @@ export function YNABSettingsForm({
         <CardHeader>
           <CardTitle>YNAB Settings</CardTitle>
           <CardDescription>
-            Configure your YNAB budget and account preferences
+            Configure your YNAB plan and account preferences
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -285,13 +285,13 @@ export function YNABSettingsForm({
       <CardHeader>
         <CardTitle>YNAB Settings</CardTitle>
         <CardDescription>
-          Configure your YNAB budget and account preferences
+          Configure your YNAB plan and account preferences
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="budgetId">YNAB Budget</Label>
+            <Label htmlFor="budgetId">YNAB Plan</Label>
             <Select
               name="budgetId"
               value={selectedBudgetId}
@@ -311,7 +311,7 @@ export function YNABSettingsForm({
             </Select>
             {budgets.length === 0 && (
               <p className="text-sm text-gray-500">
-                No budgets found. Please create a budget in YNAB first.
+                No plans found. Please create a plan in YNAB first.
               </p>
             )}
           </div>
@@ -495,7 +495,7 @@ export function YNABSettingsForm({
                 Create Splitwise Account
               </DialogTitle>
               <DialogDescription className="text-gray-600 dark:text-gray-400">
-                Create a new account in your YNAB budget to track your Splitwise
+                Create a new account in your YNAB plan to track your Splitwise
                 balance.
               </DialogDescription>
             </DialogHeader>

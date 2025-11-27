@@ -47,7 +47,7 @@ export function StepPersona() {
       emoji: "👥",
       title: "We both use YNAB",
       details:
-        "My partner and I each have our own YNAB budget and want two-way sync",
+        "My partner and I each have our own YNAB plan and want two-way sync",
     },
   ];
 

@@ -134,7 +134,7 @@ export default function TermsOfServicePage() {
                 <p>
                   Splitwise for YNAB is a third-party integration service that
                   automatically synchronizes flagged transactions between your
-                  YNAB budget and Splitwise expense sharing groups.
+                  YNAB plan and Splitwise expense sharing groups.
                 </p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>

@@ -210,7 +210,7 @@ export function StepYnab({ initialSettings }: StepYnabProps) {
     return (
       <StepContainer
         title="Configure YNAB"
-        description="Select your budget and phantom Splitwise account"
+        description='Select your plan and "phantom" account'
       >
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
@@ -225,13 +225,13 @@ export function StepYnab({ initialSettings }: StepYnabProps) {
   return (
     <StepContainer
       title="Configure YNAB"
-      description="Select your budget and phantom Splitwise account"
+      description='Select your plan and "phantom" account'
     >
       {/* Form card */}
       <div className="bg-white dark:bg-[#141414] border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-6">
         {/* Budget selector */}
         <div className="space-y-2">
-          <Label htmlFor="budgetId">YNAB Budget</Label>
+          <Label htmlFor="budgetId">YNAB Plan</Label>
           <Select value={selectedBudgetId} onValueChange={handleBudgetChange}>
             <SelectTrigger className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700">
               <SelectValue placeholder="Select a budget" />
@@ -246,13 +246,14 @@ export function StepYnab({ initialSettings }: StepYnabProps) {
           </Select>
           {budgets.length === 0 && !isLoading && (
             <p className="text-sm text-gray-500">
-              No budgets found. Please create a budget in YNAB first.
+              No plans found. Please create a plan in YNAB first.
             </p>
           )}
-          {budgets.length > 1 && (
+          {!isLoading && (
             <p className="text-sm text-gray-500">
-              Using YNAB Together? Select <strong>your</strong> personal budget,
-              not a shared one.
+              In this plan, flag a transaction with{" "}
+              <YNABFlag colorId={manualFlagColor} size="sm" /> to sync it to
+              Splitwise
             </p>
           )}
         </div>
@@ -261,7 +262,7 @@ export function StepYnab({ initialSettings }: StepYnabProps) {
         {selectedBudgetId && (
           <div className="space-y-2">
             <Label htmlFor="splitwiseAccountId">
-              Your &ldquo;Phantom&rdquo; Account
+              Your &quot;phantom&quot; account
             </Label>
             <Select
               value={selectedAccountId}
@@ -444,7 +445,7 @@ export function StepYnab({ initialSettings }: StepYnabProps) {
               Create Splitwise Account
             </DialogTitle>
             <DialogDescription>
-              Create a new account in your YNAB budget to track your Splitwise
+              Create a new account in your YNAB plan to track your Splitwise
               balance.
             </DialogDescription>
           </DialogHeader>
