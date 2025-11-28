@@ -11,15 +11,8 @@ import { getYNABSettings } from "@/app/actions/ynab";
 import { getSyncHistory, getSyncRateLimitStatus } from "@/app/actions/sync";
 import { SyncHistory } from "@/components/sync-history";
 import { SyncHeroCard, type SyncHeroState } from "@/components/sync-hero-card";
-import { ScheduledSyncInfo } from "@/components/scheduled-sync-info";
 import { PartnerInviteCard } from "@/components/partner-invite-card";
-import {
-  HelpCircle,
-  Settings,
-  RefreshCw,
-  Users,
-  AlertTriangle,
-} from "lucide-react";
+import { HelpCircle, Settings, RefreshCw, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Metadata } from "next";
 import { MAX_REQUESTS, WINDOW_SECONDS } from "@/lib/rate-limit";
@@ -27,7 +20,6 @@ import { redirect } from "next/navigation";
 import { getUserFirstName } from "@/lib/utils";
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { YNABFlag } from "@/components/ynab-flag";
 
 export const metadata: Metadata = {
   title: "Dashboard - Manage Your YNAB & Splitwise Integration",
@@ -98,12 +90,6 @@ export default async function DashboardPage() {
     syncHeroState = "rate_limited";
   }
 
-  // Get last sync time
-  const firstSync = syncHistory[0];
-  const lastSyncTime = firstSync
-    ? new Date(firstSync.completedAt || firstSync.startedAt)
-    : null;
-
   return (
     <div className="flex min-h-screen flex-col bg-[#FDFBF7] dark:bg-[#0f0f0f]">
       <AppHeader />
@@ -152,7 +138,6 @@ export default async function DashboardPage() {
           <div className="mt-6">
             <SyncHeroCard
               initialState={syncHeroState}
-              lastSyncTime={lastSyncTime}
               manualFlagColor={ynabSettings?.manualFlagColor || "blue"}
               budgetName={ynabSettings?.budgetName || undefined}
               disabledReason={disabledReason}
@@ -165,12 +150,14 @@ export default async function DashboardPage() {
               }
               maxRequests={MAX_REQUESTS}
               windowMinutes={WINDOW_SECONDS / 60}
+              partnerName={
+                partnershipStatus?.type === "primary"
+                  ? partnershipStatus.secondaryName
+                  : partnershipStatus?.type === "secondary"
+                    ? partnershipStatus.primaryName
+                    : null
+              }
             />
-          </div>
-
-          {/* Scheduled sync info */}
-          <div className="mt-6">
-            <ScheduledSyncInfo />
           </div>
 
           {/* Orphaned state alert - Secondary with missing primary */}
@@ -205,31 +192,6 @@ export default async function DashboardPage() {
               </CardContent>
             </Card>
           )}
-
-          {/* Partnership status - only show for connected primary/secondary users */}
-          {partnershipStatus &&
-            (partnershipStatus.type === "primary" ||
-              partnershipStatus.type === "secondary") && (
-              <Card className="mt-6">
-                <CardContent>
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center flex-shrink-0">
-                      <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-900 dark:text-white">
-                        Household sync active
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {partnershipStatus.type === "primary"
-                          ? `Syncing with ${partnershipStatus.secondaryName || "your partner"}`
-                          : `Syncing with ${partnershipStatus.primaryName || "your partner"}`}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
           {/* Sync History */}
           <Card className="mt-6">

@@ -82,8 +82,8 @@ export function StepSplitwise({ authError, userProfile }: StepSplitwiseProps) {
           <Alert className="mb-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
             <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             <AlertDescription className="text-blue-800 dark:text-blue-200">
-              Make sure this Splitwise account has access to your
-              household&apos;s shared group.
+              Make sure this Splitwise account has access to your duo
+              account&apos;s shared group.
             </AlertDescription>
           </Alert>
         )}

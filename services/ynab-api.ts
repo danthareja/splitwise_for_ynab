@@ -9,6 +9,10 @@ export type YNABBudgetsResult =
   | { success: true; budgets: YNABBudget[] }
   | { success: false; error: string };
 
+export type YNABBudgetResult =
+  | { success: true; budget: YNABBudget }
+  | { success: false; error: string };
+
 export type YNABAccountsResult =
   | { success: true; accounts: YNABAccount[] }
   | { success: false; error: string };
@@ -45,6 +49,30 @@ export async function getYNABBudgets(): Promise<YNABBudgetsResult> {
       success: false,
       error:
         error instanceof Error ? error.message : "Failed to fetch YNAB budgets",
+    };
+  }
+}
+
+export async function getYNABBudget(
+  budgetId: string,
+): Promise<YNABBudgetResult> {
+  try {
+    const axiosInstance = await getYNABAxiosInstance();
+
+    const response = await axiosInstance.get(`/budgets/${budgetId}`, {
+      _operation: "get budget",
+    });
+    return {
+      success: true,
+      budget: response.data.data.budget as YNABBudget,
+    };
+  } catch (error) {
+    console.error("Error fetching YNAB budget:", error);
+    Sentry.captureException(error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to fetch YNAB budget",
     };
   }
 }

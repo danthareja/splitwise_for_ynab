@@ -2,7 +2,6 @@ import type React from "react";
 import { SessionProvider } from "next-auth/react";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { ToasterProvider } from "@/components/ui/toaster-provider";
 import type { Metadata } from "next";
 import { Instrument_Serif, DM_Sans } from "next/font/google";
 
@@ -128,10 +127,7 @@ export default function RootLayout({
       <body
         className={`${instrumentSerif.variable} ${dmSans.variable} font-sans antialiased`}
       >
-        <SessionProvider>
-          {children}
-          <ToasterProvider />
-        </SessionProvider>
+        <SessionProvider>{children}</SessionProvider>
         <Analytics />
         <SpeedInsights />
       </body>

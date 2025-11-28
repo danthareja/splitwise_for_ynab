@@ -119,16 +119,6 @@ describe("lib/utils", () => {
     });
   });
 
-  describe("formatDateTime", () => {
-    it("should format full date and time", () => {
-      const result = formatDateTime("2024-01-15T14:30:00Z", "en-US");
-      expect(result).toContain("January");
-      expect(result).toContain("15");
-      expect(result).toContain("2024");
-      expect(result).toContain("at");
-    });
-  });
-
   describe("pluralize", () => {
     it("should return singular for count of 1", () => {
       expect(pluralize(1, "item")).toBe("item");

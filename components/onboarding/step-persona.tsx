@@ -54,7 +54,7 @@ export function StepPersona() {
   return (
     <StepContainer
       title="Who uses YNAB?"
-      description="This helps us set up the right sync for your situation."
+      description="This helps us set up the right sync for your situation. You can change this later in Settings."
     >
       <div className="grid gap-4">
         {personas.map((p) => {

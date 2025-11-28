@@ -2,36 +2,17 @@
 
 import type React from "react";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { saveSplitwiseSettings } from "@/app/actions/splitwise";
+import { useSplitwiseForm } from "@/hooks/use-splitwise-form";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  getSplitwiseGroupsForUser,
-  saveSplitwiseSettings,
-  getPartnerEmoji,
-  checkPartnerSyncStatus,
-} from "@/app/actions/splitwise";
-import type { SplitwiseGroup } from "@/types/splitwise";
-import { AlertCircle, Loader2, AlertTriangle, Info, Check } from "lucide-react";
-import { EmojiPicker } from "@/components/emoji-picker";
-import Image from "next/image";
+  SplitwiseFormFields,
+  SplitwiseSecondaryFormFields,
+  SplitwisePrimaryRoleCard,
+} from "@/components/splitwise-form-fields";
+import { AlertCircle, Loader2, Check } from "lucide-react";
 
 interface SplitwiseSettingsFormProps {
   initialGroupId?: string | null;
@@ -42,244 +23,90 @@ interface SplitwiseSettingsFormProps {
   initialUseDescriptionAsPayee?: boolean | null;
   initialCustomPayeeName?: string | null;
   onSaveSuccess?: () => void;
+  onCancel?: () => void;
+  /** If true, user is secondary and can only edit their own settings (emoji, payee) */
+  isSecondary?: boolean;
+  /** If true, user is primary (has a partner) */
+  isPrimary?: boolean;
+  /** Name of partner (for display) */
+  partnerName?: string | null;
+  /** Partner's emoji (for conflict detection in secondary mode) */
+  partnerEmoji?: string | null;
+  /** YNAB budget currency for display/comparison */
+  budgetCurrency?: string | null;
 }
-
-const CURRENCY_OPTIONS = [
-  { value: "USD", label: "USD - US Dollar" },
-  { value: "CAD", label: "CAD - Canadian Dollar" },
-  { value: "EUR", label: "EUR - Euro" },
-  { value: "GBP", label: "GBP - British Pound" },
-  { value: "AUD", label: "AUD - Australian Dollar" },
-  { value: "JPY", label: "JPY - Japanese Yen" },
-  { value: "CHF", label: "CHF - Swiss Franc" },
-];
-
-// Suggested emojis that are visually distinct
-const SUGGESTED_EMOJIS = ["🤴", "👸", "🤑", "😸", "💰", "💸", "🌚", "🌞"];
-
-// Common split ratios for easy selection
-const SPLIT_RATIO_PRESETS = [
-  { value: "1:1", label: "Equal Split (1:1)" },
-  { value: "2:1", label: "You Pay More (2:1)" },
-  { value: "1:2", label: "Partner Pays More (1:2)" },
-  { value: "custom", label: "Custom Split..." },
-];
 
 export function SplitwiseSettingsForm({
   initialGroupId,
+  initialGroupName,
   initialCurrencyCode,
   initialEmoji = "✅",
   initialSplitRatio = "1:1",
   initialUseDescriptionAsPayee = true,
   initialCustomPayeeName,
   onSaveSuccess,
+  onCancel,
+  isSecondary = false,
+  isPrimary = false,
+  partnerName,
+  partnerEmoji,
+  budgetCurrency,
 }: SplitwiseSettingsFormProps) {
-  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [validGroups, setValidGroups] = useState<SplitwiseGroup[]>([]);
-  const [invalidGroups, setInvalidGroups] = useState<SplitwiseGroup[]>([]);
-  const [selectedGroupId, setSelectedGroupId] = useState(initialGroupId || "");
-  const [selectedCurrency, setSelectedCurrency] = useState(
-    initialCurrencyCode || "",
-  );
-  const [selectedEmoji, setSelectedEmoji] = useState(initialEmoji || "✅");
-  const [selectedSplitRatio, setSelectedSplitRatio] = useState(
-    initialSplitRatio || "1:1",
-  );
-  const [customSplitRatio, setCustomSplitRatio] = useState("");
-  const [showCustomSplit, setShowCustomSplit] = useState(false);
-  const [useDescriptionAsPayee, setUseDescriptionAsPayee] = useState(
-    initialUseDescriptionAsPayee ?? true,
-  );
-  const [customPayeeName, setCustomPayeeName] = useState(
-    initialCustomPayeeName || "Splitwise for YNAB",
-  );
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const [partnerInfo, setPartnerInfo] = useState<{
-    emoji: string | null;
-    currencyCode: string | null;
-    partnerName: string;
-  } | null>(null);
-  const [isEmojiConflict, setIsEmojiConflict] = useState(false);
-  const [partnerSynced, setPartnerSynced] = useState(false);
+  const form = useSplitwiseForm({
+    initialGroupId,
+    initialGroupName,
+    initialCurrencyCode,
+    initialEmoji,
+    initialSplitRatio,
+    initialUseDescriptionAsPayee,
+    initialCustomPayeeName,
+    isSecondary,
+    skipGroupLoad: isSecondary,
+  });
 
-  // Track if groups have been loaded to avoid unnecessary reloading
-  const groupsLoadedRef = useRef(false);
-
-  useEffect(() => {
-    // Only load groups once when component first mounts
-    if (!groupsLoadedRef.current) {
-      loadGroups();
-      groupsLoadedRef.current = true;
-    }
-
-    checkPartnerSync();
-    // Check if current split ratio is custom
-    if (
-      initialSplitRatio &&
-      !SPLIT_RATIO_PRESETS.find((p) => p.value === initialSplitRatio)
-    ) {
-      setShowCustomSplit(true);
-      setCustomSplitRatio(initialSplitRatio);
-      setSelectedSplitRatio("custom");
-    }
-  }, [initialSplitRatio]);
-
-  useEffect(() => {
-    async function checkPartnerEmoji(groupId: string) {
-      try {
-        const partnerData = await getPartnerEmoji(groupId);
-        if (partnerData) {
-          setPartnerInfo(partnerData);
-
-          // Check if current emoji conflicts with partner's
-          if (selectedEmoji === partnerData.emoji) {
-            setIsEmojiConflict(true);
-            // Suggest a different emoji
-            suggestDifferentEmoji(partnerData.emoji);
-          } else {
-            setIsEmojiConflict(false);
-          }
-
-          // If partner has a currency set and we don't, adopt their currency
-          if (partnerData.currencyCode && !selectedCurrency) {
-            setSelectedCurrency(partnerData.currencyCode);
-          }
-        } else {
-          setPartnerInfo(null);
-          setIsEmojiConflict(false);
-        }
-      } catch (error) {
-        console.error("Error checking partner emoji:", error);
-      }
-    }
-
-    if (selectedGroupId) {
-      checkPartnerEmoji(selectedGroupId);
-    }
-  }, [selectedGroupId, selectedEmoji, selectedCurrency]);
-
-  // Update custom payee name when group selection changes (if still using default)
-  useEffect(() => {
-    const selectedGroup = validGroups.find(
-      (group) => group.id.toString() === selectedGroupId,
-    );
-
-    if (selectedGroup && !initialCustomPayeeName) {
-      setCustomPayeeName(`Splitwise: ${selectedGroup.name}`);
-    }
-  }, [selectedGroupId, validGroups, initialCustomPayeeName]);
-
-  // Check if settings were recently synced by partner
-  async function checkPartnerSync() {
-    try {
-      const syncStatus = await checkPartnerSyncStatus();
-      if (syncStatus?.recentlyUpdated) {
-        setPartnerSynced(true);
-      }
-    } catch (error) {
-      console.error("Error checking partner sync:", error);
-    }
-  }
-
-  async function loadGroups() {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const result = await getSplitwiseGroupsForUser();
-
-      if (result.success) {
-        setValidGroups(result.validGroups || []);
-        setInvalidGroups(result.invalidGroups || []);
-      } else {
-        setError(result.error || "Failed to load groups");
-      }
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "An unexpected error occurred",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  function suggestDifferentEmoji(partnerEmoji: string) {
-    // Find an emoji that's not the same as the partner's
-    const availableEmojis = SUGGESTED_EMOJIS.filter(
-      (emoji) => emoji !== partnerEmoji,
-    );
-    if (availableEmojis.length > 0) {
-      // Pick a random emoji from the available ones
-      const randomEmoji =
-        availableEmojis[Math.floor(Math.random() * availableEmojis.length)];
-      if (randomEmoji) {
-        setSelectedEmoji(randomEmoji);
-      }
-    }
-  }
-
-  function handleEmojiChange(emoji: string) {
-    setSelectedEmoji(emoji);
-    // Check if this new emoji conflicts with partner's
-    if (partnerInfo && emoji === partnerInfo.emoji) {
-      setIsEmojiConflict(true);
-    } else {
-      setIsEmojiConflict(false);
-    }
-  }
-
-  // Handle clicking on a suggested emoji
-  function handleSuggestedEmojiClick(emoji: string) {
-    setSelectedEmoji(emoji);
-    setIsEmojiConflict(false);
-  }
-
-  // Handle split ratio changes
-  function handleSplitRatioChange(value: string) {
-    setSelectedSplitRatio(value);
-    if (value === "custom") {
-      setShowCustomSplit(true);
-    } else {
-      setShowCustomSplit(false);
-      setCustomSplitRatio("");
-    }
-  }
+  // Check emoji conflict with partner for secondary users
+  const isEmojiConflictWithPartner =
+    isSecondary && partnerEmoji === form.selectedEmoji;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSaving(true);
-    setError(null);
+    form.setError(null);
     setSuccessMessage(null);
 
     try {
-      const formData = new FormData(event.currentTarget);
-      const selectedGroup = validGroups.find(
-        (group) => group.id.toString() === selectedGroupId,
-      );
+      const formData = new FormData();
 
-      // Ensure the form data has the current emoji and split ratio values
-      formData.set("emoji", selectedEmoji);
-
-      // Set the split ratio - use custom value if "custom" is selected
-      const finalSplitRatio =
-        selectedSplitRatio === "custom" ? customSplitRatio : selectedSplitRatio;
-      formData.set("splitRatio", finalSplitRatio);
-
-      // Set the payee field options
-      formData.set("useDescriptionAsPayee", useDescriptionAsPayee.toString());
-      formData.set("customPayeeName", customPayeeName);
-
-      if (selectedGroup) {
-        formData.set("groupName", selectedGroup.name);
+      if (isSecondary) {
+        // Secondary users only submit their own settings
+        formData.set("groupId", initialGroupId || "");
+        formData.set("groupName", initialGroupName || "");
+        formData.set("currencyCode", initialCurrencyCode || "USD");
+        formData.set("splitRatio", initialSplitRatio || "1:1");
+      } else {
+        // Primary/solo users submit all settings
+        formData.set("groupId", form.selectedGroupId);
+        formData.set("groupName", form.selectedGroupName);
+        formData.set("currencyCode", form.selectedCurrency);
+        formData.set("splitRatio", form.finalSplitRatio || "1:1");
       }
+
+      // Both submit emoji and payee settings
+      formData.set("emoji", form.selectedEmoji);
+      formData.set(
+        "useDescriptionAsPayee",
+        form.useDescriptionAsPayee.toString(),
+      );
+      formData.set("customPayeeName", form.customPayeeName);
 
       const result = await saveSplitwiseSettings(formData);
 
       if (result.success) {
-        // Check if we need to show sync notifications
+        // Build success message
         const syncMessages = [];
         if (result.currencySynced && result.updatedPartners?.length > 0) {
           syncMessages.push("Currency synchronized");
@@ -288,7 +115,6 @@ export function SplitwiseSettingsForm({
           syncMessages.push("Split ratio synchronized");
         }
 
-        // Check for partner sync message (when connecting to existing group)
         let displayMessage = "Settings saved!";
         const hasPartnerSync = !!result.partnerSyncMessage;
         const hasRegularSync =
@@ -303,34 +129,27 @@ export function SplitwiseSettingsForm({
         }
 
         if (hasPartnerSync || hasRegularSync) {
-          // Show success message for sync events
           setSuccessMessage(displayMessage);
-          // Clear the message and close form after showing it briefly
           setTimeout(() => {
             setSuccessMessage(null);
-            setError(null);
+            form.setError(null);
             onSaveSuccess?.();
           }, 2000);
         } else {
-          // No sync occurred, close immediately
-          setSuccessMessage(null);
-          setError(null);
-          onSaveSuccess?.();
+          setSuccessMessage("Settings saved!");
+          setTimeout(() => {
+            onSaveSuccess?.();
+          }, 1000);
         }
       } else {
-        setError(result.error || "Failed to save settings");
+        form.setError(result.error || "Failed to save settings");
 
-        // If there's an emoji conflict, highlight it
-        if (result.isEmojiConflict) {
-          setIsEmojiConflict(true);
-          // Try to suggest a different emoji
-          if (partnerInfo && partnerInfo.emoji) {
-            suggestDifferentEmoji(partnerInfo.emoji);
-          }
+        if (result.isEmojiConflict && form.partnerInfo?.emoji) {
+          form.suggestDifferentEmoji(form.partnerInfo.emoji);
         }
       }
     } catch (err) {
-      setError(
+      form.setError(
         err instanceof Error ? err.message : "An unexpected error occurred",
       );
     } finally {
@@ -338,368 +157,167 @@ export function SplitwiseSettingsForm({
     }
   }
 
-  if (isLoading) {
+  // Loading state for non-secondary users
+  if (form.isLoading && !isSecondary) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Splitwise Settings</CardTitle>
-          <CardDescription>
-            Configure your Splitwise group and currency preferences
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin mr-2" />
-            Loading groups...
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+        <span className="ml-3 text-gray-600 dark:text-gray-400">
+          Loading groups...
+        </span>
+      </div>
     );
   }
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Splitwise Settings</CardTitle>
-        <CardDescription>
-          Configure your Splitwise group and currency preferences
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {partnerSynced && (
-          <Alert className="mb-4" variant="success">
-            <Check className="h-4 w-4" />
-            <AlertDescription>
-              Your settings were recently synchronized with your partner.
-            </AlertDescription>
+  // Secondary user form
+  if (isSecondary) {
+    return (
+      <form onSubmit={handleSubmit}>
+        <SplitwiseSecondaryFormFields
+          groupName={initialGroupName || ""}
+          currencyCode={initialCurrencyCode || "USD"}
+          splitRatio={initialSplitRatio || "1:1"}
+          partnerName={partnerName || "your partner"}
+          selectedEmoji={form.selectedEmoji}
+          useDescriptionAsPayee={form.useDescriptionAsPayee}
+          customPayeeName={form.customPayeeName}
+          partnerEmoji={partnerEmoji}
+          isEmojiConflict={isEmojiConflictWithPartner}
+          onEmojiChange={form.handleEmojiChange}
+          onPayeeModeChange={form.handlePayeeModeChange}
+          onCustomPayeeNameChange={(name) => form.setCustomPayeeName(name)}
+        />
+
+        {form.error && (
+          <Alert variant="destructive" className="mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{form.error}</AlertDescription>
           </Alert>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="groupId">Splitwise Group</Label>
-            <Select
-              name="groupId"
-              value={selectedGroupId}
-              onValueChange={setSelectedGroupId}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a group" />
-              </SelectTrigger>
-              <SelectContent>
-                {validGroups.map((group) => (
-                  <SelectItem key={group.id} value={group.id.toString()}>
-                    <div className="flex items-center gap-3">
-                      <div className="flex -space-x-2">
-                        {group.members.slice(0, 2).map((member) => (
-                          <div
-                            key={member.id}
-                            className="relative h-6 w-6 overflow-hidden rounded-full border-1 border-muted-foreground"
-                          >
-                            <Image
-                              src={
-                                member.picture?.medium ||
-                                "https://placecats.com/50/50"
-                              }
-                              alt={`${member.first_name} ${member.last_name}`}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{group.name}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {group.members.map((m) => m.first_name).join(" & ")}
-                        </span>
-                      </div>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {validGroups.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                No valid groups found. You need a group with exactly 2 members.
-              </p>
+        {successMessage && (
+          <Alert variant="success" className="mt-4">
+            <Check className="h-4 w-4" />
+            <AlertDescription>{successMessage}</AlertDescription>
+          </Alert>
+        )}
+
+        <div className="mt-6 flex gap-3 justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onCancel?.() || onSaveSuccess?.()}
+            disabled={isSaving}
+            className="rounded-full"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={
+              isSaving || isEmojiConflictWithPartner || !form.selectedEmoji
+            }
+            className="rounded-full bg-gray-900 hover:bg-gray-800 text-white"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Settings"
             )}
-          </div>
+          </Button>
+        </div>
+      </form>
+    );
+  }
 
-          {invalidGroups.length > 0 && (
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                <div className="space-y-1">
-                  <p className="font-medium">
-                    Groups with more than 2 members cannot be used:
-                  </p>
-                  <ul className="list-disc list-inside text-sm">
-                    {invalidGroups.map((group) => (
-                      <li key={group.id}>
-                        {group.name} ({group.members.length} members)
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="text-sm">
-                    This app only supports groups with exactly 2 members for
-                    shared expenses between partners.
-                  </p>
-                </div>
-              </AlertDescription>
-            </Alert>
+  // Primary/Solo user form
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* Role explanation for primary users */}
+      {isPrimary && (
+        <SplitwisePrimaryRoleCard partnerName={partnerName ?? null} />
+      )}
+
+      {/* Duo account sync notification */}
+      {form.partnerSynced && (
+        <Alert className="mb-4" variant="success">
+          <Check className="h-4 w-4" />
+          <AlertDescription>
+            Settings were recently updated by your partner.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <SplitwiseFormFields
+        validGroups={form.validGroups}
+        invalidGroups={form.invalidGroups}
+        isLoading={form.isLoading}
+        selectedGroupId={form.selectedGroupId}
+        selectedGroupName={form.selectedGroupName}
+        selectedCurrency={form.selectedCurrency}
+        selectedEmoji={form.selectedEmoji}
+        selectedSplitRatio={form.selectedSplitRatio}
+        customSplitRatio={form.customSplitRatio}
+        useDescriptionAsPayee={form.useDescriptionAsPayee}
+        customPayeeName={form.customPayeeName}
+        partnerInfo={form.partnerInfo}
+        isEmojiConflict={form.isEmojiConflict}
+        showAdvanced={showAdvanced}
+        onShowAdvancedChange={setShowAdvanced}
+        onGroupChange={form.handleGroupChange}
+        onCurrencyChange={form.setSelectedCurrency}
+        onEmojiChange={form.handleEmojiChange}
+        onSplitRatioChange={form.handleSplitRatioChange}
+        onCustomSplitRatioChange={(ratio) => form.setCustomSplitRatio(ratio)}
+        onPayeeModeChange={form.handlePayeeModeChange}
+        onCustomPayeeNameChange={(name) => form.setCustomPayeeName(name)}
+        isSolo={!isPrimary}
+        isDual={isPrimary}
+        budgetCurrency={budgetCurrency}
+      />
+
+      {form.error && (
+        <Alert variant="destructive" className="mt-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{form.error}</AlertDescription>
+        </Alert>
+      )}
+
+      {successMessage && (
+        <Alert variant="success" className="mt-4">
+          <Check className="h-4 w-4" />
+          <AlertDescription>{successMessage}</AlertDescription>
+        </Alert>
+      )}
+
+      <div className="mt-6 flex gap-3 justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onCancel?.() || onSaveSuccess?.()}
+          disabled={isSaving}
+          className="rounded-full"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={isSaving || !form.isValid || form.validGroups.length === 0}
+          className="rounded-full bg-gray-900 hover:bg-gray-800 text-white"
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Save Settings"
           )}
-
-          <div className="space-y-2">
-            <Label htmlFor="currencyCode">Currency</Label>
-            <Select
-              name="currencyCode"
-              value={selectedCurrency}
-              onValueChange={setSelectedCurrency}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select currency" />
-              </SelectTrigger>
-              <SelectContent>
-                {CURRENCY_OPTIONS.map((currency) => (
-                  <SelectItem key={currency.value} value={currency.value}>
-                    {currency.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {partnerInfo?.currencyCode && (
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertDescription>
-                  Your currency will sync with {partnerInfo.partnerName}.
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <EmojiPicker
-              label="Sync Marker Emoji"
-              value={selectedEmoji}
-              onChange={handleEmojiChange}
-              description="We use an emoji to mark synced expenses in Splitwise."
-            />
-
-            {partnerInfo && (
-              <Alert variant={isEmojiConflict ? "destructive" : "default"}>
-                {isEmojiConflict ? (
-                  <AlertCircle className="h-4 w-4" />
-                ) : (
-                  <Info className="h-4 w-4" />
-                )}
-                <AlertDescription>
-                  {isEmojiConflict ? (
-                    <>
-                      Emoji conflict! {partnerInfo.partnerName} is already using
-                      &quot;{partnerInfo.emoji}&quot;. Please choose a different
-                      emoji.
-                    </>
-                  ) : (
-                    <>
-                      {partnerInfo.partnerName} is using &quot;
-                      {partnerInfo.emoji}&quot; as their sync marker.
-                    </>
-                  )}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <div className="flex flex-wrap gap-2 mt-2">
-              <p className="text-sm w-full">Suggested alternatives:</p>
-              {SUGGESTED_EMOJIS.filter((emoji) => emoji !== partnerInfo?.emoji)
-                .slice(0, 8)
-                .map((emoji) => (
-                  <Button
-                    key={emoji}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-8 w-8 p-0 text-lg"
-                    onClick={() => handleSuggestedEmojiClick(emoji)}
-                  >
-                    {emoji}
-                  </Button>
-                ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="splitRatio">Split Ratio</Label>
-            <Select
-              name="splitRatio"
-              value={selectedSplitRatio}
-              onValueChange={handleSplitRatioChange}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select split ratio" />
-              </SelectTrigger>
-              <SelectContent>
-                {SPLIT_RATIO_PRESETS.map((ratio) => (
-                  <SelectItem key={ratio.value} value={ratio.value}>
-                    {ratio.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {showCustomSplit && (
-            <div className="space-y-2">
-              <Label htmlFor="customSplitRatio">Custom Split Ratio</Label>
-              <input
-                type="text"
-                name="customSplitRatio"
-                value={customSplitRatio}
-                onChange={(e) => setCustomSplitRatio(e.target.value)}
-                placeholder="Enter ratio like 2:3 or 5:2"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#141414] text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                pattern="^\d+:\d+$"
-                title="Please enter a ratio in the format X:Y (e.g., 2:1)"
-                required
-              />
-            </div>
-          )}
-
-          {partnerInfo && (
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                Your split ratio will sync with {partnerInfo.partnerName}. If
-                you set a{" "}
-                {selectedSplitRatio !== "custom"
-                  ? selectedSplitRatio
-                  : customSplitRatio}{" "}
-                ratio, {partnerInfo.partnerName}&apos;s ratio will automatically
-                get a{" "}
-                {(() => {
-                  const ratio =
-                    selectedSplitRatio !== "custom"
-                      ? selectedSplitRatio
-                      : customSplitRatio;
-                  const [a, b] = ratio.split(":").map(Number) ?? [];
-                  if (a && b) {
-                    return `${b}:${a}`;
-                  }
-                  return "X:Y";
-                })()}{" "}
-                ratio.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="space-y-2">
-            <Label>YNAB Transaction Mapping</Label>
-            <RadioGroup
-              value={useDescriptionAsPayee ? "description" : "custom"}
-              onValueChange={(value) =>
-                setUseDescriptionAsPayee(value === "description")
-              }
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="description" id="description" />
-                <Label htmlFor="description" className="text-sm font-normal">
-                  Use Splitwise description as YNAB payee name (recommended)
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="custom" id="custom" />
-                <Label htmlFor="custom" className="text-sm font-normal">
-                  Use custom YNAB payee name, put Splitwise description in memo
-                </Label>
-              </div>
-            </RadioGroup>
-
-            {!useDescriptionAsPayee && (
-              <div className="mt-3 space-y-2">
-                <Label htmlFor="customPayeeName">Custom Payee Name</Label>
-                <Input
-                  id="customPayeeName"
-                  type="text"
-                  value={customPayeeName}
-                  onChange={(e) => setCustomPayeeName(e.target.value)}
-                  placeholder={
-                    validGroups.find((g) => g.id.toString() === selectedGroupId)
-                      ?.name
-                      ? `Splitwise: ${validGroups.find((g) => g.id.toString() === selectedGroupId)?.name}`
-                      : "e.g., Splitwise Expenses"
-                  }
-                  className="w-full"
-                  required={!useDescriptionAsPayee}
-                />
-                <p className="text-sm text-muted-foreground">
-                  This will be{" "}
-                  <strong>
-                    the payee name for every Splitwise transaction
-                  </strong>{" "}
-                  we send to YNAB. The original Splitwise description will be
-                  added to the memo field.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {successMessage && (
-            <Alert variant="success">
-              <Check className="h-4 w-4" />
-              <AlertDescription>{successMessage}</AlertDescription>
-            </Alert>
-          )}
-
-          <div className="flex gap-3 justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onSaveSuccess?.()}
-              disabled={isSaving}
-              className="rounded-full"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={
-                isSaving ||
-                validGroups.length === 0 ||
-                isEmojiConflict ||
-                !selectedGroupId ||
-                !selectedCurrency
-              }
-              className="rounded-full bg-gray-900 hover:bg-gray-800 text-white"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Save Settings"
-              )}
-            </Button>
-          </div>
-
-          {isEmojiConflict && (
-            <p className="text-sm text-red-500">
-              Please choose a different emoji before saving.
-            </p>
-          )}
-        </form>
-      </CardContent>
-    </Card>
+        </Button>
+      </div>
+    </form>
   );
 }
