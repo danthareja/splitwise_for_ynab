@@ -286,114 +286,140 @@ async function checkEmojiConflict(
   return { hasConflict: false };
 }
 
-// Synchronize split ratio with all partners in the same group
-async function syncSplitRatioWithPartners(
+// Synchronize split ratio with household partner (only primary ↔ secondary)
+async function syncSplitRatioWithPartner(
   userId: string,
   groupId: string,
   splitRatio: string,
 ) {
   try {
-    // Find all other users with the same group
-    const partnersWithSameGroup = await prisma.splitwiseSettings.findMany({
-      where: {
-        groupId: groupId,
-        userId: {
-          not: userId, // Exclude the current user
+    // Get the current user to check their partnership status
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        primaryUserId: true,
+        secondaryUser: {
+          select: { id: true },
         },
+      },
+    });
+
+    if (!currentUser) {
+      return { success: true, updatedPartners: [] };
+    }
+
+    // Find the partner - either current user's primary or secondary
+    const partnerId =
+      currentUser.primaryUserId || currentUser.secondaryUser?.id;
+    if (!partnerId) {
+      // No explicit partnership, no sync needed
+      return { success: true, updatedPartners: [] };
+    }
+
+    // Verify partner has the same group
+    const partnerSettings = await prisma.splitwiseSettings.findFirst({
+      where: {
+        userId: partnerId,
+        groupId: groupId,
       },
       include: {
         user: true,
       },
     });
 
-    // Update split ratio for all partners
-    if (partnersWithSameGroup.length > 0) {
-      const updatePromises = partnersWithSameGroup.map(
-        (partnerSettings: (typeof partnersWithSameGroup)[0]) => {
-          // Reverse the split ratio for partners (if user has 2:1, partner gets 1:2)
-          const [userShares, partnerShares] = splitRatio.split(":");
-          const partnerSplitRatio = `${partnerShares}:${userShares}`;
-
-          return prisma.splitwiseSettings.update({
-            where: { userId: partnerSettings.userId },
-            data: {
-              defaultSplitRatio: partnerSplitRatio,
-              // Add a flag to indicate the split ratio was synchronized
-              lastPartnerSyncAt: new Date(),
-            },
-          });
-        },
-      );
-
-      await Promise.all(updatePromises);
-      return {
-        success: true,
-        updatedPartners: partnersWithSameGroup.map(
-          (p: (typeof partnersWithSameGroup)[0]) =>
-            getUserFirstName(p.user) || "Your partner",
-        ),
-      };
+    if (!partnerSettings) {
+      return { success: true, updatedPartners: [] };
     }
 
-    return { success: true, updatedPartners: [] };
+    // Reverse the split ratio for partner (if user has 2:1, partner gets 1:2)
+    const [userShares, partnerShares] = splitRatio.split(":");
+    const partnerSplitRatio = `${partnerShares}:${userShares}`;
+
+    await prisma.splitwiseSettings.update({
+      where: { userId: partnerId },
+      data: {
+        defaultSplitRatio: partnerSplitRatio,
+        lastPartnerSyncAt: new Date(),
+      },
+    });
+
+    return {
+      success: true,
+      updatedPartners: [
+        getUserFirstName(partnerSettings.user) || "Your partner",
+      ],
+    };
   } catch (error) {
-    console.error("Error syncing split ratio with partners:", error);
+    console.error("Error syncing split ratio with partner:", error);
     return {
       success: false,
-      error: "Failed to sync split ratio with partners",
+      error: "Failed to sync split ratio with partner",
     };
   }
 }
 
-// Synchronize currency code with all partners in the same group
-async function syncCurrencyWithPartners(
+// Synchronize currency code with household partner (only primary ↔ secondary)
+async function syncCurrencyWithPartner(
   userId: string,
   groupId: string,
   currencyCode: string,
 ) {
   try {
-    // Find all other users with the same group
-    const partnersWithSameGroup = await prisma.splitwiseSettings.findMany({
-      where: {
-        groupId: groupId,
-        userId: {
-          not: userId, // Exclude the current user
+    // Get the current user to check their partnership status
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        primaryUserId: true,
+        secondaryUser: {
+          select: { id: true },
         },
+      },
+    });
+
+    if (!currentUser) {
+      return { success: true, updatedPartners: [] };
+    }
+
+    // Find the partner - either current user's primary or secondary
+    const partnerId =
+      currentUser.primaryUserId || currentUser.secondaryUser?.id;
+    if (!partnerId) {
+      // No explicit partnership, no sync needed
+      return { success: true, updatedPartners: [] };
+    }
+
+    // Verify partner has the same group
+    const partnerSettings = await prisma.splitwiseSettings.findFirst({
+      where: {
+        userId: partnerId,
+        groupId: groupId,
       },
       include: {
         user: true,
       },
     });
 
-    // Update currency code for all partners
-    if (partnersWithSameGroup.length > 0) {
-      const updatePromises = partnersWithSameGroup.map(
-        (partnerSettings: (typeof partnersWithSameGroup)[0]) => {
-          return prisma.splitwiseSettings.update({
-            where: { userId: partnerSettings.userId },
-            data: {
-              currencyCode: currencyCode,
-              // Add a flag to indicate the currency was synchronized
-              lastPartnerSyncAt: new Date(),
-            },
-          });
-        },
-      );
-
-      await Promise.all(updatePromises);
-      return {
-        success: true,
-        updatedPartners: partnersWithSameGroup.map(
-          (p: (typeof partnersWithSameGroup)[0]) =>
-            getUserFirstName(p.user) || "Your partner",
-        ),
-      };
+    if (!partnerSettings) {
+      return { success: true, updatedPartners: [] };
     }
 
-    return { success: true, updatedPartners: [] };
+    await prisma.splitwiseSettings.update({
+      where: { userId: partnerId },
+      data: {
+        currencyCode: currencyCode,
+        lastPartnerSyncAt: new Date(),
+      },
+    });
+
+    return {
+      success: true,
+      updatedPartners: [
+        getUserFirstName(partnerSettings.user) || "Your partner",
+      ],
+    };
   } catch (error) {
-    console.error("Error syncing currency with partners:", error);
-    return { success: false, error: "Failed to sync currency with partners" };
+    console.error("Error syncing currency with partner:", error);
+    return { success: false, error: "Failed to sync currency with partner" };
   }
 }
 
@@ -438,6 +464,65 @@ export async function saveSplitwiseSettings(formData: FormData) {
     };
   }
 
+  // Check if this group is already in use by another user without explicit partnership
+  const currentUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      persona: true,
+      primaryUserId: true,
+      secondaryUser: { select: { id: true } },
+    },
+  });
+
+  if (currentUser) {
+    // Find any other user using this group
+    const existingGroupUser = await prisma.splitwiseSettings.findFirst({
+      where: {
+        groupId: groupId,
+        userId: { not: session.user.id },
+      },
+      select: {
+        userId: true,
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            name: true,
+            persona: true,
+          },
+        },
+      },
+    });
+
+    if (existingGroupUser) {
+      // Check if we have an explicit partnership with this user
+      const isPartner =
+        currentUser.primaryUserId === existingGroupUser.userId ||
+        currentUser.secondaryUser?.id === existingGroupUser.userId;
+
+      if (!isPartner) {
+        // Block: group is in use by someone we're not partnered with
+        const existingUserName =
+          getUserFirstName(existingGroupUser.user) || "Another user";
+        const existingUserPersona = existingGroupUser.user.persona;
+
+        if (existingUserPersona === "dual") {
+          return {
+            success: false,
+            error: `This group is already used by ${existingUserName}. To share this group, ask them to invite you to their duo account.`,
+            isGroupConflict: true,
+          };
+        } else {
+          return {
+            success: false,
+            error: `This group is already used by ${existingUserName} (Solo mode). To share this group, ask them to switch to Duo mode and invite you.`,
+            isGroupConflict: true,
+          };
+        }
+      }
+    }
+  }
+
   try {
     // Get current settings to check if currency or split ratio has changed
     const currentSettings = await prisma.splitwiseSettings.findUnique({
@@ -445,28 +530,28 @@ export async function saveSplitwiseSettings(formData: FormData) {
     });
 
     // If this is a new group connection and user hasn't provided currency/split ratio,
-    // try to sync from partner's existing settings
+    // try to sync from primary's existing settings (only for secondary users)
     let finalCurrencyCode = currencyCode;
     let finalSplitRatio = splitRatio || "1:1";
     let partnerSyncMessage = "";
 
     const isNewGroupConnection = currentSettings?.groupId !== groupId;
     if (isNewGroupConnection && (!currencyCode || !splitRatio)) {
-      const partnerSettings = await syncFromPartnerIfAvailable(
+      const primarySettings = await syncFromPrimaryIfSecondary(
         session.user.id,
         groupId,
       );
-      if (partnerSettings) {
-        if (!currencyCode && partnerSettings.currencyCode) {
-          finalCurrencyCode = partnerSettings.currencyCode;
-          partnerSyncMessage += `Currency (${partnerSettings.currencyCode}) `;
+      if (primarySettings) {
+        if (!currencyCode && primarySettings.currencyCode) {
+          finalCurrencyCode = primarySettings.currencyCode;
+          partnerSyncMessage += `Currency (${primarySettings.currencyCode}) `;
         }
-        if (!splitRatio && partnerSettings.defaultSplitRatio) {
-          finalSplitRatio = partnerSettings.defaultSplitRatio;
-          partnerSyncMessage += `Split ratio (${partnerSettings.defaultSplitRatio}) `;
+        if (!splitRatio && primarySettings.defaultSplitRatio) {
+          finalSplitRatio = primarySettings.defaultSplitRatio;
+          partnerSyncMessage += `Split ratio (${primarySettings.defaultSplitRatio}) `;
         }
         if (partnerSyncMessage) {
-          partnerSyncMessage = `${partnerSyncMessage.trim()} synced from ${partnerSettings.partnerName}`;
+          partnerSyncMessage = `${partnerSyncMessage.trim()} synced from ${primarySettings.partnerName}`;
         }
       }
     }
@@ -501,28 +586,28 @@ export async function saveSplitwiseSettings(formData: FormData) {
       },
     });
 
-    // If currency code changed or group changed, sync with partners
+    // If currency code changed or group changed, sync with household partner
     let currencySyncResult: {
       success: boolean;
       updatedPartners?: string[];
       error?: string;
     } = { success: true, updatedPartners: [] };
     if ((isCurrencyChanged || isGroupChanged) && finalCurrencyCode) {
-      currencySyncResult = await syncCurrencyWithPartners(
+      currencySyncResult = await syncCurrencyWithPartner(
         session.user.id,
         groupId,
         finalCurrencyCode,
       );
     }
 
-    // If split ratio changed or group changed, sync with partners
+    // If split ratio changed or group changed, sync with household partner
     let splitRatioSyncResult: {
       success: boolean;
       updatedPartners?: string[];
       error?: string;
     } = { success: true, updatedPartners: [] };
     if ((isSplitRatioChanged || isGroupChanged) && finalSplitRatio) {
-      splitRatioSyncResult = await syncSplitRatioWithPartners(
+      splitRatioSyncResult = await syncSplitRatioWithPartner(
         session.user.id,
         groupId,
         finalSplitRatio,
@@ -551,7 +636,7 @@ export async function saveSplitwiseSettings(formData: FormData) {
   }
 }
 
-// Get partner's emoji and currency
+// Get household partner's emoji and currency (only for explicit primary/secondary relationship)
 export async function getPartnerEmoji(groupId: string) {
   const session = await auth();
 
@@ -560,13 +645,33 @@ export async function getPartnerEmoji(groupId: string) {
   }
 
   try {
-    // Find settings for other users with the same group
+    // First, check if user has an explicit partnership
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        primaryUserId: true,
+        secondaryUser: { select: { id: true } },
+      },
+    });
+
+    if (!currentUser) {
+      return null;
+    }
+
+    // Find the partner ID - either current user's primary or secondary
+    const partnerId =
+      currentUser.primaryUserId || currentUser.secondaryUser?.id;
+
+    if (!partnerId) {
+      // No explicit partnership, no partner info to return
+      return null;
+    }
+
+    // Get the partner's settings
     const partnerSettings = await prisma.splitwiseSettings.findFirst({
       where: {
+        userId: partnerId,
         groupId: groupId,
-        userId: {
-          not: session.user.id,
-        },
       },
       select: {
         emoji: true,
@@ -596,9 +701,11 @@ export async function getPartnerEmoji(groupId: string) {
   }
 }
 
-// Detect if there's an existing primary user for a given Splitwise group
-// Used during onboarding to show "Join [Partner]'s household?" prompt
-export async function detectPotentialPrimary(groupId: string) {
+// Detect if there's an existing user for a given Splitwise group
+// Returns user info and their persona so UI can show appropriate prompts:
+// - If existing user is dual primary: "Join [name]'s household?"
+// - If existing user is solo: "This group is used by [name]. Ask them to switch to Duo mode."
+export async function detectExistingGroupUser(groupId: string) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -606,8 +713,9 @@ export async function detectPotentialPrimary(groupId: string) {
   }
 
   try {
-    // Find another user with the same group who is a primary (not a secondary)
-    const potentialPrimary = await prisma.user.findFirst({
+    // Find another user with the same group who is not a secondary
+    // (either solo or dual primary)
+    const existingUser = await prisma.user.findFirst({
       where: {
         id: {
           not: session.user.id,
@@ -616,10 +724,8 @@ export async function detectPotentialPrimary(groupId: string) {
         splitwiseSettings: {
           groupId: groupId,
         },
-        // Must be a primary (no primaryUserId set)
+        // Must be a primary (no primaryUserId set) - not a secondary
         primaryUserId: null,
-        // Must be a dual user
-        persona: "dual",
         // Must have completed onboarding
         onboardingComplete: true,
       },
@@ -629,6 +735,11 @@ export async function detectPotentialPrimary(groupId: string) {
         name: true,
         email: true,
         image: true,
+        persona: true,
+        // Check if they already have a secondary (household is full)
+        secondaryUser: {
+          select: { id: true },
+        },
         splitwiseSettings: {
           select: {
             currencyCode: true,
@@ -641,30 +752,36 @@ export async function detectPotentialPrimary(groupId: string) {
       },
     });
 
-    if (potentialPrimary) {
+    if (existingUser) {
       return {
-        primaryId: potentialPrimary.id,
-        primaryName: getUserFirstName(potentialPrimary) || "Your partner",
-        primaryEmail: potentialPrimary.email,
-        primaryImage: potentialPrimary.image,
-        settings: potentialPrimary.splitwiseSettings,
+        id: existingUser.id,
+        name: getUserFirstName(existingUser) || "Another user",
+        email: existingUser.email,
+        image: existingUser.image,
+        persona: existingUser.persona as "solo" | "dual" | null,
+        hasPartner: !!existingUser.secondaryUser,
+        settings: existingUser.splitwiseSettings,
       };
     }
 
     return null;
   } catch (error) {
-    console.error("Error detecting potential primary:", error);
+    console.error("Error detecting existing group user:", error);
     Sentry.captureException(error);
     return null;
   }
 }
 
 // Join an existing household as a secondary user
-export async function joinHousehold(primaryUserId: string) {
+export async function joinHousehold(primaryUserId: string, emoji: string) {
   const session = await auth();
 
   if (!session?.user?.id) {
     return { success: false, error: "You must be logged in" };
+  }
+
+  if (!emoji) {
+    return { success: false, error: "Emoji is required" };
   }
 
   try {
@@ -690,7 +807,10 @@ export async function joinHousehold(primaryUserId: string) {
     }
 
     if (primaryUser.secondaryUser) {
-      return { success: false, error: "This household already has a partner" };
+      return {
+        success: false,
+        error: "This duo account already has a partner",
+      };
     }
 
     if (!primaryUser.splitwiseSettings) {
@@ -700,20 +820,54 @@ export async function joinHousehold(primaryUserId: string) {
       };
     }
 
-    // Link current user as secondary
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
-        primaryUserId: primaryUserId,
-        persona: "dual",
-      },
-    });
+    const primarySettings = primaryUser.splitwiseSettings;
+
+    // Check emoji conflict with primary
+    if (emoji === primarySettings.emoji) {
+      return {
+        success: false,
+        error: `Choose a different emoji—your partner is using "${primarySettings.emoji}"`,
+        isEmojiConflict: true,
+      };
+    }
+
+    // Link current user as secondary AND create their SplitwiseSettings
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: session.user.id },
+        data: {
+          primaryUserId: primaryUserId,
+          persona: "dual",
+        },
+      }),
+      // Create SplitwiseSettings for secondary with shared settings + their own emoji
+      prisma.splitwiseSettings.upsert({
+        where: { userId: session.user.id },
+        create: {
+          userId: session.user.id,
+          groupId: primarySettings.groupId,
+          groupName: primarySettings.groupName,
+          currencyCode: primarySettings.currencyCode,
+          defaultSplitRatio: primarySettings.defaultSplitRatio || "1:1",
+          emoji: emoji,
+          // useDescriptionAsPayee defaults to true
+          // customPayeeName stays null - user can configure their own
+        },
+        update: {
+          groupId: primarySettings.groupId,
+          groupName: primarySettings.groupName,
+          currencyCode: primarySettings.currencyCode,
+          defaultSplitRatio: primarySettings.defaultSplitRatio || "1:1",
+          emoji: emoji,
+        },
+      }),
+    ]);
 
     return { success: true };
   } catch (error) {
     console.error("Error joining household:", error);
     Sentry.captureException(error);
-    return { success: false, error: "Failed to join household" };
+    return { success: false, error: "Failed to join duo account" };
   }
 }
 
@@ -958,7 +1112,10 @@ export async function acceptInvite(token: string, emoji: string) {
     }
 
     if (primaryUser.secondaryUser) {
-      return { success: false, error: "This household already has a partner" };
+      return {
+        success: false,
+        error: "This duo account already has a partner",
+      };
     }
 
     // Get primary's CURRENT settings (not cached invite values)
@@ -1072,7 +1229,10 @@ export async function linkAsSecondary(token: string) {
     }
 
     if (primaryUser.secondaryUser) {
-      return { success: false, error: "This household already has a partner" };
+      return {
+        success: false,
+        error: "This duo account already has a partner",
+      };
     }
 
     // Verify primary has settings configured
@@ -1112,7 +1272,7 @@ export async function linkAsSecondary(token: string) {
   } catch (error) {
     console.error("Error linking as secondary:", error);
     Sentry.captureException(error);
-    return { success: false, error: "Failed to join household" };
+    return { success: false, error: "Failed to join duo account" };
   }
 }
 
@@ -1150,61 +1310,6 @@ export async function checkPartnerSyncStatus() {
     return { recentlyUpdated: false };
   } catch (error) {
     console.error("Error checking currency sync status:", error);
-    Sentry.captureException(error);
-    return null;
-  }
-}
-
-// Check if another user is connected to the same Splitwise group
-export async function checkPartnerConnection() {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return null;
-  }
-
-  try {
-    // Get current user's Splitwise settings
-    const mySettings = await prisma.splitwiseSettings.findUnique({
-      where: { userId: session.user.id },
-      select: { groupId: true },
-    });
-
-    if (!mySettings?.groupId) {
-      return { partnerConnected: false };
-    }
-
-    // Check if there's another user with the same group ID
-    const partnerSettings = await prisma.splitwiseSettings.findFirst({
-      where: {
-        groupId: mySettings.groupId,
-        userId: { not: session.user.id },
-      },
-      select: {
-        user: {
-          select: {
-            firstName: true,
-            name: true,
-          },
-        },
-      },
-    });
-
-    if (partnerSettings) {
-      const partnerName =
-        partnerSettings.user.firstName ||
-        partnerSettings.user.name?.split(" ")[0] ||
-        null;
-
-      return {
-        partnerConnected: true,
-        partnerName,
-      };
-    }
-
-    return { partnerConnected: false };
-  } catch (error) {
-    console.error("Error checking partner connection:", error);
     Sentry.captureException(error);
     return null;
   }
@@ -1276,20 +1381,27 @@ export async function testSplitwiseConnection() {
   }
 }
 
-// New function to sync settings from partner when connecting to existing group
-async function syncFromPartnerIfAvailable(userId: string, groupId: string) {
+// Sync settings from primary when secondary joins a group
+// Only works for users with explicit primary/secondary relationship
+async function syncFromPrimaryIfSecondary(userId: string, groupId: string) {
   try {
-    // Check if there's already a partner with this group configured
-    const partnerSettings = await prisma.splitwiseSettings.findFirst({
+    // Get the current user to check if they're a secondary
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { primaryUserId: true },
+    });
+
+    if (!currentUser?.primaryUserId) {
+      // Not a secondary user, no sync needed
+      return null;
+    }
+
+    // Get the primary's settings for this group
+    const primarySettings = await prisma.splitwiseSettings.findFirst({
       where: {
+        userId: currentUser.primaryUserId,
         groupId: groupId,
-        userId: {
-          not: userId,
-        },
-        // Only sync from partners who have complete settings
-        currencyCode: {
-          not: null,
-        },
+        currencyCode: { not: null },
       },
       select: {
         currencyCode: true,
@@ -1303,25 +1415,25 @@ async function syncFromPartnerIfAvailable(userId: string, groupId: string) {
       },
     });
 
-    if (partnerSettings) {
-      // Reverse the split ratio for the new partner
-      let newPartnerSplitRatio = "1:1";
-      if (partnerSettings.defaultSplitRatio) {
-        const [partnerShares, userShares] =
-          partnerSettings.defaultSplitRatio.split(":");
-        newPartnerSplitRatio = `${userShares}:${partnerShares}`;
+    if (primarySettings) {
+      // Reverse the split ratio for the secondary
+      let secondarySplitRatio = "1:1";
+      if (primarySettings.defaultSplitRatio) {
+        const [primaryShares, secondaryShares] =
+          primarySettings.defaultSplitRatio.split(":");
+        secondarySplitRatio = `${secondaryShares}:${primaryShares}`;
       }
 
       return {
-        currencyCode: partnerSettings.currencyCode,
-        defaultSplitRatio: newPartnerSplitRatio,
-        partnerName: getUserFirstName(partnerSettings.user) || "Your partner",
+        currencyCode: primarySettings.currencyCode,
+        defaultSplitRatio: secondarySplitRatio,
+        partnerName: getUserFirstName(primarySettings.user) || "Your partner",
       };
     }
 
     return null;
   } catch (error) {
-    console.error("Error syncing from partner:", error);
+    console.error("Error syncing from primary:", error);
     return null;
   }
 }

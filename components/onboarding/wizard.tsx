@@ -15,7 +15,7 @@ export const ONBOARDING_STEPS = [
     title: "Connect Splitwise",
     description: "Link your Splitwise account",
   },
-  { id: 1, title: "Choose Setup", description: "Solo or dual mode" },
+  { id: 1, title: "Choose Setup", description: "Solo or duo mode" },
   {
     id: 2,
     title: "Configure YNAB",

@@ -103,7 +103,7 @@ export function PartnerInviteCard({
         </p>
         <p className="text-sm text-violet-700 dark:text-violet-300 mb-3">
           Right now, you can sync your shared expenses to Splitwise, but they
-          won't make it into your partner's plan yet.
+          won&apos;t make it into your partner&apos;s plan yet.
         </p>
 
         {error && (

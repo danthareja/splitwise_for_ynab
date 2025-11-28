@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { getUserOnboardingData } from "@/app/actions/db";
+import { getUserOnboardingData, getPartnershipStatus } from "@/app/actions/db";
 import { getSplitwiseSettings } from "@/app/actions/splitwise";
 import { getYNABSettings } from "@/app/actions/ynab";
 import { AppHeader } from "@/components/header";
@@ -40,6 +40,7 @@ export default async function SettingsPage() {
 
   const ynabSettings = await getYNABSettings();
   const splitwiseSettings = await getSplitwiseSettings();
+  const partnershipStatus = await getPartnershipStatus();
 
   return (
     <div className="flex min-h-screen flex-col bg-[#FDFBF7] dark:bg-[#0f0f0f]">
@@ -70,6 +71,7 @@ export default async function SettingsPage() {
             persona={onboardingData.persona}
             ynabSettings={ynabSettings}
             splitwiseSettings={splitwiseSettings}
+            partnershipStatus={partnershipStatus}
           />
         </div>
       </main>

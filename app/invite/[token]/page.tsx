@@ -6,7 +6,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Join Household - Splitwise for YNAB",
+  title: "Join Duo Account - Splitwise for YNAB",
   description: "Accept your partner's invite to sync expenses together.",
   robots: {
     index: false,

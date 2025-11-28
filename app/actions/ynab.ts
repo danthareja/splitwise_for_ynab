@@ -6,9 +6,11 @@ import { auth } from "@/auth";
 import { prisma } from "@/db";
 import {
   getYNABBudgets,
+  getYNABBudget,
   getYNABAccounts,
   createYNABAccount,
   type YNABBudgetsResult,
+  type YNABBudgetResult,
   type YNABAccountsResult,
   type YNABAccountResult,
 } from "@/services/ynab-api";
@@ -24,6 +26,21 @@ export async function getYNABBudgetsForUser(): Promise<YNABBudgetsResult> {
   }
 
   return await getYNABBudgets();
+}
+
+export async function getYNABBudgetForUser(
+  budgetId: string,
+): Promise<YNABBudgetResult> {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return {
+      success: false,
+      error: "You must be logged in to fetch budget",
+    };
+  }
+
+  return await getYNABBudget(budgetId);
 }
 
 export async function getYNABAccountsForBudget(

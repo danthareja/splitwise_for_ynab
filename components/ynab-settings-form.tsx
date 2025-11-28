@@ -2,42 +2,14 @@
 
 import type React from "react";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  getYNABBudgetsForUser,
-  getYNABAccountsForBudget,
-  createYNABAccountForUser,
-  saveYNABSettings,
-} from "@/app/actions/ynab";
-import { YNABFlag, FLAG_COLORS } from "@/components/ynab-flag";
-import { type YNABBudget, type YNABAccount } from "@/types/ynab";
-import { AlertCircle, Loader2, Plus, Check } from "lucide-react";
+import { saveYNABSettings } from "@/app/actions/ynab";
+import { useYNABForm } from "@/hooks/use-ynab-form";
+import { YNABFormFields } from "@/components/ynab-form-fields";
+import { YNABCreateAccountDialog } from "@/components/ynab-create-account-dialog";
+import { AlertCircle, Loader2, Check } from "lucide-react";
 
 interface YNABSettingsFormProps {
   initialBudgetId?: string | null;
@@ -47,6 +19,7 @@ interface YNABSettingsFormProps {
   initialManualFlagColor?: string | null;
   initialSyncedFlagColor?: string | null;
   onSaveSuccess?: () => void;
+  onCancel?: () => void;
 }
 
 export function YNABSettingsForm({
@@ -57,203 +30,48 @@ export function YNABSettingsForm({
   initialManualFlagColor,
   initialSyncedFlagColor,
   onSaveSuccess,
+  onCancel,
 }: YNABSettingsFormProps) {
-  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const [budgets, setBudgets] = useState<YNABBudget[]>([]);
-  const [accounts, setAccounts] = useState<YNABAccount[]>([]);
-
-  const [selectedBudgetId, setSelectedBudgetId] = useState(
-    initialBudgetId || "",
-  );
-  const [selectedBudgetName, setSelectedBudgetName] = useState(
-    initialBudgetName || "",
-  );
-  const [selectedAccountId, setSelectedAccountId] = useState(
-    initialSplitAccountId || "",
-  );
-  const [selectedAccountName, setSelectedAccountName] = useState(
-    initialSplitAccountName || "",
-  );
-  const [manualFlagColor, setManualFlagColor] = useState(
-    initialManualFlagColor || "blue",
-  );
-  const [syncedFlagColor, setSyncedFlagColor] = useState(
-    initialSyncedFlagColor || "green",
-  );
-
-  const [showCreateAccountDialog, setShowCreateAccountDialog] = useState(false);
-  const [newAccountName, setNewAccountName] = useState("🤝 Splitwise");
-  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
-  const [isFlagColorConflict, setIsFlagColorConflict] = useState(false);
-
-  useEffect(() => {
-    loadBudgets();
-  }, []);
-
-  useEffect(() => {
-    if (selectedBudgetId) {
-      loadAccounts(selectedBudgetId);
-    }
-  }, [selectedBudgetId]);
-
-  // Check for flag color conflicts
-  useEffect(() => {
-    setIsFlagColorConflict(manualFlagColor === syncedFlagColor);
-  }, [manualFlagColor, syncedFlagColor]);
-
-  async function loadBudgets() {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const result = await getYNABBudgetsForUser();
-
-      if (result.success) {
-        setBudgets(result.budgets);
-      } else {
-        setError(result.error || "Failed to load budgets");
-      }
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "An unexpected error occurred",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function loadAccounts(budgetId: string) {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const result = await getYNABAccountsForBudget(budgetId);
-
-      if (result.success) {
-        setAccounts(result.accounts);
-      } else {
-        setError(result.error || "Failed to load accounts");
-      }
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "An unexpected error occurred",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handleCreateAccount() {
-    setIsCreatingAccount(true);
-    setError(null);
-
-    try {
-      const result = await createYNABAccountForUser(
-        selectedBudgetId,
-        newAccountName,
-      );
-
-      if (result.success) {
-        // Add the new account to the accounts list
-        setAccounts((prevAccounts) => [...prevAccounts, result.account]);
-
-        // Select the new account
-        setSelectedAccountId(result.account.id);
-        setSelectedAccountName(result.account.name);
-
-        // Close the dialog
-        setShowCreateAccountDialog(false);
-
-        // Show success message
-        setSuccessMessage(`Created new account: ${result.account.name}`);
-
-        // Clear success message after 3 seconds
-        setTimeout(() => {
-          setSuccessMessage(null);
-        }, 3000);
-      } else {
-        setError(result.error || "Failed to create account");
-      }
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "An unexpected error occurred",
-      );
-    } finally {
-      setIsCreatingAccount(false);
-    }
-  }
-
-  function handleBudgetChange(budgetId: string) {
-    const budget = budgets.find((b) => b.id === budgetId);
-    setSelectedBudgetId(budgetId);
-    setSelectedBudgetName(budget?.name || "");
-
-    // Reset account selection when budget changes
-    setSelectedAccountId("");
-    setSelectedAccountName("");
-  }
-
-  function handleAccountChange(accountId: string) {
-    const account = accounts.find((a) => a.id === accountId);
-    setSelectedAccountId(accountId);
-    setSelectedAccountName(account?.name || "");
-  }
-
-  function handleManualFlagColorChange(color: string) {
-    setManualFlagColor(color);
-    // If synced flag is the same, change it to a different color
-    if (color === syncedFlagColor) {
-      // Find a different color
-      const availableColors = FLAG_COLORS.filter((c) => c.id !== color);
-      if (availableColors.length > 0 && availableColors[0]) {
-        setSyncedFlagColor(availableColors[0].id);
-      }
-    }
-  }
-
-  function handleSyncedFlagColorChange(color: string) {
-    setSyncedFlagColor(color);
-    // If manual flag is the same, change it to a different color
-    if (color === manualFlagColor) {
-      // Find a different color
-      const availableColors = FLAG_COLORS.filter((c) => c.id !== color);
-      if (availableColors.length > 0 && availableColors[0]) {
-        setManualFlagColor(availableColors[0].id);
-      }
-    }
-  }
+  const form = useYNABForm({
+    initialBudgetId,
+    initialBudgetName,
+    initialAccountId: initialSplitAccountId,
+    initialAccountName: initialSplitAccountName,
+    initialManualFlagColor,
+    initialSyncedFlagColor,
+  });
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSaving(true);
-    setError(null);
+    form.setError(null);
     setSuccessMessage(null);
 
     try {
-      const formData = new FormData(event.currentTarget);
-
-      // Add budget name and account name to form data
-      formData.set("budgetName", selectedBudgetName);
-      formData.set("splitwiseAccountName", selectedAccountName);
+      const formData = new FormData();
+      formData.set("budgetId", form.selectedBudgetId);
+      formData.set("budgetName", form.selectedBudgetName);
+      formData.set("splitwiseAccountId", form.selectedAccountId);
+      formData.set("splitwiseAccountName", form.selectedAccountName);
+      formData.set("manualFlagColor", form.manualFlagColor);
+      formData.set("syncedFlagColor", form.syncedFlagColor);
 
       const result = await saveYNABSettings(formData);
 
       if (result.success) {
-        setSuccessMessage("YNAB settings saved successfully!");
-
-        // Wait a moment before closing the form
+        setSuccessMessage("Settings saved!");
         setTimeout(() => {
           onSaveSuccess?.();
-        }, 2000);
+        }, 1000);
       } else {
-        setError(result.error || "Failed to save settings");
+        form.setError(result.error || "Failed to save settings");
       }
     } catch (err) {
-      setError(
+      form.setError(
         err instanceof Error ? err.message : "An unexpected error occurred",
       );
     } finally {
@@ -261,289 +79,81 @@ export function YNABSettingsForm({
     }
   }
 
-  if (isLoading && budgets.length === 0) {
+  if (form.isLoading && form.budgets.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>YNAB Settings</CardTitle>
-          <CardDescription>
-            Configure your YNAB plan and account preferences
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin mr-2" />
-            Loading budgets...
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+        <span className="ml-3 text-gray-600 dark:text-gray-400">
+          Loading budgets...
+        </span>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>YNAB Settings</CardTitle>
-        <CardDescription>
-          Configure your YNAB plan and account preferences
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="budgetId">YNAB Plan</Label>
-            <Select
-              name="budgetId"
-              value={selectedBudgetId}
-              onValueChange={handleBudgetChange}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a budget" />
-              </SelectTrigger>
-              <SelectContent>
-                {budgets.map((budget) => (
-                  <SelectItem key={budget.id} value={budget.id}>
-                    {budget.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {budgets.length === 0 && (
-              <p className="text-sm text-gray-500">
-                No plans found. Please create a plan in YNAB first.
-              </p>
-            )}
-          </div>
+    <form onSubmit={handleSubmit}>
+      <YNABFormFields
+        budgets={form.budgets}
+        accounts={form.accounts}
+        isLoading={form.isLoading}
+        selectedBudgetId={form.selectedBudgetId}
+        selectedAccountId={form.selectedAccountId}
+        manualFlagColor={form.manualFlagColor}
+        syncedFlagColor={form.syncedFlagColor}
+        showAdvanced={showAdvanced}
+        onShowAdvancedChange={setShowAdvanced}
+        onBudgetChange={form.handleBudgetChange}
+        onAccountChange={form.handleAccountChange}
+        onManualFlagColorChange={form.setManualFlagColor}
+        onSyncedFlagColorChange={form.handleSyncedFlagColorChange}
+      />
 
-          {selectedBudgetId && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="splitwiseAccountId">Splitwise Account</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowCreateAccountDialog(true)}
-                  className="flex items-center gap-1"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Create New
-                </Button>
-              </div>
-              <Select
-                name="splitwiseAccountId"
-                value={selectedAccountId}
-                onValueChange={handleAccountChange}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a Splitwise account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      {account.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-sm text-gray-500">
-                Select an existing account or create a new one to track your
-                Splitwise balance.
-              </p>
-            </div>
-          )}
+      {form.error && (
+        <Alert variant="destructive" className="mt-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{form.error}</AlertDescription>
+        </Alert>
+      )}
 
-          <div className="space-y-3">
-            <Label htmlFor="manualFlagColor">Manual Flag Color</Label>
-            <p className="text-sm text-gray-500 -mt-2">
-              This is the color you&apos;ll use to flag transactions in YNAB
-              that should be synced to Splitwise.
-            </p>
-            <Select
-              name="manualFlagColor"
-              value={manualFlagColor}
-              onValueChange={handleManualFlagColorChange}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a color">
-                  <div className="flex items-center gap-2">
-                    <YNABFlag colorId={manualFlagColor} size="sm" />
-                    <span>
-                      {FLAG_COLORS.find((c) => c.id === manualFlagColor)
-                        ?.name || "Select a color"}
-                    </span>
-                  </div>
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {FLAG_COLORS.map((flag) => (
-                  <SelectItem key={flag.id} value={flag.id}>
-                    <div className="flex items-center gap-2">
-                      <YNABFlag colorId={flag.id} size="sm" />
-                      <span>{flag.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      {successMessage && (
+        <Alert variant="success" className="mt-4">
+          <Check className="h-4 w-4" />
+          <AlertDescription>{successMessage}</AlertDescription>
+        </Alert>
+      )}
 
-          <div className="space-y-3">
-            <Label htmlFor="syncedFlagColor">Synced Flag Color</Label>
-            <p className="text-sm text-gray-500 -mt-2">
-              After a transaction is synced, we&apos;ll change its flag to this
-              color to indicate it&apos;s been processed.
-            </p>
-            <Select
-              name="syncedFlagColor"
-              value={syncedFlagColor}
-              onValueChange={handleSyncedFlagColorChange}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a color">
-                  <div className="flex items-center gap-2">
-                    <YNABFlag colorId={syncedFlagColor} size="sm" />
-                    <span>
-                      {FLAG_COLORS.find((c) => c.id === syncedFlagColor)
-                        ?.name || "Select a color"}
-                    </span>
-                  </div>
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {FLAG_COLORS.map((flag) => (
-                  <SelectItem
-                    key={flag.id}
-                    value={flag.id}
-                    disabled={flag.id === manualFlagColor}
-                    className={flag.id === manualFlagColor ? "opacity-50" : ""}
-                  >
-                    <div className="flex items-center gap-2">
-                      <YNABFlag colorId={flag.id} size="sm" />
-                      <span>{flag.name}</span>
-                      {flag.id === manualFlagColor && (
-                        <span className="text-xs">(Used for manual flag)</span>
-                      )}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {isFlagColorConflict && (
-              <p className="text-sm text-red-500">
-                Manual flag color and synced flag color must be different.
-              </p>
-            )}
-          </div>
-
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {successMessage && (
-            <Alert variant="success">
-              <Check className="h-4 w-4" />
-              <AlertDescription>{successMessage}</AlertDescription>
-            </Alert>
-          )}
-
-          <div className="flex gap-3 justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onSaveSuccess?.()}
-              disabled={isSaving}
-              className="rounded-full"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={
-                isSaving ||
-                !selectedBudgetId ||
-                !selectedAccountId ||
-                isFlagColorConflict
-              }
-              className="rounded-full bg-gray-900 hover:bg-gray-800 text-white"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Save Settings"
-              )}
-            </Button>
-          </div>
-        </form>
-
-        {/* Create Account Dialog */}
-        <Dialog
-          open={showCreateAccountDialog}
-          onOpenChange={setShowCreateAccountDialog}
+      <div className="mt-6 flex gap-3 justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onCancel?.() || onSaveSuccess?.()}
+          disabled={isSaving}
+          className="rounded-full"
         >
-          <DialogContent className="sm:max-w-md bg-white dark:bg-[#141414] border-gray-200 dark:border-gray-800">
-            <DialogHeader>
-              <DialogTitle className="font-serif text-gray-900 dark:text-white">
-                Create Splitwise Account
-              </DialogTitle>
-              <DialogDescription className="text-gray-600 dark:text-gray-400">
-                Create a new account in your YNAB plan to track your Splitwise
-                balance.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="account-name">Account Name</Label>
-                <Input
-                  id="account-name"
-                  value={newAccountName}
-                  onChange={(e) => setNewAccountName(e.target.value)}
-                  placeholder="🤝 Splitwise"
-                  className="rounded-xl"
-                />
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  This account will be used to track your Splitwise balance in
-                  YNAB.
-                </p>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowCreateAccountDialog(false)}
-                disabled={isCreatingAccount}
-                className="rounded-full"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                onClick={handleCreateAccount}
-                disabled={isCreatingAccount || !newAccountName.trim()}
-                className="rounded-full bg-gray-900 hover:bg-gray-800 text-white"
-              >
-                {isCreatingAccount ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  "Create Account"
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </CardContent>
-    </Card>
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={isSaving || !form.isValid}
+          className="rounded-full bg-gray-900 hover:bg-gray-800 text-white"
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Save Settings"
+          )}
+        </Button>
+      </div>
+
+      <YNABCreateAccountDialog
+        open={form.showCreateAccountDialog}
+        onOpenChange={form.setShowCreateAccountDialog}
+        onCreateAccount={form.handleCreateAccount}
+        isCreating={form.isCreatingAccount}
+      />
+    </form>
   );
 }

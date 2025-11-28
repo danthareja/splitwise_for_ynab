@@ -15,19 +15,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
 import { syncUserDataAction, getSyncRateLimitStatus } from "@/app/actions/sync";
 import { reenableAccount } from "@/app/actions/user";
 import { YNABFlag } from "@/components/ynab-flag";
-import { YNABTransaction } from "@/components/persona-walkthrough";
-import {
-  RefreshCw,
-  AlertCircle,
-  Clock,
-  CheckCircle,
-  Loader2,
-} from "lucide-react";
-import { formatTimeAgo } from "@/lib/utils";
+import { RefreshCw, AlertCircle, Clock, Loader2 } from "lucide-react";
 
 export type SyncHeroState =
   | "empty"
@@ -38,7 +29,6 @@ export type SyncHeroState =
 
 interface SyncHeroCardProps {
   initialState: SyncHeroState;
-  lastSyncTime?: Date | null;
   manualFlagColor?: string;
   budgetName?: string;
   // Disabled state props
@@ -49,11 +39,12 @@ interface SyncHeroCardProps {
   initialRateLimitResetSeconds?: number;
   maxRequests?: number;
   windowMinutes?: number;
+  // Duo mode info
+  partnerName?: string | null;
 }
 
 export function SyncHeroCard({
   initialState,
-  lastSyncTime,
   manualFlagColor = "blue",
   budgetName,
   disabledReason,
@@ -62,6 +53,7 @@ export function SyncHeroCard({
   initialRateLimitResetSeconds = 3600,
   maxRequests = 2,
   windowMinutes = 60,
+  partnerName,
 }: SyncHeroCardProps) {
   const router = useRouter();
   const [state, setState] = useState<SyncHeroState>(initialState);
@@ -73,6 +65,69 @@ export function SyncHeroCard({
   const [rateLimitResetSeconds, setRateLimitResetSeconds] = useState(
     initialRateLimitResetSeconds,
   );
+  const [scheduledSyncTime, setScheduledSyncTime] = useState<string>("");
+
+  // Calculate scheduled sync time in user's timezone
+  useEffect(() => {
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof (globalThis as any).Temporal !== "undefined") {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const Temporal = (globalThis as any).Temporal;
+        const userTimeZone = Temporal.TimeZone.from(userTimezone);
+        const startTimeUTC = Temporal.PlainTime.from("17:00");
+        const endTimeUTC = Temporal.PlainTime.from("17:59");
+        const today = Temporal.Now.plainDateISO();
+        const startDateTimeUTC = today.toPlainDateTime(startTimeUTC);
+        const endDateTimeUTC = today.toPlainDateTime(endTimeUTC);
+        const startZoned = startDateTimeUTC
+          .toZonedDateTime("UTC")
+          .withTimeZone(userTimeZone);
+        const endZoned = endDateTimeUTC
+          .toZonedDateTime("UTC")
+          .withTimeZone(userTimeZone);
+
+        const startTime = startZoned.toLocaleString([], {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+          timeZone: userTimezone,
+        });
+        const endTime = endZoned.toLocaleString([], {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+          timeZone: userTimezone,
+        });
+        setScheduledSyncTime(`${startTime} – ${endTime}`);
+      } catch {
+        fallbackToDateAPI();
+      }
+    } else {
+      fallbackToDateAPI();
+    }
+
+    function fallbackToDateAPI() {
+      const utcDate = new Date();
+      utcDate.setUTCHours(17, 0, 0, 0);
+      const utcDateEnd = new Date();
+      utcDateEnd.setUTCHours(17, 59, 59, 999);
+
+      const startTime = utcDate.toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+      const endTime = utcDateEnd.toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+      setScheduledSyncTime(`${startTime} – ${endTime}`);
+    }
+  }, []);
 
   const refreshRateLimitStatus = useCallback(async () => {
     const status = await getSyncRateLimitStatus();
@@ -119,9 +174,6 @@ export function SyncHeroCard({
       const result = await syncUserDataAction();
 
       if (result.success) {
-        toast.success("Sync completed successfully", {
-          description: `Synced ${result.syncedTransactions?.length || 0} YNAB transactions and ${result.syncedExpenses?.length || 0} Splitwise expenses.`,
-        });
         setState("ready");
       } else {
         // Check if rate limited
@@ -129,17 +181,11 @@ export function SyncHeroCard({
           setState("rate_limited");
           await refreshRateLimitStatus();
         } else {
-          toast.error("Sync failed", {
-            description: result.error || "An unknown error occurred",
-          });
           setState("ready");
         }
       }
     } catch (error) {
-      toast.error("Sync failed", {
-        description:
-          error instanceof Error ? error.message : "An unknown error occurred",
-      });
+      console.error("Failed to sync user data:", error);
       setState("ready");
     } finally {
       setIsSyncing(false);
@@ -160,27 +206,16 @@ export function SyncHeroCard({
           setRateLimitResetSeconds(status.resetInSeconds);
           if (status.remaining === 0) {
             setState("rate_limited");
-            toast.success("Account re-enabled", {
-              description:
-                "You're currently rate limited. Try syncing again soon.",
-            });
           } else {
             setState("ready");
-            toast.success("Account re-enabled", {
-              description: "You can now sync your expenses again.",
-            });
           }
         } else {
           setState("ready");
-          toast.success("Account re-enabled", {
-            description: "You can now sync your expenses again.",
-          });
         }
         router.refresh();
       }
     } catch (error) {
       console.error("Failed to re-enable account:", error);
-      toast.error("Failed to re-enable account");
     } finally {
       setIsReenabling(false);
     }
@@ -300,12 +335,6 @@ export function SyncHeroCard({
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                 Sync Shared Expenses
               </h2>
-              {lastSyncTime && !isRateLimited && (
-                <div className="flex items-center justify-center sm:justify-start gap-1 text-xs text-gray-500 dark:text-gray-400 mb-2">
-                  <CheckCircle className="h-3 w-3 text-green-500" />
-                  Last sync {formatTimeAgo(lastSyncTime)}
-                </div>
-              )}
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {isRateLimited ? (
                   <>
@@ -363,30 +392,6 @@ export function SyncHeroCard({
             </div>
           </div>
 
-          {/* YNAB-style transaction example - always visible */}
-          <div className="overflow-x-auto -mx-4 sm:mx-0">
-            <div className="px-4 sm:px-0">
-              <YNABTransaction
-                flag={
-                  manualFlagColor as
-                    | "red"
-                    | "orange"
-                    | "yellow"
-                    | "green"
-                    | "blue"
-                    | "purple"
-                }
-                account="💳 Credit Card"
-                date={new Date()}
-                payee="Whole Foods"
-                category="🛒 Groceries"
-                outflow="$150.00"
-                highlightFlag={!isRateLimited && !isSyncingState}
-                interactive={false}
-              />
-            </div>
-          </div>
-
           {/* Sync button - mobile only, centered */}
           <div className="sm:hidden">
             {isRateLimited ? (
@@ -417,11 +422,21 @@ export function SyncHeroCard({
             )}
           </div>
 
-          {/* Rate limit info */}
-          <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-            {rateLimitRemaining} of {maxRequests} syncs remaining • Resets every{" "}
-            {formatWindowTime(windowMinutes)}
-          </p>
+          {/* Footer info */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-1 sm:gap-0 text-xs text-gray-500 dark:text-gray-400 text-center">
+            <span>
+              Auto-sync daily{" "}
+              {scheduledSyncTime
+                ? ` between ${scheduledSyncTime}`
+                : " between 11:00 AM – 11:59 AM"}
+            </span>
+            {partnerName && (
+              <>
+                <span className="hidden sm:inline mx-1.5">•</span>
+                <span>Duo with {partnerName}</span>
+              </>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import { prisma } from "@/db";
-import { sendWelcomeEmail } from "@/services/email";
 
 export async function GET(request: NextRequest) {
   // Extract the authorization code from the query parameters
@@ -93,13 +92,6 @@ export async function GET(request: NextRequest) {
     where: {
       userId: session.user.id,
       provider: "splitwise",
-    },
-  });
-
-  // Check if user has ever connected to Splitwise before (even if they disconnected)
-  const existingSettings = await prisma.splitwiseSettings.findUnique({
-    where: {
-      userId: session.user.id,
     },
   });
 

@@ -169,6 +169,7 @@ export type PartnershipStatus =
       type: "secondary";
       primaryName: string | null;
       primaryEmail: string | null;
+      primaryEmoji: string | null;
     }
   | { type: "orphaned" }; // Secondary with missing/deleted primary
 
@@ -226,6 +227,11 @@ export async function getPartnershipStatus(): Promise<PartnershipStatus | null> 
             name: true,
             firstName: true,
             email: true,
+            splitwiseSettings: {
+              select: {
+                emoji: true,
+              },
+            },
           },
         },
         secondaryUser: {
@@ -250,6 +256,7 @@ export async function getPartnershipStatus(): Promise<PartnershipStatus | null> 
           type: "secondary",
           primaryName: user.primaryUser.firstName || user.primaryUser.name,
           primaryEmail: user.primaryUser.email,
+          primaryEmoji: user.primaryUser.splitwiseSettings?.emoji || null,
         };
       } else {
         // Primary no longer exists - orphaned state
