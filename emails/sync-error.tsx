@@ -1,6 +1,6 @@
-import { Button, Heading, Section, Text, Hr } from "@react-email/components";
+import { Button, Heading, Section, Text } from "@react-email/components";
 import { baseUrl, EmailLayout } from "./components/email-layout";
-import { emailStyles } from "./components/email-styles";
+import { emailStyles, colors } from "./components/email-styles";
 import { ContentBox } from "./components/content-box";
 import { HelpSection } from "./components/help-section";
 import { EmailFooter } from "./components/email-footer";
@@ -14,45 +14,38 @@ export const SyncErrorEmail = ({
   userName = "there",
   errorMessage,
 }: SyncErrorEmailProps) => {
-  const previewText = "Your recent sync failed";
+  const previewText = "Your sync ran into an issue";
 
   return (
     <EmailLayout previewText={previewText}>
+      <Heading style={emailStyles.h1}>Sync hiccup</Heading>
+
       <Text style={emailStyles.text}>Hi {userName},</Text>
 
       <Text style={emailStyles.text}>
-        A recent attempt to sync your Splitwise for YNAB account failed.
+        Your latest sync didn&apos;t complete. This is usually temporary—we'll
+        automatically retry tomorrow.
       </Text>
 
       <ContentBox variant="error">
         <Text style={emailStyles.errorText}>{errorMessage}</Text>
       </ContentBox>
 
-      <Section style={emailStyles.section}>
-        <Heading style={emailStyles.h3}>What We&apos;re Doing</Heading>
-        <Text style={emailStyles.text}>
-          This error is usually temporary. We&apos;ll automatically retry the
-          sync operation tomorrow during our scheduled window.
-        </Text>
-        <Text style={{ ...emailStyles.text }}>
-          If you want to try again sooner, you can manually sync from your
-          dashboard.
-        </Text>
-      </Section>
+      <Text style={emailStyles.text}>
+        Want to try again sooner? Hit the sync button on your dashboard.
+      </Text>
 
       <Section
         style={{ ...emailStyles.buttonSection, textAlign: "center" as const }}
       >
-        <Button style={{ ...emailStyles.button }} href={`${baseUrl}/dashboard`}>
+        <Button style={emailStyles.button} href={`${baseUrl}/dashboard`}>
           Go to Dashboard
         </Button>
       </Section>
 
-      <Hr style={emailStyles.hr} />
+      <HelpSection />
 
-      <HelpSection message="If this problem persists, please reach out." />
-
-      <EmailFooter reason="because of a sync error in your Splitwise for YNAB account" />
+      <EmailFooter reason="because of a sync issue in your Splitwise for YNAB account" />
     </EmailLayout>
   );
 };
@@ -60,8 +53,6 @@ export const SyncErrorEmail = ({
 SyncErrorEmail.PreviewProps = {
   userName: "John",
   errorMessage: "Unable to connect to YNAB API. Please try again later.",
-  suggestedFix:
-    "This is usually a temporary issue. Try syncing again in a few minutes.",
 } as SyncErrorEmailProps;
 
 export default SyncErrorEmail;

@@ -1,6 +1,6 @@
-import { Button, Heading, Section, Text, Hr } from "@react-email/components";
+import { Button, Heading, Section, Text } from "@react-email/components";
 import { baseUrl, EmailLayout } from "./components/email-layout";
-import { emailStyles } from "./components/email-styles";
+import { emailStyles, colors } from "./components/email-styles";
 import { ContentBox } from "./components/content-box";
 import { HelpSection } from "./components/help-section";
 import { EmailFooter } from "./components/email-footer";
@@ -16,16 +16,21 @@ export const SyncErrorRequiresActionEmail = ({
   errorMessage,
   suggestedFix,
 }: SyncErrorRequiresActionEmailProps) => {
-  const previewText =
-    "[ACTION REQUIRED] Your Splitwise for YNAB account has temporarily been disabled";
+  const previewText = "Action needed: Your sync has been paused";
 
   return (
     <EmailLayout previewText={previewText}>
+      <Section style={urgentBanner}>
+        <Text style={urgentText}>⚠️ Action required</Text>
+      </Section>
+
+      <Heading style={emailStyles.h1}>Your sync is paused</Heading>
+
       <Text style={emailStyles.text}>Hi {userName},</Text>
 
       <Text style={emailStyles.text}>
-        Your Splitwise for YNAB account has temporarily been disabled due to a
-        recent sync error that requires your attention.
+        We&apos;ve temporarily paused syncing because of an issue that needs
+        your attention.
       </Text>
 
       <ContentBox variant="error">
@@ -33,44 +38,53 @@ export const SyncErrorRequiresActionEmail = ({
       </ContentBox>
 
       <Section style={emailStyles.section}>
-        <Heading style={emailStyles.h3}>How to Re-enable Syncing</Heading>
-        <Text style={{ ...emailStyles.bulletText }}>1. {suggestedFix}</Text>
-        <Text style={{ ...emailStyles.bulletText }}>
-          2. Visit your dashboard, where you&apos;ll see a notification
+        <Heading style={emailStyles.h3}>How to fix this</Heading>
+        <Text style={emailStyles.text}>
+          <strong>1.</strong> {suggestedFix}
         </Text>
-        <Text style={{ ...emailStyles.bulletText }}>
-          3. Click &quot;Re-enable Sync&quot; once you&apos;ve fixed the issue
+        <Text style={emailStyles.text}>
+          <strong>2.</strong> Visit your dashboard and click "Re-enable Sync"
         </Text>
       </Section>
 
       <Section
         style={{ ...emailStyles.buttonSection, textAlign: "center" as const }}
       >
-        <Button style={{ ...emailStyles.button }} href={`${baseUrl}/dashboard`}>
+        <Button style={emailStyles.button} href={`${baseUrl}/dashboard`}>
           Go to Dashboard
         </Button>
       </Section>
 
-      <Text style={{ ...emailStyles.text }}>
-        <strong>Note:</strong> No further syncing will occur until you manually
-        re-enable your account.
+      <Text style={emailStyles.textSmall}>
+        Syncing will remain paused until you re-enable it.
       </Text>
 
-      <Hr style={emailStyles.hr} />
+      <HelpSection />
 
-      <HelpSection message="If you're having trouble resolving this issue, we're here to help!" />
-
-      <EmailFooter reason="because of a sync error in your Splitwise for YNAB account" />
+      <EmailFooter reason="because of a sync issue requiring your attention" />
     </EmailLayout>
   );
 };
 
+const urgentBanner = {
+  backgroundColor: colors.amberLight,
+  borderRadius: "8px",
+  padding: "12px 16px",
+  marginBottom: "24px",
+};
+
+const urgentText = {
+  ...emailStyles.text,
+  color: colors.amber,
+  fontWeight: "600",
+  margin: 0,
+  fontSize: "14px",
+};
+
 SyncErrorRequiresActionEmail.PreviewProps = {
   userName: "John",
-  errorMessage:
-    "YNAB can't get transactions: The subscription for this account has lapsed. (403.1)",
-  suggestedFix:
-    "Your YNAB subscription has lapsed. Please renew your YNAB subscription to continue syncing.",
+  errorMessage: "YNAB subscription has lapsed. (403.1)",
+  suggestedFix: "Renew your YNAB subscription to continue syncing.",
 } as SyncErrorRequiresActionEmailProps;
 
 export default SyncErrorRequiresActionEmail;

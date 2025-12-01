@@ -202,6 +202,12 @@ model PartnerInvite {
   defaultSplitRatio String  @default("1:1") // Shared between partners
   primaryEmoji    String    // To check for conflicts
   
+  // Partner contact info (auto-detected from Splitwise group, can be overridden)
+  partnerEmail    String?   // Email to send invite to
+  partnerName     String?   // Partner's name from Splitwise
+  emailSentAt     DateTime? // When the invite email was sent
+  emailReminderCount Int    @default(0) // Number of reminder emails sent
+  
   // Status
   status          String    @default("pending") // pending, accepted, expired
   acceptedByUserId String?  // User who accepted (becomes secondary)

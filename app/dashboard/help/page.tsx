@@ -169,10 +169,9 @@ export default async function HelpPage() {
                     Does syncing happen automatically?
                   </AccordionTrigger>
                   <AccordionContent>
-                    Yes! We automatically sync your expenses every few hours.
-                    You can also trigger a manual sync anytime from your
-                    dashboard. Manual syncs are rate-limited to respect API
-                    abuse policies.
+                    Yes! We automatically sync your expenses once a day. You can
+                    also trigger a manual sync anytime from your dashboard.
+                    Manual syncs are rate-limited to respect API abuse policies.
                   </AccordionContent>
                 </AccordionItem>
 
@@ -417,7 +416,7 @@ export default async function HelpPage() {
                   </AccordionTrigger>
                   <AccordionContent>
                     <strong>Primary</strong> is the first person to set up the
-                    duo account. They control the shared settings:
+                    Duo account. They control the shared settings:
                     <ul className="list-disc list-inside mt-2 space-y-1">
                       <li>Which Splitwise group to use</li>
                       <li>The currency for expenses</li>
@@ -518,7 +517,7 @@ export default async function HelpPage() {
                   </AccordionTrigger>
                   <AccordionContent>
                     Not directly. If you need to swap roles, the Primary should
-                    switch to Solo mode (which disconnects the duo account),
+                    switch to Solo mode (which disconnects the Duo account),
                     then you can set up fresh with you as the new Primary and
                     invite your partner as Secondary.
                   </AccordionContent>
@@ -526,7 +525,7 @@ export default async function HelpPage() {
 
                 <AccordionItem value="duo-leave">
                   <AccordionTrigger>
-                    What happens if I leave a duo account?
+                    What happens if I leave a Duo account?
                   </AccordionTrigger>
                   <AccordionContent>
                     <strong>If you&apos;re Secondary:</strong> You&apos;ll be

@@ -8,6 +8,10 @@ import {
   SyncErrorRequiresActionEmailProps,
 } from "@/emails/sync-error-requires-action";
 import SyncPartialEmail, { SyncPartialEmailProps } from "@/emails/sync-partial";
+import {
+  PartnerInviteEmail,
+  PartnerInviteEmailProps,
+} from "@/emails/partner-invite";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -144,4 +148,40 @@ export async function sendSyncPartialEmail({
   }
 
   return data;
+}
+
+interface SendPartnerInviteEmailParams extends PartnerInviteEmailProps {
+  to: string;
+}
+
+export async function sendPartnerInviteEmail({
+  to,
+  partnerName,
+  inviterName,
+  groupName,
+  inviteUrl,
+}: SendPartnerInviteEmailParams) {
+  const { data, error } = await resend.emails.send({
+    from: "Splitwise for YNAB <support@splitwiseforynab.com>",
+    to: [to],
+    subject: `${inviterName} invited you to sync expenses together`,
+    react: PartnerInviteEmail({
+      partnerName,
+      inviterName,
+      groupName,
+      inviteUrl,
+    }),
+    text: await render(
+      PartnerInviteEmail({ partnerName, inviterName, groupName, inviteUrl }),
+      { plainText: true },
+    ),
+  });
+
+  if (error) {
+    Sentry.captureException(error);
+    console.error(error);
+    return { success: false, error };
+  }
+
+  return { success: true, data };
 }

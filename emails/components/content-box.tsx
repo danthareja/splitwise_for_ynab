@@ -5,7 +5,7 @@ import { ReactNode } from "react";
 interface ContentBoxProps {
   children: ReactNode;
   title?: string;
-  variant?: "default" | "error" | "action" | "warning";
+  variant?: "default" | "highlight" | "success" | "error" | "warning";
 }
 
 export const ContentBox = ({
@@ -13,12 +13,27 @@ export const ContentBox = ({
   title,
   variant = "default",
 }: ContentBoxProps) => {
+  const getBoxStyle = () => {
+    switch (variant) {
+      case "highlight":
+        return emailStyles.highlightBox;
+      case "success":
+        return emailStyles.successBox;
+      case "error":
+        return emailStyles.errorBox;
+      case "warning":
+        return emailStyles.highlightBox; // Use amber for warnings too
+      default:
+        return emailStyles.contentBox;
+    }
+  };
+
   const getTextStyle = () => {
     switch (variant) {
       case "error":
         return emailStyles.errorText;
-      case "action":
-        return emailStyles.actionText;
+      case "success":
+        return emailStyles.successText;
       case "warning":
         return emailStyles.warningText;
       default:
@@ -27,10 +42,10 @@ export const ContentBox = ({
   };
 
   return (
-    <Section style={emailStyles.contentBox}>
+    <Section style={getBoxStyle()}>
       {title && <Heading style={emailStyles.h3}>{title}</Heading>}
       {typeof children === "string" ? (
-        <Text style={getTextStyle()}>{children}</Text>
+        <Text style={{ ...getTextStyle(), margin: 0 }}>{children}</Text>
       ) : (
         children
       )}

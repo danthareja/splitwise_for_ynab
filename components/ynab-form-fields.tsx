@@ -79,7 +79,7 @@ export function YNABFormFields({
             No plans found. Please create a plan in YNAB first.
           </p>
         )}
-        {!isLoading && selectedBudgetId && (
+        {budgets.length > 0 && !isLoading && selectedBudgetId && (
           <p className="text-sm text-gray-500">
             In this plan, flag a transaction with{" "}
             <YNABFlag colorId={manualFlagColor} size="sm" /> to sync it to
@@ -89,7 +89,7 @@ export function YNABFormFields({
       </div>
 
       {/* Account selector */}
-      {selectedBudgetId && (
+      {budgets.length > 0 && !isLoading && selectedBudgetId && (
         <div className="space-y-2">
           <Label htmlFor="splitwiseAccountId">
             Your &quot;phantom&quot; account

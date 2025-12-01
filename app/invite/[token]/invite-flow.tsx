@@ -43,10 +43,10 @@ export function InviteFlow({
         // Redirect to onboarding - they'll start at step 0 (Connect Splitwise)
         router.push("/dashboard/setup");
       } else {
-        setError(result.error || "Failed to join duo account");
+        setError(result.error || "Failed to join Duo account");
       }
     } catch (error) {
-      console.error("Failed to join duo account:", error);
+      console.error("Failed to join Duo account:", error);
       setError("An unexpected error occurred");
     } finally {
       setIsLinking(false);
@@ -67,7 +67,7 @@ export function InviteFlow({
           <Users className="h-8 w-8 text-blue-600 dark:text-blue-400" />
         </div>
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
-          Join {invite.primaryName}&apos;s duo account
+          Join {invite.primaryName}&apos;s Duo account
         </h1>
         <p className="text-gray-500">
           {invite.primaryName} invited you to sync expenses together
@@ -123,7 +123,7 @@ export function InviteFlow({
                   Signed in with YNAB
                 </p>
                 <p className="text-sm text-gray-500">
-                  Ready to join {invite.primaryName}&apos;s duo account
+                  Ready to join {invite.primaryName}&apos;s Duo account
                 </p>
               </div>
             </div>

@@ -1,19 +1,36 @@
-import { Heading, Section, Text } from "@react-email/components";
-import { emailStyles } from "./email-styles";
+import { Section, Text, Link } from "@react-email/components";
+import { emailStyles, colors } from "./email-styles";
+import { baseUrl } from "./email-layout";
 
 interface HelpSectionProps {
-  message?: string;
+  showHelpLink?: boolean;
 }
 
-export const HelpSection = ({
-  message = "We're here to help!",
-}: HelpSectionProps) => {
+export const HelpSection = ({ showHelpLink = true }: HelpSectionProps) => {
   return (
-    <Section style={emailStyles.section}>
-      <Heading style={emailStyles.h3}>Need Support?</Heading>
-      <Text style={emailStyles.text}>
-        {message} Reply to this email, and we&apos;ll get back to you.
+    <Section style={container}>
+      <Text style={text}>
+        Questions? Just reply to this email.
+        {showHelpLink && (
+          <>
+            {" "}
+            Or visit our{" "}
+            <Link href={`${baseUrl}/dashboard/help`} style={emailStyles.link}>
+              help center
+            </Link>
+            .
+          </>
+        )}
       </Text>
     </Section>
   );
+};
+
+const container = {
+  marginTop: "24px",
+};
+
+const text = {
+  ...emailStyles.textSmall,
+  color: "#9ca3af",
 };

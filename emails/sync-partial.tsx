@@ -1,7 +1,7 @@
 import { SyncedItem } from "@/prisma/generated/client";
 import { Button, Heading, Section, Text, Hr } from "@react-email/components";
 import { baseUrl, EmailLayout } from "./components/email-layout";
-import { emailStyles } from "./components/email-styles";
+import { emailStyles, colors } from "./components/email-styles";
 import { HelpSection } from "./components/help-section";
 import { EmailFooter } from "./components/email-footer";
 import { pluralize } from "@/lib/utils";
@@ -19,155 +19,75 @@ export const SyncPartialEmail = ({
   failedTransactions,
   currencyCode = "USD",
 }: SyncPartialEmailProps) => {
-  const previewText = "Your recent sync completed with some errors";
+  const previewText = "Some items didn't sync";
 
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: currency,
-    }).format(amount);
+    }).format(Math.abs(amount));
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
   };
 
   const totalFailures = failedExpenses.length + failedTransactions.length;
 
   return (
     <EmailLayout previewText={previewText}>
+      <Heading style={emailStyles.h1}>Partial sync complete</Heading>
+
       <Text style={emailStyles.text}>Hi {userName},</Text>
 
       <Text style={emailStyles.text}>
-        Your recent sync completed, but <strong>{totalFailures}</strong>{" "}
-        {pluralize(totalFailures, "item")} failed to sync properly.
+        Your sync finished, but {totalFailures}{" "}
+        {pluralize(totalFailures, "item")} couldn&apos;t be processed. Here's
+        what happened:
       </Text>
 
       {failedExpenses.length > 0 && (
         <Section style={emailStyles.section}>
           <Heading style={emailStyles.h3}>
-            Failed: From Splitwise to YNAB
+            Splitwise → YNAB ({failedExpenses.length} failed)
           </Heading>
-          <Text style={emailStyles.text}>
-            These Splitwise expenses could not be synced to YNAB:
-          </Text>
 
-          <div
-            style={{
-              border: "1px solid #e5e7eb",
-              borderRadius: "6px",
-              overflow: "hidden",
-              marginTop: "12px",
-            }}
-          >
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: "14px",
-              }}
-            >
+          <div style={tableContainer}>
+            <table style={emailStyles.table}>
               <thead>
-                <tr style={{ backgroundColor: "#f9fafb" }}>
-                  <th
-                    style={{
-                      padding: "12px 16px",
-                      textAlign: "left",
-                      fontWeight: "500",
-                      color: "#374151",
-                    }}
-                  >
-                    Description
-                  </th>
-                  <th
-                    style={{
-                      padding: "12px 16px",
-                      textAlign: "left",
-                      fontWeight: "500",
-                      color: "#374151",
-                      width: "120px",
-                    }}
-                  >
+                <tr>
+                  <th style={emailStyles.tableHeader}>Item</th>
+                  <th style={{ ...emailStyles.tableHeader, width: "80px" }}>
                     Amount
-                  </th>
-                  <th
-                    style={{
-                      padding: "12px 16px",
-                      textAlign: "left",
-                      fontWeight: "500",
-                      color: "#374151",
-                      width: "100px",
-                    }}
-                  >
-                    Date
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {failedExpenses.map((expense, index) => (
-                  <tr
-                    key={expense.id}
-                    style={{
-                      backgroundColor: index % 2 === 0 ? "#ffffff" : "#f9fafb",
-                      borderTop: index > 0 ? "1px solid #e5e7eb" : "none",
-                    }}
-                  >
-                    <td style={{ padding: "12px 16px" }}>
-                      <div
-                        style={{
-                          maxWidth: "200px",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
+                {failedExpenses.map((expense) => (
+                  <tr key={expense.id}>
+                    <td style={emailStyles.tableCell}>
+                      <div style={itemName}>
                         {expense.description || "Unknown expense"}
                       </div>
                       {expense.errorMessage && (
-                        <div
-                          style={{
-                            fontSize: "12px",
-                            color: "#dc2626",
-                            marginTop: "4px",
-                          }}
-                        >
-                          {expense.errorMessage}
-                        </div>
+                        <div style={errorDetail}>{expense.errorMessage}</div>
                       )}
                     </td>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        fontWeight: "500",
-                        color: expense.amount >= 0 ? "#059669" : "#dc2626",
-                      }}
-                    >
+                    <td style={{ ...emailStyles.tableCell, ...amountCell }}>
                       {formatCurrency(expense.amount, currencyCode)}
-                      <div
-                        style={{
-                          fontSize: "12px",
-                          color: "#6b7280",
-                          marginTop: "2px",
-                        }}
-                      >
-                        {expense.amount < 0 ? "you owe" : "you get back"}
-                      </div>
-                    </td>
-                    <td style={{ padding: "12px 16px", color: "#6b7280" }}>
-                      {formatDate(expense.date)}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <Text style={emailStyles.text}>
-            <strong>How to retry:</strong> Open these expenses in Splitwise and
-            make a small edit (like changing the description, amount, or notes).
-          </Text>
-          <Text style={emailStyles.text}>
-            <strong>Manual alternative:</strong> Create these transactions
-            manually in YNAB for the amounts shown above.
+
+          <Text style={emailStyles.textSmall}>
+            <strong>To retry:</strong> Edit the expense in Splitwise (change
+            description or amount) and sync again.
           </Text>
         </Section>
       )}
@@ -175,128 +95,44 @@ export const SyncPartialEmail = ({
       {failedTransactions.length > 0 && (
         <Section style={emailStyles.section}>
           <Heading style={emailStyles.h3}>
-            Failed: From YNAB to Splitwise
+            YNAB → Splitwise ({failedTransactions.length} failed)
           </Heading>
-          <Text style={emailStyles.text}>
-            These YNAB transactions could not be synced to Splitwise:
-          </Text>
 
-          <div
-            style={{
-              border: "1px solid #e5e7eb",
-              borderRadius: "6px",
-              overflow: "hidden",
-              marginTop: "12px",
-            }}
-          >
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: "14px",
-              }}
-            >
+          <div style={tableContainer}>
+            <table style={emailStyles.table}>
               <thead>
-                <tr style={{ backgroundColor: "#f9fafb" }}>
-                  <th
-                    style={{
-                      padding: "12px 16px",
-                      textAlign: "left",
-                      fontWeight: "500",
-                      color: "#374151",
-                    }}
-                  >
-                    Description
-                  </th>
-                  <th
-                    style={{
-                      padding: "12px 16px",
-                      textAlign: "left",
-                      fontWeight: "500",
-                      color: "#374151",
-                      width: "120px",
-                    }}
-                  >
+                <tr>
+                  <th style={emailStyles.tableHeader}>Item</th>
+                  <th style={{ ...emailStyles.tableHeader, width: "80px" }}>
                     Amount
-                  </th>
-                  <th
-                    style={{
-                      padding: "12px 16px",
-                      textAlign: "left",
-                      fontWeight: "500",
-                      color: "#374151",
-                      width: "100px",
-                    }}
-                  >
-                    Date
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {failedTransactions.map((transaction, index) => (
-                  <tr
-                    key={transaction.id}
-                    style={{
-                      backgroundColor: index % 2 === 0 ? "#ffffff" : "#f9fafb",
-                      borderTop: index > 0 ? "1px solid #e5e7eb" : "none",
-                    }}
-                  >
-                    <td style={{ padding: "12px 16px" }}>
-                      <div
-                        style={{
-                          maxWidth: "200px",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
+                {failedTransactions.map((transaction) => (
+                  <tr key={transaction.id}>
+                    <td style={emailStyles.tableCell}>
+                      <div style={itemName}>
                         {transaction.description || "Unknown transaction"}
                       </div>
                       {transaction.errorMessage && (
-                        <div
-                          style={{
-                            fontSize: "12px",
-                            color: "#dc2626",
-                            marginTop: "4px",
-                          }}
-                        >
+                        <div style={errorDetail}>
                           {transaction.errorMessage}
                         </div>
                       )}
                     </td>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        fontWeight: "500",
-                        color: transaction.amount >= 0 ? "#059669" : "#dc2626",
-                      }}
-                    >
+                    <td style={{ ...emailStyles.tableCell, ...amountCell }}>
                       {formatCurrency(transaction.amount, currencyCode)}
-                      <div
-                        style={{
-                          fontSize: "12px",
-                          color: "#6b7280",
-                          marginTop: "2px",
-                        }}
-                      >
-                        {transaction.amount < 0 ? "you paid" : ""}
-                      </div>
-                    </td>
-                    <td style={{ padding: "12px 16px", color: "#6b7280" }}>
-                      {formatDate(transaction.date)}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <Text style={emailStyles.text}>
-            <strong>How to retry:</strong> Open these transactions in YNAB and
-            edit the flag back to your sync color.
-          </Text>
-          <Text style={emailStyles.text}>
-            <strong>Manual alternative:</strong> Create these expenses manually
-            in Splitwise for the amounts shown above.
+
+          <Text style={emailStyles.textSmall}>
+            <strong>To retry:</strong> Re-flag the transaction in YNAB and sync
+            again.
           </Text>
         </Section>
       )}
@@ -304,37 +140,40 @@ export const SyncPartialEmail = ({
       <Section
         style={{ ...emailStyles.buttonSection, textAlign: "center" as const }}
       >
-        <Button style={{ ...emailStyles.button }} href={`${baseUrl}/dashboard`}>
+        <Button style={emailStyles.button} href={`${baseUrl}/dashboard`}>
           Go to Dashboard
         </Button>
       </Section>
 
-      <Section style={emailStyles.section}>
-        <Heading style={emailStyles.h3}>What Happens Next</Heading>
-        <Text style={emailStyles.text}>
-          These failed items will <strong>not</strong> be automatically retried.
-          You have two options:
-        </Text>
-        <Text style={{ ...emailStyles.bulletText }}>
-          <strong>Option 1:</strong> Follow the retry instructions above, then
-          sync again from your dashboard
-        </Text>
-        <Text style={{ ...emailStyles.bulletText }}>
-          <strong>Option 2:</strong> Use the manual alternatives above to create
-          the entries directly in the other system
-        </Text>
-        <Text style={emailStyles.text}>
-          Choose whichever approach works better for your workflow.
-        </Text>
-      </Section>
+      <HelpSection />
 
-      <Hr style={emailStyles.hr} />
-
-      <HelpSection message="If you're not sure how to fix these errors, please reach out." />
-
-      <EmailFooter reason="because of a partial sync in your Splitwise for YNAB account" />
+      <EmailFooter reason="because some items failed to sync" />
     </EmailLayout>
   );
+};
+
+const tableContainer = {
+  border: `1px solid ${colors.border}`,
+  borderRadius: "8px",
+  overflow: "hidden",
+  margin: "12px 0",
+};
+
+const itemName = {
+  fontWeight: "500",
+  color: colors.foreground,
+};
+
+const errorDetail = {
+  fontSize: "12px",
+  color: colors.red,
+  marginTop: "4px",
+};
+
+const amountCell = {
+  fontWeight: "500",
+  color: colors.foreground,
+  textAlign: "right" as const,
 };
 
 SyncPartialEmail.PreviewProps = {
@@ -351,8 +190,7 @@ SyncPartialEmail.PreviewProps = {
       syncHistoryId: "sync-history-1",
       direction: "splitwise_to_ynab",
       status: "error",
-      errorMessage:
-        "YNAB can't create transaction: date must not be in the future or over 5 years ago (400)",
+      errorMessage: "Date must not be over 5 years ago",
     },
   ],
   failedTransactions: [
@@ -366,7 +204,7 @@ SyncPartialEmail.PreviewProps = {
       syncHistoryId: "sync-history-1",
       direction: "ynab_to_splitwise",
       status: "error",
-      errorMessage: "Splitwise API rate limit exceeded",
+      errorMessage: "API rate limit exceeded",
     },
   ],
 } as SyncPartialEmailProps;

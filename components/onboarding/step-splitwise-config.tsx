@@ -19,7 +19,8 @@ import {
   Users,
   Check,
 } from "lucide-react";
-import { PartnerInviteCard } from "@/components/partner-invite-card";
+import { PartnerInviteSetup } from "@/components/partner-invite-setup";
+import { createPartnerInvite } from "@/app/actions/splitwise";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useSplitwiseForm, SUGGESTED_EMOJIS } from "@/hooks/use-splitwise-form";
@@ -82,6 +83,13 @@ export function StepSplitwiseConfig({
   } | null>(null);
   // Emoji selection for joining household
   const [joinEmoji, setJoinEmoji] = useState<string>("");
+
+  // Partner invite info (for dual primary users)
+  const [partnerInviteInfo, setPartnerInviteInfo] = useState<{
+    email: string;
+    name: string;
+    isCustomEmail: boolean;
+  } | null>(null);
 
   // Use shared form hook
   const form = useSplitwiseForm({
@@ -152,7 +160,7 @@ export function StepSplitwiseConfig({
         await completeOnboarding();
         router.push("/dashboard");
       } else {
-        form.setError(result.error || "Failed to join duo account");
+        form.setError(result.error || "Failed to join Duo account");
         if ("isEmojiConflict" in result && result.isEmojiConflict) {
           const partnerEmoji = existingGroupUser.settings?.emoji;
           if (partnerEmoji) {
@@ -239,6 +247,31 @@ export function StepSplitwiseConfig({
       const result = await saveSplitwiseSettings(formData);
 
       if (result.success) {
+        // For dual users with partner info, create and send invite automatically
+        if (
+          persona === "dual" &&
+          partnerInviteInfo?.email &&
+          !existingGroupUser
+        ) {
+          try {
+            await createPartnerInvite({
+              settings: {
+                groupId: form.selectedGroupId,
+                groupName: form.selectedGroupName,
+                currencyCode: form.selectedCurrency,
+                emoji: form.selectedEmoji,
+                defaultSplitRatio: form.finalSplitRatio,
+              },
+              partnerEmail: partnerInviteInfo.email,
+              partnerName: partnerInviteInfo.name,
+              sendEmail: true,
+            });
+          } catch (inviteError) {
+            // Don't block onboarding if invite fails - they can resend from dashboard
+            console.error("Failed to send partner invite:", inviteError);
+          }
+        }
+
         await completeOnboarding();
         router.push("/dashboard");
       } else {
@@ -390,7 +423,7 @@ export function StepSplitwiseConfig({
             <AlertCircle className="h-4 w-4" />
             <AlertTitle className="font-bold">Duo Account Full</AlertTitle>
             <AlertDescription>
-              {existingGroupUser.name}&apos;s duo account already has a partner.
+              {existingGroupUser.name}&apos;s Duo account already has a partner.
               This group cannot be used.
             </AlertDescription>
           </Alert>
@@ -407,11 +440,11 @@ export function StepSplitwiseConfig({
               </div>
               <div className="flex-1">
                 <h3 className="font-medium text-gray-900 dark:text-white mb-1">
-                  Join {existingGroupUser.name}&apos;s duo account?
+                  Join {existingGroupUser.name}&apos;s Duo account?
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {existingGroupUser.name} has already set up this group. You
-                  can join their duo account and share their settings.
+                  can join their Duo account and share their settings.
                 </p>
 
                 {/* Show inherited settings preview */}
@@ -485,7 +518,7 @@ export function StepSplitwiseConfig({
                     ) : (
                       <>
                         <Check className="mr-2 h-4 w-4" />
-                        Join duo account
+                        Join Duo account
                       </>
                     )}
                   </Button>
@@ -567,21 +600,16 @@ export function StepSplitwiseConfig({
             </Alert>
           )}
 
-          {/* Partner invite for new dual primaries (no existing user in this group) */}
+          {/* Partner invite setup for new dual primaries (no existing user in this group) */}
           {persona === "dual" &&
             form.selectedGroupId &&
             form.selectedEmoji &&
             !existingGroupUser && (
-              <PartnerInviteCard
-                variant="inline"
+              <PartnerInviteSetup
+                groupId={form.selectedGroupId}
+                groupName={form.selectedGroupName}
+                onPartnerInfoChange={setPartnerInviteInfo}
                 className="mt-6"
-                pendingSettings={{
-                  groupId: form.selectedGroupId,
-                  groupName: form.selectedGroupName,
-                  currencyCode: form.selectedCurrency,
-                  emoji: form.selectedEmoji,
-                  defaultSplitRatio: form.finalSplitRatio,
-                }}
               />
             )}
 

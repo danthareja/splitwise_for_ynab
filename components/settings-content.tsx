@@ -234,7 +234,7 @@ export function SettingsContent({
               <p>
                 Switching to Solo mode will disconnect{" "}
                 <strong>{confirmation.partnerName || "your partner"}</strong>{" "}
-                from your duo account.
+                from your Duo account.
               </p>
               <p>
                 They&apos;ll need to reconfigure their own Splitwise settings to
@@ -263,7 +263,7 @@ export function SettingsContent({
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
-              Leave duo account?
+              Leave Duo account?
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
               <p>
@@ -271,7 +271,7 @@ export function SettingsContent({
                 <strong>
                   {confirmation.partnerName || "your partner"}&apos;s
                 </strong>{" "}
-                duo account.
+                Duo account.
               </p>
               <p>
                 You&apos;ll need to select a{" "}
@@ -484,7 +484,7 @@ export function SettingsContent({
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-500 dark:text-gray-400">
-                        Splitwise Account
+                        &quot;Phantom&quot; Account
                       </span>
                       <span className="text-sm font-medium text-gray-900 dark:text-white">
                         {ynabSettings.splitwiseAccountName}

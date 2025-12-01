@@ -8,8 +8,9 @@ import {
   getSplitwiseGroups,
   validateSplitwiseApiKey,
 } from "@/services/splitwise-auth";
+import { sendPartnerInviteEmail } from "@/services/email";
 import { getUserFirstName } from "@/lib/utils";
-import type { SplitwiseUser } from "@/types/splitwise";
+import type { SplitwiseUser, SplitwiseMember } from "@/types/splitwise";
 
 export async function validateApiKey(formData: FormData) {
   const apiKey = formData.get("apiKey") as string;
@@ -249,6 +250,74 @@ export async function getSplitwiseGroupsForUser() {
     validGroups,
     invalidGroups,
   };
+}
+
+// Get partner info from a Splitwise group (the other member who isn't the current user)
+export async function getPartnerFromGroup(groupId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  const apiKey = await getSplitwiseApiKey();
+  if (!apiKey) {
+    return { success: false, error: "No Splitwise API key found" };
+  }
+
+  try {
+    const result = await getSplitwiseGroups(apiKey);
+    if (!result.success || !result.groups) {
+      return {
+        success: false,
+        error: result.error || "Failed to fetch groups",
+      };
+    }
+
+    const group = result.groups.find((g) => g.id.toString() === groupId);
+    if (!group) {
+      return { success: false, error: "Group not found" };
+    }
+
+    // Get the current user's Splitwise account to find their ID
+    const account = await prisma.account.findFirst({
+      where: {
+        userId: session.user.id,
+        provider: "splitwise",
+      },
+    });
+
+    if (!account?.providerAccountId) {
+      return { success: false, error: "Splitwise account not found" };
+    }
+
+    const currentSplitwiseId = account.providerAccountId;
+
+    // Find the partner (the member who isn't the current user)
+    const partner = group.members.find(
+      (member: SplitwiseMember) => member.id.toString() !== currentSplitwiseId,
+    );
+
+    if (!partner) {
+      return { success: false, error: "No partner found in group" };
+    }
+
+    return {
+      success: true,
+      partner: {
+        id: partner.id,
+        firstName: partner.first_name,
+        lastName: partner.last_name,
+        email: partner.email,
+        image: partner.picture?.medium,
+      },
+      groupName: group.name,
+    };
+  } catch (error) {
+    console.error("Error getting partner from group:", error);
+    Sentry.captureException(error);
+    return { success: false, error: "Failed to get partner info" };
+  }
 }
 
 // Check for emoji conflicts
@@ -509,7 +578,7 @@ export async function saveSplitwiseSettings(formData: FormData) {
         if (existingUserPersona === "dual") {
           return {
             success: false,
-            error: `This group is already used by ${existingUserName}. To share this group, ask them to invite you to their duo account.`,
+            error: `This group is already used by ${existingUserName}. To share this group, ask them to invite you to their Duo account.`,
             isGroupConflict: true,
           };
         } else {
@@ -809,7 +878,7 @@ export async function joinHousehold(primaryUserId: string, emoji: string) {
     if (primaryUser.secondaryUser) {
       return {
         success: false,
-        error: "This duo account already has a partner",
+        error: "This Duo account already has a partner",
       };
     }
 
@@ -867,18 +936,23 @@ export async function joinHousehold(primaryUserId: string, emoji: string) {
   } catch (error) {
     console.error("Error joining household:", error);
     Sentry.captureException(error);
-    return { success: false, error: "Failed to join duo account" };
+    return { success: false, error: "Failed to join Duo account" };
   }
 }
 
 // Generate a partner invite token for streamlined secondary setup
 // Can accept settings directly (for onboarding when not yet saved) or read from DB
-export async function createPartnerInvite(settings?: {
-  groupId: string;
-  groupName?: string | null;
-  currencyCode: string;
-  emoji: string;
-  defaultSplitRatio?: string;
+export async function createPartnerInvite(options?: {
+  settings?: {
+    groupId: string;
+    groupName?: string | null;
+    currencyCode: string;
+    emoji: string;
+    defaultSplitRatio?: string;
+  };
+  partnerEmail?: string;
+  partnerName?: string;
+  sendEmail?: boolean;
 }) {
   const session = await auth();
 
@@ -901,7 +975,7 @@ export async function createPartnerInvite(settings?: {
 
     // Must be a dual user who is primary (no primaryUserId)
     // Skip this check if settings are provided directly (during onboarding)
-    if (!settings && user.persona !== "dual") {
+    if (!options?.settings && user.persona !== "dual") {
       return {
         success: false,
         error: `Only dual users can create partner invites (current: ${user.persona || "none"})`,
@@ -913,7 +987,7 @@ export async function createPartnerInvite(settings?: {
     }
 
     // Use provided settings or fall back to database
-    const effectiveSettings = settings || user.splitwiseSettings;
+    const effectiveSettings = options?.settings || user.splitwiseSettings;
 
     if (
       !effectiveSettings?.groupId ||
@@ -947,7 +1021,7 @@ export async function createPartnerInvite(settings?: {
 
     // Get split ratio from settings or database
     const splitRatio =
-      settings?.defaultSplitRatio ||
+      options?.settings?.defaultSplitRatio ||
       user.splitwiseSettings?.defaultSplitRatio ||
       "1:1";
 
@@ -961,14 +1035,43 @@ export async function createPartnerInvite(settings?: {
         currencyCode: effectiveSettings.currencyCode,
         defaultSplitRatio: splitRatio,
         primaryEmoji: effectiveSettings.emoji,
+        partnerEmail: options?.partnerEmail || null,
+        partnerName: options?.partnerName || null,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       },
     });
+
+    // Send email if requested and partner email is provided
+    let emailSent = false;
+    if (options?.sendEmail && options?.partnerEmail) {
+      const baseUrl =
+        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+      const inviteUrl = `${baseUrl}/invite/${token}`;
+      const inviterName = getUserFirstName(user) || "Your partner";
+
+      const emailResult = await sendPartnerInviteEmail({
+        to: options.partnerEmail,
+        partnerName: options.partnerName || undefined,
+        inviterName,
+        groupName: effectiveSettings.groupName || undefined,
+        inviteUrl,
+      });
+
+      if (emailResult.success) {
+        emailSent = true;
+        // Update invite with email sent timestamp
+        await prisma.partnerInvite.update({
+          where: { token },
+          data: { emailSentAt: new Date() },
+        });
+      }
+    }
 
     return {
       success: true,
       token: invite.token,
       expiresAt: invite.expiresAt,
+      emailSent,
     };
   } catch (error) {
     console.error("Error creating partner invite:", error);
@@ -979,6 +1082,87 @@ export async function createPartnerInvite(settings?: {
       success: false,
       error: `Failed to create invite: ${errorMessage}`,
     };
+  }
+}
+
+// Maximum number of reminder emails that can be sent for a single invite
+const MAX_INVITE_REMINDERS = 3;
+
+// Resend partner invite email (optionally with a new email address)
+export async function resendPartnerInvite(newEmail?: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  try {
+    // Get existing pending invite
+    const invite = await prisma.partnerInvite.findFirst({
+      where: {
+        primaryUserId: session.user.id,
+        status: "pending",
+        expiresAt: { gt: new Date() },
+      },
+    });
+
+    if (!invite) {
+      return { success: false, error: "No pending invite found" };
+    }
+
+    // Check reminder limit
+    if (invite.emailReminderCount >= MAX_INVITE_REMINDERS) {
+      return {
+        success: false,
+        error: `Maximum reminders reached (${MAX_INVITE_REMINDERS}). The invite expires in ${Math.ceil((invite.expiresAt.getTime() - Date.now()) / 86400000)} days.`,
+        maxRemindersReached: true,
+      };
+    }
+
+    // Use new email or existing
+    const partnerEmail = newEmail || invite.partnerEmail;
+    if (!partnerEmail) {
+      return { success: false, error: "No email address provided" };
+    }
+
+    // Get current user info for the email
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+    });
+
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const inviteUrl = `${baseUrl}/invite/${invite.token}`;
+    const inviterName = getUserFirstName(user) || "Your partner";
+
+    const emailResult = await sendPartnerInviteEmail({
+      to: partnerEmail,
+      partnerName: invite.partnerName || undefined,
+      inviterName,
+      groupName: invite.groupName || undefined,
+      inviteUrl,
+    });
+
+    if (!emailResult.success) {
+      return { success: false, error: "Failed to send email" };
+    }
+
+    // Update invite with new email and sent timestamp
+    await prisma.partnerInvite.update({
+      where: { id: invite.id },
+      data: {
+        partnerEmail,
+        emailSentAt: new Date(),
+        emailReminderCount: { increment: 1 },
+      },
+    });
+
+    revalidatePath("/dashboard");
+
+    return { success: true, email: partnerEmail };
+  } catch (error) {
+    console.error("Error resending partner invite:", error);
+    Sentry.captureException(error);
+    return { success: false, error: "Failed to resend invite" };
   }
 }
 
@@ -1000,10 +1184,20 @@ export async function getExistingInvite() {
       select: {
         token: true,
         expiresAt: true,
+        partnerEmail: true,
+        partnerName: true,
+        emailSentAt: true,
+        emailReminderCount: true,
+        groupName: true,
       },
     });
 
-    return invite;
+    if (!invite) return null;
+
+    return {
+      ...invite,
+      maxReminders: MAX_INVITE_REMINDERS,
+    };
   } catch (error) {
     console.error("Error getting existing invite:", error);
     return null;
@@ -1114,7 +1308,7 @@ export async function acceptInvite(token: string, emoji: string) {
     if (primaryUser.secondaryUser) {
       return {
         success: false,
-        error: "This duo account already has a partner",
+        error: "This Duo account already has a partner",
       };
     }
 
@@ -1231,7 +1425,7 @@ export async function linkAsSecondary(token: string) {
     if (primaryUser.secondaryUser) {
       return {
         success: false,
-        error: "This duo account already has a partner",
+        error: "This Duo account already has a partner",
       };
     }
 
@@ -1272,7 +1466,7 @@ export async function linkAsSecondary(token: string) {
   } catch (error) {
     console.error("Error linking as secondary:", error);
     Sentry.captureException(error);
-    return { success: false, error: "Failed to join duo account" };
+    return { success: false, error: "Failed to join Duo account" };
   }
 }
 

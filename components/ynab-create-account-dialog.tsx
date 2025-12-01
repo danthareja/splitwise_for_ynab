@@ -41,7 +41,7 @@ export function YNABCreateAccountDialog({
       <DialogContent className="sm:max-w-md bg-white dark:bg-[#141414]">
         <DialogHeader>
           <DialogTitle className="font-serif">
-            Create Splitwise Account
+            Create &quot;Phantom&quot; Account
           </DialogTitle>
           <DialogDescription>
             Create a new account in your YNAB plan to track your Splitwise
