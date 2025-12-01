@@ -8,6 +8,7 @@ import {
   saveSplitwiseSettings,
   detectExistingGroupUser,
   joinHousehold,
+  checkSplitwiseGroupAccess,
 } from "@/app/actions/splitwise";
 import { getYNABBudgetsForUser } from "@/app/actions/ynab";
 import { completeOnboarding } from "@/app/actions/user";
@@ -91,6 +92,12 @@ export function StepSplitwiseConfig({
     isCustomEmail: boolean;
   } | null>(null);
 
+  // For secondary users: track group access check
+  const [secondaryGroupAccess, setSecondaryGroupAccess] = useState<{
+    isChecking: boolean;
+    hasAccess: boolean | null;
+  }>({ isChecking: false, hasAccess: null });
+
   // Use shared form hook
   const form = useSplitwiseForm({
     initialGroupId: initialSettings?.groupId,
@@ -140,6 +147,25 @@ export function StepSplitwiseConfig({
     }
     checkExistingGroupUser();
   }, [form.selectedGroupId]);
+
+  // For secondary users: check if they have access to the primary's group
+  useEffect(() => {
+    async function checkGroupAccess() {
+      if (!isSecondary || !primarySettings?.groupId) return;
+
+      setSecondaryGroupAccess({ isChecking: true, hasAccess: null });
+      try {
+        const result = await checkSplitwiseGroupAccess(primarySettings.groupId);
+        // User needs both access to the group AND the group must be valid (2 members)
+        const hasAccess = result.hasAccess && result.isValid;
+        setSecondaryGroupAccess({ isChecking: false, hasAccess });
+      } catch (error) {
+        console.error("Error checking group access:", error);
+        setSecondaryGroupAccess({ isChecking: false, hasAccess: false });
+      }
+    }
+    checkGroupAccess();
+  }, [isSecondary, primarySettings?.groupId]);
 
   // Handle joining an existing household (only for dual primaries)
   async function handleJoinHousehold() {
@@ -309,10 +335,8 @@ export function StepSplitwiseConfig({
   // Secondary user view
   if (isSecondary) {
     const primaryGroupId = primarySettings?.groupId;
-    const hasGroupAccess = form.validGroups.some(
-      (g) => g.id.toString() === primaryGroupId,
-    );
-    const isCheckingAccess = form.isLoading;
+    const hasGroupAccess = secondaryGroupAccess.hasAccess === true;
+    const isCheckingAccess = secondaryGroupAccess.isChecking;
 
     return (
       <StepContainer
@@ -320,17 +344,19 @@ export function StepSplitwiseConfig({
         description="Pick your sync marker and payee preferences"
       >
         {/* Group access error */}
-        {!isCheckingAccess && primaryGroupId && !hasGroupAccess && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Your Splitwise account doesn&apos;t have access to {primaryName}
-              &apos;s group ({primarySettings?.groupName || "Shared group"}).
-              Please disconnect and reconnect with the correct Splitwise
-              account.
-            </AlertDescription>
-          </Alert>
-        )}
+        {!isCheckingAccess &&
+          primaryGroupId &&
+          secondaryGroupAccess.hasAccess === false && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Your Splitwise account doesn&apos;t have access to {primaryName}
+                &apos;s group ({primarySettings?.groupName || "Shared group"}).
+                Please disconnect and reconnect with the correct Splitwise
+                account.
+              </AlertDescription>
+            </Alert>
+          )}
 
         <SplitwiseSecondaryFormFields
           groupName={primarySettings?.groupName || ""}

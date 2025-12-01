@@ -8,7 +8,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { saveSplitwiseSettings } from "@/app/actions/splitwise";
 import { useSplitwiseForm } from "@/hooks/use-splitwise-form";
 import {
-  SplitwiseFormFields,
+  SplitwiseSoloFormFields,
+  SplitwisePrimaryFormFields,
   SplitwiseSecondaryFormFields,
   SplitwisePrimaryRoleCard,
 } from "@/components/splitwise-form-fields";
@@ -241,43 +242,56 @@ export function SplitwiseSettingsForm({
         <SplitwisePrimaryRoleCard partnerName={partnerName ?? null} />
       )}
 
-      {/* Duo account sync notification */}
-      {form.partnerSynced && (
-        <Alert className="mb-4" variant="success">
-          <Check className="h-4 w-4" />
-          <AlertDescription>
-            Settings were recently updated by your partner.
-          </AlertDescription>
-        </Alert>
+      {isPrimary ? (
+        <SplitwisePrimaryFormFields
+          validGroups={form.validGroups}
+          invalidGroups={form.invalidGroups}
+          isLoading={form.isLoading}
+          partnerName={partnerName || "your partner"}
+          partnerEmoji={form.partnerInfo?.emoji}
+          isEmojiConflict={form.isEmojiConflict}
+          selectedGroupId={form.selectedGroupId}
+          selectedCurrency={form.selectedCurrency}
+          selectedEmoji={form.selectedEmoji}
+          selectedSplitRatio={form.selectedSplitRatio}
+          customSplitRatio={form.customSplitRatio}
+          useDescriptionAsPayee={form.useDescriptionAsPayee}
+          customPayeeName={form.customPayeeName}
+          onGroupChange={form.handleGroupChange}
+          onCurrencyChange={form.setSelectedCurrency}
+          onEmojiChange={form.handleEmojiChange}
+          onSplitRatioChange={form.handleSplitRatioChange}
+          onCustomSplitRatioChange={(ratio) => form.setCustomSplitRatio(ratio)}
+          onPayeeModeChange={form.handlePayeeModeChange}
+          onCustomPayeeNameChange={(name) => form.setCustomPayeeName(name)}
+          showAdvanced={showAdvanced}
+          onShowAdvancedChange={setShowAdvanced}
+          budgetCurrency={budgetCurrency}
+        />
+      ) : (
+        <SplitwiseSoloFormFields
+          validGroups={form.validGroups}
+          invalidGroups={form.invalidGroups}
+          isLoading={form.isLoading}
+          selectedGroupId={form.selectedGroupId}
+          selectedCurrency={form.selectedCurrency}
+          selectedEmoji={form.selectedEmoji}
+          selectedSplitRatio={form.selectedSplitRatio}
+          customSplitRatio={form.customSplitRatio}
+          useDescriptionAsPayee={form.useDescriptionAsPayee}
+          customPayeeName={form.customPayeeName}
+          showAdvanced={showAdvanced}
+          onShowAdvancedChange={setShowAdvanced}
+          onGroupChange={form.handleGroupChange}
+          onCurrencyChange={form.setSelectedCurrency}
+          onEmojiChange={form.handleEmojiChange}
+          onSplitRatioChange={form.handleSplitRatioChange}
+          onCustomSplitRatioChange={(ratio) => form.setCustomSplitRatio(ratio)}
+          onPayeeModeChange={form.handlePayeeModeChange}
+          onCustomPayeeNameChange={(name) => form.setCustomPayeeName(name)}
+          budgetCurrency={budgetCurrency}
+        />
       )}
-
-      <SplitwiseFormFields
-        validGroups={form.validGroups}
-        invalidGroups={form.invalidGroups}
-        isLoading={form.isLoading}
-        selectedGroupId={form.selectedGroupId}
-        selectedGroupName={form.selectedGroupName}
-        selectedCurrency={form.selectedCurrency}
-        selectedEmoji={form.selectedEmoji}
-        selectedSplitRatio={form.selectedSplitRatio}
-        customSplitRatio={form.customSplitRatio}
-        useDescriptionAsPayee={form.useDescriptionAsPayee}
-        customPayeeName={form.customPayeeName}
-        partnerInfo={form.partnerInfo}
-        isEmojiConflict={form.isEmojiConflict}
-        showAdvanced={showAdvanced}
-        onShowAdvancedChange={setShowAdvanced}
-        onGroupChange={form.handleGroupChange}
-        onCurrencyChange={form.setSelectedCurrency}
-        onEmojiChange={form.handleEmojiChange}
-        onSplitRatioChange={form.handleSplitRatioChange}
-        onCustomSplitRatioChange={(ratio) => form.setCustomSplitRatio(ratio)}
-        onPayeeModeChange={form.handlePayeeModeChange}
-        onCustomPayeeNameChange={(name) => form.setCustomPayeeName(name)}
-        isSolo={!isPrimary}
-        isDual={isPrimary}
-        budgetCurrency={budgetCurrency}
-      />
 
       {form.error && (
         <Alert variant="destructive" className="mt-4">

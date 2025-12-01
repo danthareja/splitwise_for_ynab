@@ -1,6 +1,6 @@
 import { Button, Heading, Section, Text } from "@react-email/components";
 import { baseUrl, EmailLayout } from "./components/email-layout";
-import { emailStyles, colors } from "./components/email-styles";
+import { emailStyles } from "./components/email-styles";
 import { ContentBox } from "./components/content-box";
 import { HelpSection } from "./components/help-section";
 import { EmailFooter } from "./components/email-footer";

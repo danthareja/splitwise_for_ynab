@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getSplitwiseGroupsForUser,
   getPartnerEmoji,
-  checkPartnerSyncStatus,
 } from "@/app/actions/splitwise";
 import type { SplitwiseGroup } from "@/types/splitwise";
 
@@ -35,7 +34,7 @@ export const SUGGESTED_EMOJIS = [
 // Common split ratios for easy selection
 export const SPLIT_RATIO_PRESETS = [
   { value: "1:1", label: "Equal Split (1:1)" },
-  { value: "2:1", label: "You Pay More (2:1)" },
+  { value: "2:1", label: "I Pay More (2:1)" },
   { value: "1:2", label: "Partner Pays More (1:2)" },
   { value: "custom", label: "Custom Split..." },
 ];
@@ -111,7 +110,6 @@ export function useSplitwiseForm({
 
   const [partnerInfo, setPartnerInfo] = useState<PartnerInfo | null>(null);
   const [isEmojiConflict, setIsEmojiConflict] = useState(false);
-  const [partnerSynced, setPartnerSynced] = useState(false);
 
   const groupsLoadedRef = useRef(false);
 
@@ -169,26 +167,13 @@ export function useSplitwiseForm({
     [selectedCurrency, selectedEmoji],
   );
 
-  // Check partner sync status
-  const checkPartnerSync = useCallback(async () => {
-    try {
-      const syncStatus = await checkPartnerSyncStatus();
-      if (syncStatus?.recentlyUpdated) {
-        setPartnerSynced(true);
-      }
-    } catch (err) {
-      console.error("Error checking partner sync:", err);
-    }
-  }, []);
-
   // Load groups on mount (only once, skip for secondary)
   useEffect(() => {
     if (!groupsLoadedRef.current && !isSecondary && !skipGroupLoad) {
       loadGroups();
       groupsLoadedRef.current = true;
     }
-    checkPartnerSync();
-  }, [loadGroups, isSecondary, skipGroupLoad, checkPartnerSync]);
+  }, [loadGroups, isSecondary, skipGroupLoad]);
 
   // Check partner emoji when group changes
   useEffect(() => {
@@ -276,7 +261,6 @@ export function useSplitwiseForm({
     setCustomPayeeName,
     partnerInfo,
     isEmojiConflict,
-    partnerSynced,
     finalSplitRatio,
     isValid,
 

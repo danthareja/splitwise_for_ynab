@@ -97,6 +97,8 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
           <StepSplitwise
             authError={auth_error}
             userProfile={onboardingData.userProfile}
+            primarySettings={onboardingData.primarySettings}
+            primaryName={onboardingData.primaryName}
           />
         );
       case 1:

@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
     branches: [main]
 
@@ -50,3 +50,66 @@ jobs:
 
       - name: Run tests
         run: npm run test:run
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      # Minimal env vars needed for app to start
+      DATABASE_URL: postgresql://postgres:postgres@localhost:6969/test
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: test-secret-for-ci-only
+      AUTH_YNAB_ID: test-ynab-id
+      AUTH_YNAB_SECRET: test-ynab-secret
+      SPLITWISE_CLIENT_ID: test-splitwise-id
+      SPLITWISE_CLIENT_SECRET: test-splitwise-secret
+      RESEND_API_KEY: re_test_key
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6969:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Run database migrations
+        run: npx prisma db push --force-reset
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run Playwright tests
+        run: npx playwright test --project=chromium
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

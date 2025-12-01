@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/db";
 import {
   getSplitwiseGroups,
+  getSplitwiseGroup,
   validateSplitwiseApiKey,
 } from "@/services/splitwise-auth";
 import { sendPartnerInviteEmail } from "@/services/email";
@@ -249,6 +250,55 @@ export async function getSplitwiseGroupsForUser() {
     success: true,
     validGroups,
     invalidGroups,
+  };
+}
+
+/**
+ * Check if the current user has access to a specific Splitwise group.
+ * More efficient than fetching all groups - avoids pagination issues.
+ */
+export async function checkSplitwiseGroupAccess(groupId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return {
+      success: false,
+      hasAccess: false,
+      isValid: false,
+      error: "You must be logged in",
+    };
+  }
+
+  const apiKey = await getSplitwiseApiKey();
+
+  if (!apiKey) {
+    return {
+      success: false,
+      hasAccess: false,
+      isValid: false,
+      error: "No Splitwise API key found",
+    };
+  }
+
+  const result = await getSplitwiseGroup(apiKey, groupId);
+
+  if (!result.success || !result.group) {
+    return {
+      success: true, // The check itself succeeded
+      hasAccess: false,
+      isValid: false,
+      error: result.error,
+    };
+  }
+
+  // Group exists and user has access - check if it's valid (exactly 2 members)
+  const isValid = result.group.members.length === 2;
+
+  return {
+    success: true,
+    hasAccess: true,
+    isValid,
+    group: result.group,
   };
 }
 
@@ -1216,11 +1266,19 @@ export async function getInviteByToken(token: string) {
     }
 
     if (invite.status !== "pending") {
-      return { success: false, error: "This invite has already been used" };
+      return {
+        success: false,
+        error:
+          "This invite has already been used. Please reach out to your partner to get a new invite.",
+      };
     }
 
     if (invite.expiresAt < new Date()) {
-      return { success: false, error: "This invite has expired" };
+      return {
+        success: false,
+        error:
+          "This invite has expired. Please reach out to your partner to get a new invite.",
+      };
     }
 
     // Get primary user's CURRENT info and settings (not just cached invite values)
@@ -1285,11 +1343,19 @@ export async function acceptInvite(token: string, emoji: string) {
     }
 
     if (invite.status !== "pending") {
-      return { success: false, error: "This invite has already been used" };
+      return {
+        success: false,
+        error:
+          "This invite has already been used. Please reach out to your partner to get a new invite.",
+      };
     }
 
     if (invite.expiresAt < new Date()) {
-      return { success: false, error: "This invite has expired" };
+      return {
+        success: false,
+        error:
+          "This invite has expired. Please reach out to your partner to get a new invite.",
+      };
     }
 
     // Verify primary still exists, doesn't have a secondary, and has settings
@@ -1402,11 +1468,19 @@ export async function linkAsSecondary(token: string) {
     }
 
     if (invite.status !== "pending") {
-      return { success: false, error: "This invite has already been used" };
+      return {
+        success: false,
+        error:
+          "This invite has already been used. Please reach out to your partner to get a new invite.",
+      };
     }
 
     if (invite.expiresAt < new Date()) {
-      return { success: false, error: "This invite has expired" };
+      return {
+        success: false,
+        error:
+          "This invite has expired. Please reach out to your partner to get a new invite.",
+      };
     }
 
     // Verify primary still exists and doesn't have a secondary
@@ -1467,45 +1541,6 @@ export async function linkAsSecondary(token: string) {
     console.error("Error linking as secondary:", error);
     Sentry.captureException(error);
     return { success: false, error: "Failed to join Duo account" };
-  }
-}
-
-// Check if settings were recently synced by partner
-export async function checkPartnerSyncStatus() {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return null;
-  }
-
-  try {
-    const settings = await prisma.splitwiseSettings.findUnique({
-      where: { userId: session.user.id },
-      select: {
-        lastPartnerSyncAt: true,
-      },
-    });
-
-    if (settings?.lastPartnerSyncAt) {
-      // Check if the sync happened in the last 24 hours
-      const syncTime = new Date(settings.lastPartnerSyncAt);
-      const now = new Date();
-      const hoursSinceSync =
-        (now.getTime() - syncTime.getTime()) / (1000 * 60 * 60);
-
-      if (hoursSinceSync < 24) {
-        return {
-          recentlyUpdated: true,
-          syncTime: settings.lastPartnerSyncAt,
-        };
-      }
-    }
-
-    return { recentlyUpdated: false };
-  } catch (error) {
-    console.error("Error checking currency sync status:", error);
-    Sentry.captureException(error);
-    return null;
   }
 }
 

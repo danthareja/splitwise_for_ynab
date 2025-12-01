@@ -10,11 +10,15 @@ import {
   Check,
   AlertCircle,
   LogOut,
+  Loader2,
 } from "lucide-react";
 import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { disconnectSplitwiseAccount } from "@/app/actions/splitwise";
+import {
+  disconnectSplitwiseAccount,
+  checkSplitwiseGroupAccess,
+} from "@/app/actions/splitwise";
 import Image from "next/image";
 
 interface StepSplitwiseProps {
@@ -24,14 +28,52 @@ interface StepSplitwiseProps {
     email: string | null;
     image: string | null;
   };
+  // For secondary users - to check group access
+  primarySettings?: {
+    groupId?: string | null;
+    groupName?: string | null;
+    currencyCode?: string | null;
+    defaultSplitRatio?: string | null;
+    emoji?: string | null;
+  } | null;
+  primaryName?: string | null;
 }
 
-export function StepSplitwise({ authError, userProfile }: StepSplitwiseProps) {
+export function StepSplitwise({
+  authError,
+  userProfile,
+  primarySettings,
+  primaryName,
+}: StepSplitwiseProps) {
   const router = useRouter();
   const { nextStep, hasSplitwiseConnection, isNavigating, isSecondary } =
     useOnboardingStep();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [isCheckingAccess, setIsCheckingAccess] = useState(false);
+  const [hasGroupAccess, setHasGroupAccess] = useState<boolean | null>(null);
+
+  // For secondary users, check if they have access to the primary's group
+  useEffect(() => {
+    async function checkGroupAccess() {
+      if (!isSecondary || !hasSplitwiseConnection || !primarySettings?.groupId)
+        return;
+
+      setIsCheckingAccess(true);
+      try {
+        const result = await checkSplitwiseGroupAccess(primarySettings.groupId);
+        // User needs both access to the group AND the group must be valid (2 members)
+        setHasGroupAccess(result.hasAccess && result.isValid);
+      } catch (error) {
+        console.error("Error checking group access:", error);
+        setHasGroupAccess(false);
+      } finally {
+        setIsCheckingAccess(false);
+      }
+    }
+
+    checkGroupAccess();
+  }, [isSecondary, hasSplitwiseConnection, primarySettings?.groupId]);
 
   const handleConnect = async () => {
     setIsConnecting(true);
@@ -70,6 +112,13 @@ export function StepSplitwise({ authError, userProfile }: StepSplitwiseProps) {
 
   const errorMessage = getErrorMessage();
 
+  // Determine if secondary user has a group access error
+  const showGroupAccessError =
+    isSecondary &&
+    primarySettings?.groupId &&
+    !isCheckingAccess &&
+    hasGroupAccess === false;
+
   // If connected, show profile confirmation
   if (hasSplitwiseConnection) {
     return (
@@ -77,16 +126,54 @@ export function StepSplitwise({ authError, userProfile }: StepSplitwiseProps) {
         title="Splitwise Connected!"
         description="Confirm this is the right account before continuing."
       >
-        {/* Secondary user context */}
-        {isSecondary && (
-          <Alert className="mb-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-            <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            <AlertDescription className="text-blue-800 dark:text-blue-200">
-              Make sure this Splitwise account has access to your duo
-              account&apos;s shared group.
+        {/* Secondary user - group access error */}
+        {showGroupAccessError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex flex-col gap-3">
+              <span>
+                Your Splitwise account doesn&apos;t have access to {primaryName}
+                &apos;s group ({primarySettings?.groupName || "Shared group"}).
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDisconnect}
+                disabled={isDisconnecting}
+                className="w-fit bg-white dark:bg-gray-900 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950"
+              >
+                <LogOut className="mr-2 h-3.5 w-3.5" />
+                {isDisconnecting
+                  ? "Disconnecting..."
+                  : "Disconnect & try again"}
+              </Button>
             </AlertDescription>
           </Alert>
         )}
+
+        {/* Secondary user - checking access */}
+        {isSecondary && isCheckingAccess && (
+          <Alert className="mb-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+            <Loader2 className="h-4 w-4 text-blue-600 dark:text-blue-400 animate-spin" />
+            <AlertDescription className="text-blue-800 dark:text-blue-200">
+              Checking access to {primaryName}&apos;s Splitwise group...
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Secondary user - has access (confirmed) */}
+        {isSecondary &&
+          !isCheckingAccess &&
+          hasGroupAccess === true &&
+          primarySettings?.groupId && (
+            <Alert className="mb-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+              <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <AlertDescription className="text-green-800 dark:text-green-200">
+                This account has access to {primaryName}&apos;s group (
+                {primarySettings?.groupName}).
+              </AlertDescription>
+            </Alert>
+          )}
 
         {/* Profile card */}
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6">
@@ -128,10 +215,15 @@ export function StepSplitwise({ authError, userProfile }: StepSplitwiseProps) {
         <div className="space-y-3">
           <Button
             onClick={nextStep}
-            disabled={isNavigating || isDisconnecting}
+            disabled={
+              isNavigating ||
+              isDisconnecting ||
+              isCheckingAccess ||
+              !!showGroupAccessError
+            }
             className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-full h-12 text-base"
           >
-            Continue
+            {isCheckingAccess ? "Checking access..." : "Continue"}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
 
