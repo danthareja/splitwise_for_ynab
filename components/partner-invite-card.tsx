@@ -20,6 +20,7 @@ import {
   Check,
   Edit2,
   RefreshCw,
+  Copy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -86,6 +87,9 @@ export function PartnerInviteCard({
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [editEmail, setEditEmail] = useState("");
 
+  // Copy link state
+  const [copied, setCopied] = useState(false);
+
   // Detected partner (for initial invite)
   const [detectedPartner, setDetectedPartner] = useState<{
     name: string;
@@ -137,6 +141,15 @@ export function PartnerInviteCard({
 
   function isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  async function handleCopyLink() {
+    if (!invite?.token) return;
+
+    const inviteUrl = `${window.location.origin}/invite/${invite.token}`;
+    await navigator.clipboard.writeText(inviteUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   async function handleCreateAndSendInvite() {
@@ -246,8 +259,8 @@ export function PartnerInviteCard({
         {/* Status info */}
         <div className="text-sm text-violet-700 dark:text-violet-300 mb-3 space-y-1">
           {invite.emailSentAt ? (
-            <p className="flex items-center gap-1.5">
-              <Check className="h-3.5 w-3.5 text-emerald-600" />
+            <p>
+              <Check className="inline h-3.5 w-3.5 text-emerald-600 mr-1.5 -mt-0.5" />
               Invite sent to{" "}
               <span className="font-medium">{invite.partnerEmail}</span>
               <span className="text-violet-500">
@@ -321,6 +334,24 @@ export function PartnerInviteCard({
           </div>
         ) : (
           <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={handleCopyLink}
+              variant="outline"
+              size="sm"
+              className="rounded-full bg-white dark:bg-gray-900"
+            >
+              {copied ? (
+                <>
+                  <Check className="mr-2 h-4 w-4 text-emerald-600" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copy link
+                </>
+              )}
+            </Button>
             <Button
               onClick={handleResendInvite}
               disabled={isResending}

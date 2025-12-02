@@ -927,7 +927,8 @@ export async function joinHousehold(primaryUserId: string, emoji: string) {
     if (primaryUser.secondaryUser) {
       return {
         success: false,
-        error: "This Duo account already has a partner",
+        error:
+          "This Duo account already has a partner. Please have your partner reach out to support.",
       };
     }
 
@@ -1372,13 +1373,18 @@ export async function acceptInvite(token: string, emoji: string) {
     });
 
     if (!primaryUser) {
-      return { success: false, error: "Primary user no longer exists" };
+      return {
+        success: false,
+        error:
+          "Primary user no longer exists. Please sign up for a new account from our homepage.",
+      };
     }
 
     if (primaryUser.secondaryUser) {
       return {
         success: false,
-        error: "This Duo account already has a partner",
+        error:
+          "This Duo account already has a partner. Please have your partner reach out to support.",
       };
     }
 
@@ -1502,13 +1508,18 @@ export async function linkAsSecondary(token: string) {
     });
 
     if (!primaryUser) {
-      return { success: false, error: "Primary user no longer exists" };
+      return {
+        success: false,
+        error:
+          "Primary user no longer exists. Please sign up for a new account from our homepage.",
+      };
     }
 
     if (primaryUser.secondaryUser) {
       return {
         success: false,
-        error: "This Duo account already has a partner",
+        error:
+          "This Duo account already has a partner. Please have your partner reach out to support.",
       };
     }
 
