@@ -12,6 +12,10 @@ import {
   PartnerInviteEmail,
   PartnerInviteEmailProps,
 } from "@/emails/partner-invite";
+import {
+  PartnerJoinedEmail,
+  PartnerJoinedEmailProps,
+} from "@/emails/partner-joined";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -175,6 +179,34 @@ export async function sendPartnerInviteEmail({
       PartnerInviteEmail({ partnerName, inviterName, groupName, inviteUrl }),
       { plainText: true },
     ),
+  });
+
+  if (error) {
+    Sentry.captureException(error);
+    console.error(error);
+    return { success: false, error };
+  }
+
+  return { success: true, data };
+}
+
+interface SendPartnerJoinedEmailParams extends PartnerJoinedEmailProps {
+  to: string;
+}
+
+export async function sendPartnerJoinedEmail({
+  to,
+  userName,
+  partnerName,
+}: SendPartnerJoinedEmailParams) {
+  const { data, error } = await resend.emails.send({
+    from: "Splitwise for YNAB <support@splitwiseforynab.com>",
+    to: [to],
+    subject: `${partnerName} joined your Splitwise for YNAB account`,
+    react: PartnerJoinedEmail({ userName, partnerName }),
+    text: await render(PartnerJoinedEmail({ userName, partnerName }), {
+      plainText: true,
+    }),
   });
 
   if (error) {

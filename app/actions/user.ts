@@ -3,6 +3,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/db";
 import { revalidatePath } from "next/cache";
+import { sendPartnerJoinedEmail } from "@/services/email";
 
 export type Persona = "solo" | "dual";
 
@@ -265,6 +266,23 @@ export async function completeOnboarding() {
     return { success: false, error: "Unauthorized" };
   }
 
+  // Get user info to check if they're a secondary user
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      name: true,
+      firstName: true,
+      primaryUserId: true,
+      primaryUser: {
+        select: {
+          email: true,
+          name: true,
+          firstName: true,
+        },
+      },
+    },
+  });
+
   await prisma.user.update({
     where: { id: session.user.id },
     data: {
@@ -272,6 +290,21 @@ export async function completeOnboarding() {
       onboardingStep: 5,
     },
   });
+
+  // If this is a secondary user completing onboarding, notify the primary
+  if (user?.primaryUserId && user.primaryUser?.email) {
+    const partnerName = user.firstName || user.name || "Your partner";
+    const primaryName = user.primaryUser.firstName || user.primaryUser.name;
+
+    // Send email in the background - don't block onboarding completion
+    sendPartnerJoinedEmail({
+      to: user.primaryUser.email,
+      userName: primaryName || undefined,
+      partnerName,
+    }).catch((error) => {
+      console.error("Failed to send partner joined email:", error);
+    });
+  }
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/setup");
