@@ -2,190 +2,377 @@ import "dotenv/config";
 import { prisma } from "../db";
 
 /**
- * Backfill script to infer persona and onboardingStep from existing user data.
+ * Data migration script for new onboarding fields and partner relationships.
  *
- * Persona inference:
- * - Query SplitwiseSettings grouped by groupId
- * - If groupId has 2+ users → persona = "dual"
- * - Otherwise → persona = "solo"
+ * This script:
+ * 1. Identifies duo relationships (2 users sharing the same Splitwise groupId)
+ * 2. Establishes primary/secondary relationships (first created = primary)
+ * 3. Sets persona ("solo" or "dual") based on group membership
+ * 4. Calculates onboardingStep for incomplete users
  *
- * Step inference (0-5):
- * - Step 0: No Account entry for provider "splitwise" (need Splitwise connection)
- * - Step 1: Has Splitwise account but needs persona selection
- * - Step 2: Persona set but no YnabSettings.budgetId or .splitwiseAccountId (need YNAB config)
- * - Step 3: YNAB complete but no SplitwiseSettings.groupId or .currencyCode (need Splitwise config)
- * - Step 4: Dual persona needs partner verification
- * - Step 5 / onboardingComplete: Everything complete
+ * Onboarding steps:
+ * - Step 0: No Splitwise account connected
+ * - Step 1: Splitwise connected, needs persona selection
+ * - Step 2: Persona set, needs YNAB configuration
+ * - Step 3: YNAB configured, needs Splitwise group/currency configuration
+ * - Step 4: Dual users need partner verification (for new signups)
+ * - Complete: All configuration done
  */
+
+interface UserWithRelations {
+  id: string;
+  email: string | null;
+  createdAt: Date;
+  persona: string | null;
+  onboardingStep: number;
+  onboardingComplete: boolean;
+  primaryUserId: string | null;
+  accounts: { provider: string }[];
+  ynabSettings: { budgetId: string; splitwiseAccountId: string | null } | null;
+  splitwiseSettings: {
+    groupId: string | null;
+    currencyCode: string | null;
+  } | null;
+}
+
+interface MigrationResult {
+  userId: string;
+  email: string | null;
+  changes: {
+    persona?: { from: string | null; to: string | null };
+    onboardingStep?: { from: number; to: number };
+    onboardingComplete?: { from: boolean; to: boolean };
+    primaryUserId?: { from: string | null; to: string | null };
+  };
+}
+
+interface MigrationSummary {
+  totalUsers: number;
+  duoGroups: number;
+  usersUpdated: number;
+  soloUsers: number;
+  dualPrimaryUsers: number;
+  dualSecondaryUsers: number;
+  incompleteOnboarding: number;
+  results: MigrationResult[];
+}
 
 async function main() {
   const dryRun = process.argv.includes("--dry-run");
 
+  console.log("╔════════════════════════════════════════════════════════════╗");
+  console.log("║         Onboarding & Partner Relationship Migration        ║");
+  console.log("╚════════════════════════════════════════════════════════════╝");
+  console.log();
+
   if (dryRun) {
-    console.log("Dry run mode - no changes will be made\n");
+    console.log("🔍 DRY RUN MODE - No changes will be made\n");
+  } else {
+    console.log("⚠️  LIVE MODE - Changes will be applied to the database\n");
   }
 
-  // Step 1: Find all users with their related data
-  const users = await prisma.user.findMany({
+  // Fetch all users with their related data
+  const users = (await prisma.user.findMany({
     include: {
-      accounts: true,
-      ynabSettings: true,
-      splitwiseSettings: true,
+      accounts: { select: { provider: true } },
+      ynabSettings: { select: { budgetId: true, splitwiseAccountId: true } },
+      splitwiseSettings: { select: { groupId: true, currencyCode: true } },
     },
-  });
+    orderBy: { createdAt: "asc" },
+  })) as UserWithRelations[];
 
-  console.log(`Found ${users.length} users to process\n`);
+  console.log(`📊 Found ${users.length} users to analyze\n`);
 
-  // Step 2: Identify dual personas by grouping SplitwiseSettings by groupId
-  const groupIdUserCount = new Map<string, number>();
-
+  // Group users by their Splitwise groupId
+  const usersByGroupId = new Map<string, UserWithRelations[]>();
   for (const user of users) {
     const groupId = user.splitwiseSettings?.groupId;
     if (groupId) {
-      groupIdUserCount.set(groupId, (groupIdUserCount.get(groupId) || 0) + 1);
+      const existing = usersByGroupId.get(groupId) || [];
+      existing.push(user);
+      usersByGroupId.set(groupId, existing);
     }
   }
 
-  // Groups with 2+ users are "dual"
-  const dualGroupIds = new Set<string>();
-  for (const [groupId, count] of groupIdUserCount) {
-    if (count >= 2) {
-      dualGroupIds.add(groupId);
+  // Identify duo groups (2+ users sharing same group)
+  const duoGroups = new Map<string, UserWithRelations[]>();
+  for (const [groupId, groupUsers] of usersByGroupId) {
+    if (groupUsers.length >= 2) {
+      // Sort by createdAt to determine primary (first) vs secondary (second)
+      groupUsers.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      duoGroups.set(groupId, groupUsers);
     }
   }
 
   console.log(
-    `Found ${dualGroupIds.size} dual groups (2+ users sharing same group)\n`,
+    `👥 Found ${duoGroups.size} duo groups (2+ users sharing same Splitwise group)\n`,
   );
 
-  // Step 3: Process each user
-  let updatedCount = 0;
+  // Track all changes for summary
+  const summary: MigrationSummary = {
+    totalUsers: users.length,
+    duoGroups: duoGroups.size,
+    usersUpdated: 0,
+    soloUsers: 0,
+    dualPrimaryUsers: 0,
+    dualSecondaryUsers: 0,
+    incompleteOnboarding: 0,
+    results: [],
+  };
 
-  for (const user of users) {
-    const hasSplitwiseAccount = user.accounts.some(
-      (account) => account.provider === "splitwise",
-    );
-    const hasYnabAccount = user.accounts.some(
-      (account) => account.provider === "ynab",
-    );
+  // Track duo group details for reporting
+  const duoGroupDetails: Array<{
+    groupId: string;
+    primary: UserWithRelations;
+    secondaries: UserWithRelations[];
+  }> = [];
+  for (const [groupId, groupUsers] of duoGroups) {
+    // groupUsers is guaranteed to have at least 2 elements (filtered above)
+    const [primary, ...secondaries] = groupUsers as [
+      UserWithRelations,
+      ...UserWithRelations[],
+    ];
+    duoGroupDetails.push({ groupId, primary, secondaries });
+  }
 
-    // Infer persona
-    const groupId = user.splitwiseSettings?.groupId;
-    let persona: string | null = null;
-
-    if (groupId) {
-      persona = dualGroupIds.has(groupId) ? "dual" : "solo";
+  // Build a set of duo user IDs and their roles
+  const duoUserRoles = new Map<
+    string,
+    { role: "primary" | "secondary"; primaryId: string | null }
+  >();
+  for (const [, groupUsers] of duoGroups) {
+    // groupUsers is guaranteed to have at least 2 elements (filtered above)
+    const [primary, ...rest] = groupUsers as [
+      UserWithRelations,
+      ...UserWithRelations[],
+    ];
+    duoUserRoles.set(primary.id, { role: "primary", primaryId: null });
+    // All other users become secondary to the primary
+    for (const secondary of rest) {
+      duoUserRoles.set(secondary.id, {
+        role: "secondary",
+        primaryId: primary.id,
+      });
     }
+  }
 
-    // Infer onboarding step
-    let onboardingStep = 0;
-    let onboardingComplete = false;
+  console.log("─".repeat(64));
+  console.log("Processing users...\n");
+
+  // Process each user
+  for (const user of users) {
+    const result: MigrationResult = {
+      userId: user.id,
+      email: user.email,
+      changes: {},
+    };
+
+    // Determine configuration status
+    const hasSplitwiseAccount = user.accounts.some(
+      (a) => a.provider === "splitwise",
+    );
+    const hasYnabConfig = !!(
+      user.ynabSettings?.budgetId && user.ynabSettings?.splitwiseAccountId
+    );
+    const hasSplitwiseConfig = !!(
+      user.splitwiseSettings?.groupId && user.splitwiseSettings?.currencyCode
+    );
+    const isFullyConfigured =
+      hasSplitwiseAccount && hasYnabConfig && hasSplitwiseConfig;
+
+    // Determine persona and partner relationship
+    const duoRole = duoUserRoles.get(user.id);
+    let newPersona: string | null = null;
+    let newPrimaryUserId: string | null = null;
+
+    if (duoRole) {
+      // User is in a duo
+      newPersona = "dual";
+      if (duoRole.role === "secondary") {
+        newPrimaryUserId = duoRole.primaryId;
+        summary.dualSecondaryUsers++;
+      } else {
+        summary.dualPrimaryUsers++;
+      }
+    } else if (isFullyConfigured) {
+      // Fully configured solo user
+      newPersona = "solo";
+      summary.soloUsers++;
+    }
+    // Users not fully configured and not in a duo get null persona (need to choose)
+
+    // Determine onboarding step
+    // For fully configured users, preserve their current step if already complete
+    let newOnboardingStep = 0;
+    let newOnboardingComplete = false;
 
     if (!hasSplitwiseAccount) {
       // Step 0: Need to connect Splitwise
-      onboardingStep = 0;
-    } else if (!persona) {
-      // Step 1: Connected but needs persona (we'll default to "solo" and set step 2)
-      // Since we're backfilling, we'll infer solo if they have a group but aren't dual
-      if (groupId) {
-        persona = "solo";
-        onboardingStep = 2;
-      } else {
-        // Has Splitwise account but no settings yet - they need persona selection
-        onboardingStep = 1;
-      }
+      newOnboardingStep = 0;
+    } else if (!newPersona && !hasSplitwiseConfig) {
+      // Step 1: Splitwise connected, but no group selected yet - needs persona
+      newOnboardingStep = 1;
+    } else if (!hasYnabConfig) {
+      // Step 2: Needs YNAB configuration
+      newOnboardingStep = 2;
+    } else if (!hasSplitwiseConfig) {
+      // Step 3: Needs Splitwise group/currency configuration
+      newOnboardingStep = 3;
+    } else {
+      // Fully configured - mark complete and preserve existing step if it was already complete
+      newOnboardingComplete = true;
+      // Keep their existing step if they were already onboarded, otherwise set to a "done" state
+      newOnboardingStep = user.onboardingComplete ? user.onboardingStep : 5;
     }
 
-    // Now check YNAB config
-    if (onboardingStep < 2 && persona) {
-      onboardingStep = 2;
+    if (!newOnboardingComplete) {
+      summary.incompleteOnboarding++;
     }
 
-    const hasYnabConfig =
-      user.ynabSettings?.budgetId && user.ynabSettings?.splitwiseAccountId;
-    if (onboardingStep === 2 && !hasYnabConfig) {
-      // Stay at step 2 - needs YNAB config
-      onboardingStep = 2;
-    } else if (hasYnabConfig) {
-      onboardingStep = 3;
+    // Check what needs to be updated
+    const needsPersonaUpdate = user.persona !== newPersona;
+    const needsStepUpdate = user.onboardingStep !== newOnboardingStep;
+    const needsCompleteUpdate =
+      user.onboardingComplete !== newOnboardingComplete;
+    const needsPrimaryUpdate = user.primaryUserId !== newPrimaryUserId;
+
+    if (needsPersonaUpdate) {
+      result.changes.persona = { from: user.persona, to: newPersona };
+    }
+    if (needsStepUpdate) {
+      result.changes.onboardingStep = {
+        from: user.onboardingStep,
+        to: newOnboardingStep,
+      };
+    }
+    if (needsCompleteUpdate) {
+      result.changes.onboardingComplete = {
+        from: user.onboardingComplete,
+        to: newOnboardingComplete,
+      };
+    }
+    if (needsPrimaryUpdate) {
+      result.changes.primaryUserId = {
+        from: user.primaryUserId,
+        to: newPrimaryUserId,
+      };
     }
 
-    // Check Splitwise config
-    const hasSplitwiseConfig =
-      user.splitwiseSettings?.groupId && user.splitwiseSettings?.currencyCode;
-    if (onboardingStep === 3 && !hasSplitwiseConfig) {
-      // Stay at step 3 - needs Splitwise config
-      onboardingStep = 3;
-    } else if (hasSplitwiseConfig && onboardingStep >= 3) {
-      onboardingStep = 4;
-    }
+    const hasChanges = Object.keys(result.changes).length > 0;
 
-    // Check partner verification for dual
-    if (onboardingStep === 4) {
-      if (persona === "dual") {
-        // For dual, check if partner is also connected
-        // For now, if they're dual and have all config, we'll mark them complete
-        // Partner verification will be a UI step going forward
-        onboardingComplete = true;
-        onboardingStep = 5;
-      } else {
-        // Solo users are complete after Splitwise config
-        onboardingComplete = true;
-        onboardingStep = 5;
-      }
-    }
+    if (hasChanges) {
+      summary.usersUpdated++;
+      summary.results.push(result);
 
-    // Final check: if they have all settings, they're complete
-    if (hasSplitwiseAccount && hasYnabConfig && hasSplitwiseConfig) {
-      onboardingComplete = true;
-      onboardingStep = 5;
-      // Default to solo if persona not set
-      if (!persona) {
-        persona = dualGroupIds.has(groupId!) ? "dual" : "solo";
-      }
-    }
-
-    // Only update if values changed
-    const needsUpdate =
-      user.persona !== persona ||
-      user.onboardingStep !== onboardingStep ||
-      user.onboardingComplete !== onboardingComplete;
-
-    if (needsUpdate) {
-      console.log(`User ${user.id} (${user.email || "no email"}):`);
-      console.log(`  persona: ${user.persona} → ${persona}`);
-      console.log(
-        `  onboardingStep: ${user.onboardingStep} → ${onboardingStep}`,
-      );
-      console.log(
-        `  onboardingComplete: ${user.onboardingComplete} → ${onboardingComplete}`,
-      );
-      console.log(
-        `  hasSplitwiseAccount: ${hasSplitwiseAccount}, hasYnabConfig: ${hasYnabConfig}, hasSplitwiseConfig: ${hasSplitwiseConfig}`,
-      );
-      console.log();
-
+      // Apply changes if not dry run
       if (!dryRun) {
         await prisma.user.update({
           where: { id: user.id },
           data: {
-            persona,
-            onboardingStep,
-            onboardingComplete,
+            persona: newPersona,
+            onboardingStep: newOnboardingStep,
+            onboardingComplete: newOnboardingComplete,
+            primaryUserId: newPrimaryUserId,
           },
         });
       }
-      updatedCount++;
     }
   }
 
-  console.log(`\n${dryRun ? "Would update" : "Updated"} ${updatedCount} users`);
-  console.log("Backfill complete");
+  // Print detailed results
+  printResults(summary, duoGroupDetails, dryRun);
+}
+
+function printResults(
+  summary: MigrationSummary,
+  duoGroupDetails: Array<{
+    groupId: string;
+    primary: UserWithRelations;
+    secondaries: UserWithRelations[];
+  }>,
+  dryRun: boolean,
+) {
+  console.log("\n");
+  console.log("╔════════════════════════════════════════════════════════════╗");
+  console.log(
+    "║                     Migration Summary                       ║",
+  );
+  console.log("╚════════════════════════════════════════════════════════════╝");
+  console.log();
+
+  // Overview stats
+  console.log("📈 Overview:");
+  console.log(`   Total users:              ${summary.totalUsers}`);
+  console.log(
+    `   Users ${dryRun ? "to be updated" : "updated"}:      ${summary.usersUpdated}`,
+  );
+  console.log(`   Duo groups found:         ${summary.duoGroups}`);
+  console.log();
+
+  // User breakdown
+  console.log("👤 User Breakdown:");
+  console.log(`   Solo users:               ${summary.soloUsers}`);
+  console.log(`   Dual (primary):           ${summary.dualPrimaryUsers}`);
+  console.log(`   Dual (secondary):         ${summary.dualSecondaryUsers}`);
+  console.log(`   Incomplete onboarding:    ${summary.incompleteOnboarding}`);
+  console.log();
+
+  // Duo group details (always show if there are duo groups)
+  if (duoGroupDetails.length > 0) {
+    console.log("─".repeat(64));
+    console.log("👥 Duo Relationships:");
+    console.log();
+
+    for (const { groupId, primary, secondaries } of duoGroupDetails) {
+      console.log(`  Group: ${groupId}`);
+      console.log(
+        `    Primary:   ${primary.email || primary.id} (created: ${primary.createdAt.toISOString()})`,
+      );
+      for (const secondary of secondaries) {
+        console.log(
+          `    Secondary: ${secondary.email || secondary.id} (created: ${secondary.createdAt.toISOString()})`,
+        );
+      }
+      console.log();
+    }
+  }
+
+  // Detailed changes
+  if (summary.results.length > 0) {
+    console.log("─".repeat(64));
+    console.log("📝 Changes " + (dryRun ? "to be applied:" : "applied:"));
+    console.log();
+
+    for (const result of summary.results) {
+      const email = result.email || "no email";
+      console.log(`  User: ${result.userId}`);
+      console.log(`  Email: ${email}`);
+
+      for (const [field, change] of Object.entries(result.changes)) {
+        const { from, to } = change as { from: unknown; to: unknown };
+        console.log(
+          `    ${field}: ${JSON.stringify(from)} → ${JSON.stringify(to)}`,
+        );
+      }
+      console.log();
+    }
+  } else {
+    console.log("✅ No changes needed - all users are already up to date\n");
+  }
+
+  // Final status
+  console.log("─".repeat(64));
+  if (dryRun) {
+    console.log("🔍 DRY RUN COMPLETE - Run without --dry-run to apply changes");
+  } else {
+    console.log("✅ MIGRATION COMPLETE - All changes have been applied");
+  }
+  console.log();
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error("Migration failed:", e);
     process.exit(1);
   })
   .finally(async () => {

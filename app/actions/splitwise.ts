@@ -10,7 +10,7 @@ import {
   validateSplitwiseApiKey,
 } from "@/services/splitwise-auth";
 import { sendPartnerInviteEmail } from "@/services/email";
-import { getUserFirstName } from "@/lib/utils";
+import { getUserFirstName, reverseSplitRatio } from "@/lib/utils";
 import type { SplitwiseUser, SplitwiseMember } from "@/types/splitwise";
 
 export async function validateApiKey(formData: FormData) {
@@ -451,8 +451,7 @@ async function syncSplitRatioWithPartner(
     }
 
     // Reverse the split ratio for partner (if user has 2:1, partner gets 1:2)
-    const [userShares, partnerShares] = splitRatio.split(":");
-    const partnerSplitRatio = `${partnerShares}:${userShares}`;
+    const partnerSplitRatio = reverseSplitRatio(splitRatio);
 
     await prisma.splitwiseSettings.update({
       where: { userId: partnerId },
@@ -951,6 +950,11 @@ export async function joinHousehold(primaryUserId: string, emoji: string) {
     }
 
     // Link current user as secondary AND create their SplitwiseSettings
+    // Secondary gets the REVERSED split ratio (if primary has 2:1, secondary gets 1:2)
+    const secondarySplitRatio = reverseSplitRatio(
+      primarySettings.defaultSplitRatio,
+    );
+
     await prisma.$transaction([
       prisma.user.update({
         where: { id: session.user.id },
@@ -967,7 +971,7 @@ export async function joinHousehold(primaryUserId: string, emoji: string) {
           groupId: primarySettings.groupId,
           groupName: primarySettings.groupName,
           currencyCode: primarySettings.currencyCode,
-          defaultSplitRatio: primarySettings.defaultSplitRatio || "1:1",
+          defaultSplitRatio: secondarySplitRatio,
           emoji: emoji,
           // useDescriptionAsPayee defaults to true
           // customPayeeName stays null - user can configure their own
@@ -976,7 +980,7 @@ export async function joinHousehold(primaryUserId: string, emoji: string) {
           groupId: primarySettings.groupId,
           groupName: primarySettings.groupName,
           currencyCode: primarySettings.currencyCode,
-          defaultSplitRatio: primarySettings.defaultSplitRatio || "1:1",
+          defaultSplitRatio: secondarySplitRatio,
           emoji: emoji,
         },
       }),
@@ -1399,6 +1403,11 @@ export async function acceptInvite(token: string, emoji: string) {
     // Link current user as secondary and mark invite as accepted
     // Use primary's CURRENT settings, not cached invite values
     // Don't mark onboarding complete - they still need to configure YNAB (step 2)
+    // Secondary gets the REVERSED split ratio (if primary has 2:1, secondary gets 1:2)
+    const secondarySplitRatio = reverseSplitRatio(
+      primarySettings.defaultSplitRatio,
+    );
+
     await prisma.$transaction([
       prisma.user.update({
         where: { id: session.user.id },
@@ -1418,7 +1427,7 @@ export async function acceptInvite(token: string, emoji: string) {
           groupId: primarySettings.groupId,
           groupName: primarySettings.groupName,
           currencyCode: primarySettings.currencyCode,
-          defaultSplitRatio: primarySettings.defaultSplitRatio || "1:1",
+          defaultSplitRatio: secondarySplitRatio,
           emoji: emoji,
           // useDescriptionAsPayee defaults to true
           // customPayeeName stays null - user can configure their own
@@ -1427,7 +1436,7 @@ export async function acceptInvite(token: string, emoji: string) {
           groupId: primarySettings.groupId,
           groupName: primarySettings.groupName,
           currencyCode: primarySettings.currencyCode,
-          defaultSplitRatio: primarySettings.defaultSplitRatio || "1:1",
+          defaultSplitRatio: secondarySplitRatio,
           emoji: emoji,
         },
       }),
@@ -1646,12 +1655,9 @@ async function syncFromPrimaryIfSecondary(userId: string, groupId: string) {
 
     if (primarySettings) {
       // Reverse the split ratio for the secondary
-      let secondarySplitRatio = "1:1";
-      if (primarySettings.defaultSplitRatio) {
-        const [primaryShares, secondaryShares] =
-          primarySettings.defaultSplitRatio.split(":");
-        secondarySplitRatio = `${secondaryShares}:${primaryShares}`;
-      }
+      const secondarySplitRatio = reverseSplitRatio(
+        primarySettings.defaultSplitRatio,
+      );
 
       return {
         currencyCode: primarySettings.currencyCode,

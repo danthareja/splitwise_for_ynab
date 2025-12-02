@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { linkAsSecondary } from "@/app/actions/splitwise";
 import { ArrowRight, Loader2, Check, AlertCircle, Users } from "lucide-react";
+import { reverseSplitRatio } from "@/lib/utils";
 
 interface InviteFlowProps {
   token: string;
@@ -164,7 +165,7 @@ export function InviteFlow({
         <ul className="space-y-1 text-gray-600 dark:text-gray-300">
           <li>• Splitwise group: {invite.groupName || "Shared group"}</li>
           <li>• Currency: {invite.currencyCode}</li>
-          <li>• Split ratio: {invite.defaultSplitRatio || "1:1"}</li>
+          <li>• Split ratio: {reverseSplitRatio(invite.defaultSplitRatio)}</li>
         </ul>
       </div>
     </div>

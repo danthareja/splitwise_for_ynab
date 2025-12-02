@@ -25,6 +25,7 @@ import { createPartnerInvite } from "@/app/actions/splitwise";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useSplitwiseForm, SUGGESTED_EMOJIS } from "@/hooks/use-splitwise-form";
+import { reverseSplitRatio } from "@/lib/utils";
 import {
   SplitwiseFormFields,
   SplitwiseSecondaryFormFields,
@@ -223,7 +224,11 @@ export function StepSplitwiseConfig({
         formData.set("groupId", primarySettings.groupId);
         formData.set("groupName", primarySettings.groupName || "");
         formData.set("currencyCode", primarySettings.currencyCode || "USD");
-        formData.set("splitRatio", primarySettings.defaultSplitRatio || "1:1");
+        // Secondary gets the REVERSED split ratio (if primary has 2:1, secondary gets 1:2)
+        formData.set(
+          "splitRatio",
+          reverseSplitRatio(primarySettings.defaultSplitRatio),
+        );
         formData.set("emoji", form.selectedEmoji);
         formData.set(
           "useDescriptionAsPayee",
@@ -361,7 +366,7 @@ export function StepSplitwiseConfig({
         <SplitwiseSecondaryFormFields
           groupName={primarySettings?.groupName || ""}
           currencyCode={primarySettings?.currencyCode || "USD"}
-          splitRatio={primarySettings?.defaultSplitRatio || "1:1"}
+          splitRatio={reverseSplitRatio(primarySettings?.defaultSplitRatio)}
           partnerName={primaryName || "your partner"}
           selectedEmoji={form.selectedEmoji}
           useDescriptionAsPayee={form.useDescriptionAsPayee}
@@ -486,7 +491,9 @@ export function StepSplitwiseConfig({
                       </li>
                       <li>
                         • Split ratio:{" "}
-                        {existingGroupUser.settings.defaultSplitRatio || "1:1"}
+                        {reverseSplitRatio(
+                          existingGroupUser.settings.defaultSplitRatio,
+                        )}
                       </li>
                     </ul>
                   </div>

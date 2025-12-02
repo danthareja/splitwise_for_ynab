@@ -155,3 +155,21 @@ export function pluralize(
   }
   return plural || `${singular}s`;
 }
+
+/**
+ * Reverse a split ratio string (e.g., "2:1" becomes "1:2")
+ * This is used when a secondary user joins a primary's household -
+ * if the primary has a 2:1 ratio (they pay 2 parts), the secondary
+ * should have 1:2 (they pay 1 part).
+ * @param ratio - The split ratio string in format "X:Y"
+ * @returns The reversed ratio string "Y:X"
+ */
+export function reverseSplitRatio(ratio: string | null | undefined): string {
+  if (!ratio) return "1:1";
+
+  const parts = ratio.split(":");
+  if (parts.length !== 2) return "1:1";
+
+  const [first, second] = parts;
+  return `${second}:${first}`;
+}

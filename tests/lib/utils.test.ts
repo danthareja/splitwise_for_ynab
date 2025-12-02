@@ -7,6 +7,7 @@ import {
   formatTime,
   formatDateTime,
   pluralize,
+  reverseSplitRatio,
 } from "@/lib/utils";
 
 describe("lib/utils", () => {
@@ -138,6 +139,37 @@ describe("lib/utils", () => {
 
     it("should default to adding 's' for plural", () => {
       expect(pluralize(3, "dog")).toBe("dogs");
+    });
+  });
+
+  describe("reverseSplitRatio", () => {
+    it("should reverse a simple ratio", () => {
+      expect(reverseSplitRatio("2:1")).toBe("1:2");
+    });
+
+    it("should reverse an equal ratio", () => {
+      expect(reverseSplitRatio("1:1")).toBe("1:1");
+    });
+
+    it("should handle larger numbers", () => {
+      expect(reverseSplitRatio("3:2")).toBe("2:3");
+    });
+
+    it("should handle null input", () => {
+      expect(reverseSplitRatio(null)).toBe("1:1");
+    });
+
+    it("should handle undefined input", () => {
+      expect(reverseSplitRatio(undefined)).toBe("1:1");
+    });
+
+    it("should handle empty string", () => {
+      expect(reverseSplitRatio("")).toBe("1:1");
+    });
+
+    it("should handle invalid format", () => {
+      expect(reverseSplitRatio("invalid")).toBe("1:1");
+      expect(reverseSplitRatio("1:2:3")).toBe("1:1");
     });
   });
 });

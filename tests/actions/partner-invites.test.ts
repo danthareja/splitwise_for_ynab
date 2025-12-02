@@ -395,14 +395,14 @@ describe("actions/splitwise - Partner Invites", () => {
       expect(updatedSecondary?.primaryUserId).toBe(primary.id);
       expect(updatedSecondary?.persona).toBe("dual");
 
-      // Verify secondary has settings with same split ratio (inherits from primary)
+      // Verify secondary has settings with REVERSED split ratio (if primary has 2:1, secondary gets 1:2)
       const secondarySettings = await prisma.splitwiseSettings.findUnique({
         where: { userId: secondary.id },
       });
 
       expect(secondarySettings?.groupId).toBe(groupId);
       expect(secondarySettings?.emoji).toBe("🔄");
-      expect(secondarySettings?.defaultSplitRatio).toBe("2:1");
+      expect(secondarySettings?.defaultSplitRatio).toBe("1:2");
     });
 
     it("should reject if primary already has partner", async () => {

@@ -19,7 +19,7 @@ vi.mock("next/cache", () => ({
 }));
 
 // Import after mocking
-import { saveSplitwiseSettings } from "@/app/actions/splitwise";
+import { saveSplitwiseSettings, joinHousehold } from "@/app/actions/splitwise";
 
 /**
  * Tests for Splitwise Settings - QA.md Section 3.5
@@ -366,6 +366,133 @@ describe("actions/splitwise - saveSplitwiseSettings", () => {
       const result = await saveSplitwiseSettings(formData);
 
       expect(result.success).toBe(true);
+    });
+  });
+
+  describe("joinHousehold - split ratio reversal", () => {
+    it("should reverse split ratio when joining household (2:1 becomes 1:2)", async () => {
+      const groupId = `group-${nanoid(10)}`;
+
+      // Create primary user with 2:1 split ratio
+      const primary = await createTestUser({
+        id: `primary-${nanoid(10)}`,
+        persona: "dual",
+        onboardingComplete: true,
+      });
+
+      await createTestSplitwiseSettings({
+        userId: primary.id,
+        groupId,
+        groupName: "Test Group",
+        emoji: "✅",
+        currencyCode: "USD",
+        defaultSplitRatio: "2:1",
+      });
+
+      // Create user who will join the household
+      const joiningUser = await createTestUser({
+        id: `joining-${nanoid(10)}`,
+        persona: "dual",
+        onboardingComplete: false,
+      });
+
+      // Mock auth to return joining user
+      mockAuth.mockResolvedValue({ user: { id: joiningUser.id } });
+
+      const result = await joinHousehold(primary.id, "🔄");
+
+      expect(result.success).toBe(true);
+
+      // Verify secondary has REVERSED split ratio (1:2)
+      const secondarySettings = await prisma.splitwiseSettings.findUnique({
+        where: { userId: joiningUser.id },
+      });
+
+      expect(secondarySettings?.groupId).toBe(groupId);
+      expect(secondarySettings?.emoji).toBe("🔄");
+      expect(secondarySettings?.defaultSplitRatio).toBe("1:2");
+    });
+
+    it("should reverse split ratio when joining household (3:1 becomes 1:3)", async () => {
+      const groupId = `group-${nanoid(10)}`;
+
+      // Create primary user with 3:1 split ratio
+      const primary = await createTestUser({
+        id: `primary-${nanoid(10)}`,
+        persona: "dual",
+        onboardingComplete: true,
+      });
+
+      await createTestSplitwiseSettings({
+        userId: primary.id,
+        groupId,
+        groupName: "Test Group",
+        emoji: "✅",
+        currencyCode: "USD",
+        defaultSplitRatio: "3:1",
+      });
+
+      // Create user who will join the household
+      const joiningUser = await createTestUser({
+        id: `joining-${nanoid(10)}`,
+        persona: "dual",
+        onboardingComplete: false,
+      });
+
+      // Mock auth to return joining user
+      mockAuth.mockResolvedValue({ user: { id: joiningUser.id } });
+
+      const result = await joinHousehold(primary.id, "🔄");
+
+      expect(result.success).toBe(true);
+
+      // Verify secondary has REVERSED split ratio (1:3)
+      const secondarySettings = await prisma.splitwiseSettings.findUnique({
+        where: { userId: joiningUser.id },
+      });
+
+      expect(secondarySettings?.defaultSplitRatio).toBe("1:3");
+    });
+
+    it("should keep 1:1 ratio unchanged when joining", async () => {
+      const groupId = `group-${nanoid(10)}`;
+
+      // Create primary user with 1:1 split ratio
+      const primary = await createTestUser({
+        id: `primary-${nanoid(10)}`,
+        persona: "dual",
+        onboardingComplete: true,
+      });
+
+      await createTestSplitwiseSettings({
+        userId: primary.id,
+        groupId,
+        groupName: "Test Group",
+        emoji: "✅",
+        currencyCode: "USD",
+        defaultSplitRatio: "1:1",
+      });
+
+      // Create user who will join the household
+      const joiningUser = await createTestUser({
+        id: `joining-${nanoid(10)}`,
+        persona: "dual",
+        onboardingComplete: false,
+      });
+
+      // Mock auth to return joining user
+      mockAuth.mockResolvedValue({ user: { id: joiningUser.id } });
+
+      const result = await joinHousehold(primary.id, "🔄");
+
+      expect(result.success).toBe(true);
+
+      // 1:1 reversed is still 1:1
+      const secondarySettings = await prisma.splitwiseSettings.findUnique({
+        where: { userId: joiningUser.id },
+      });
+
+      expect(secondarySettings?.defaultSplitRatio).toBe("1:1");
     });
   });
 });
