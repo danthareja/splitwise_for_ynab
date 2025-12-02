@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import { prisma } from "@/db";
+import { sendWelcomeEmail } from "@/services/email";
 
 export async function GET(request: NextRequest) {
   // Extract the authorization code from the query parameters
@@ -140,12 +141,12 @@ export async function GET(request: NextRequest) {
   });
 
   // Send welcome email only for truly new Splitwise connections (never connected before)
-  // if (!existingAccount && !existingSettings && userData.user.email) {
-  //   await sendWelcomeEmail({
-  //     to: userData.user.email,
-  //     userName: userData.user.first_name,
-  //   });
-  // }
+  if (!existingAccount && userData.user.email) {
+    await sendWelcomeEmail({
+      to: userData.user.email,
+      userName: userData.user.first_name,
+    });
+  }
 
   // Determine redirect path
   // Priority: invite_token cookie > oauth_return_url cookie > default
