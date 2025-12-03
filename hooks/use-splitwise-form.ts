@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getSplitwiseGroupsForUser,
   getPartnerEmoji,
+  checkSecondaryInGroup,
+  checkInviteInGroup,
 } from "@/app/actions/splitwise";
 import type { SplitwiseGroup } from "@/types/splitwise";
 
@@ -49,6 +51,10 @@ interface UseSplitwiseFormOptions {
   initialCustomPayeeName?: string | null;
   /** If true, user is secondary and can only edit emoji/payee */
   isSecondary?: boolean;
+  /** If true, user is primary with a secondary partner */
+  isPrimary?: boolean;
+  /** If true, user has a pending invite (waiting for partner) */
+  hasPendingInvite?: boolean;
   /** Persona type for detecting potential primary on group change */
   persona?: "solo" | "dual" | null;
   /** Whether to skip loading groups (for secondary users) */
@@ -61,6 +67,24 @@ interface PartnerInfo {
   partnerName: string;
 }
 
+interface SecondaryOrphanWarning {
+  /** Whether the secondary will be orphaned if this group is saved */
+  willBeOrphaned: boolean;
+  /** Name of the secondary who will be orphaned */
+  secondaryName: string;
+  /** Whether we're currently checking secondary membership */
+  isChecking: boolean;
+}
+
+interface InviteExpireWarning {
+  /** Whether the pending invite will be expired if this group is saved */
+  willBeExpired: boolean;
+  /** Name/email of the invitee whose invite will be expired */
+  inviteeName: string;
+  /** Whether we're currently checking invite validity */
+  isChecking: boolean;
+}
+
 export function useSplitwiseForm({
   initialGroupId,
   initialGroupName,
@@ -70,6 +94,8 @@ export function useSplitwiseForm({
   initialUseDescriptionAsPayee = true,
   initialCustomPayeeName,
   isSecondary = false,
+  isPrimary = false,
+  hasPendingInvite = false,
   persona = null,
   skipGroupLoad = false,
 }: UseSplitwiseFormOptions = {}) {
@@ -78,6 +104,22 @@ export function useSplitwiseForm({
 
   const [validGroups, setValidGroups] = useState<SplitwiseGroup[]>([]);
   const [invalidGroups, setInvalidGroups] = useState<SplitwiseGroup[]>([]);
+
+  // Secondary orphan warning state (for primary users changing groups)
+  const [secondaryOrphanWarning, setSecondaryOrphanWarning] =
+    useState<SecondaryOrphanWarning>({
+      willBeOrphaned: false,
+      secondaryName: "",
+      isChecking: false,
+    });
+
+  // Invite expire warning state (for primary users with pending invites changing groups)
+  const [inviteExpireWarning, setInviteExpireWarning] =
+    useState<InviteExpireWarning>({
+      willBeExpired: false,
+      inviteeName: "",
+      isChecking: false,
+    });
 
   const [selectedGroupId, setSelectedGroupId] = useState(initialGroupId || "");
   const [selectedGroupName, setSelectedGroupName] = useState(
@@ -205,6 +247,91 @@ export function useSplitwiseForm({
     const group = validGroups.find((g) => g.id.toString() === groupId);
     setSelectedGroupId(groupId);
     setSelectedGroupName(group?.name || "");
+
+    // If returning to original group, clear all warnings
+    if (groupId === initialGroupId) {
+      setSecondaryOrphanWarning({
+        willBeOrphaned: false,
+        secondaryName: "",
+        isChecking: false,
+      });
+      setInviteExpireWarning({
+        willBeExpired: false,
+        inviteeName: "",
+        isChecking: false,
+      });
+      return;
+    }
+
+    // If this is a primary user and they're changing to a different group,
+    // check if their secondary partner is in the new group
+    if (isPrimary && groupId !== initialGroupId && groupId) {
+      setSecondaryOrphanWarning((prev) => ({
+        ...prev,
+        isChecking: true,
+        willBeOrphaned: false,
+      }));
+
+      try {
+        const result = await checkSecondaryInGroup(groupId);
+
+        if (result.success && result.hasSecondary) {
+          setSecondaryOrphanWarning({
+            willBeOrphaned: !result.secondaryInGroup,
+            secondaryName: result.secondaryName || "Partner",
+            isChecking: false,
+          });
+        } else {
+          setSecondaryOrphanWarning({
+            willBeOrphaned: false,
+            secondaryName: "",
+            isChecking: false,
+          });
+        }
+      } catch (err) {
+        console.error("Error checking secondary in group:", err);
+        setSecondaryOrphanWarning({
+          willBeOrphaned: false,
+          secondaryName: "",
+          isChecking: false,
+        });
+      }
+    }
+
+    // If user has a pending invite and they're changing to a different group,
+    // check if the invitee is in the new group
+    if (hasPendingInvite && groupId !== initialGroupId && groupId) {
+      setInviteExpireWarning((prev) => ({
+        ...prev,
+        isChecking: true,
+        willBeExpired: false,
+      }));
+
+      try {
+        const result = await checkInviteInGroup(groupId);
+
+        if (result.success && result.hasInvite) {
+          setInviteExpireWarning({
+            willBeExpired: !result.inviteeInGroup,
+            inviteeName: result.inviteeName || "Partner",
+            isChecking: false,
+          });
+        } else {
+          setInviteExpireWarning({
+            willBeExpired: false,
+            inviteeName: "",
+            isChecking: false,
+          });
+        }
+      } catch (err) {
+        console.error("Error checking invite in group:", err);
+        setInviteExpireWarning({
+          willBeExpired: false,
+          inviteeName: "",
+          isChecking: false,
+        });
+      }
+    }
   }
 
   function handleEmojiChange(emoji: string) {
@@ -263,6 +390,8 @@ export function useSplitwiseForm({
     isEmojiConflict,
     finalSplitRatio,
     isValid,
+    secondaryOrphanWarning,
+    inviteExpireWarning,
 
     // Actions
     loadGroups,

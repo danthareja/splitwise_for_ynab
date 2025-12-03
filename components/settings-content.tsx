@@ -591,6 +591,7 @@ export function SettingsContent({
                 onCancel={() => setEditingSection(null)}
                 isSecondary={isSecondary}
                 isPrimary={isPrimary}
+                hasPendingInvite={partnershipStatus?.type === "primary_waiting"}
                 partnerName={partnerName}
                 partnerEmoji={
                   partnershipStatus?.type === "secondary"

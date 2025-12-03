@@ -29,6 +29,8 @@ interface SplitwiseSettingsFormProps {
   isSecondary?: boolean;
   /** If true, user is primary (has a partner) */
   isPrimary?: boolean;
+  /** If true, user has a pending invite (waiting for partner to join) */
+  hasPendingInvite?: boolean;
   /** Name of partner (for display) */
   partnerName?: string | null;
   /** Partner's emoji (for conflict detection in secondary mode) */
@@ -49,6 +51,7 @@ export function SplitwiseSettingsForm({
   onCancel,
   isSecondary = false,
   isPrimary = false,
+  hasPendingInvite = false,
   partnerName,
   partnerEmoji,
   budgetCurrency,
@@ -66,6 +69,8 @@ export function SplitwiseSettingsForm({
     initialUseDescriptionAsPayee,
     initialCustomPayeeName,
     isSecondary,
+    isPrimary,
+    hasPendingInvite,
     skipGroupLoad: isSecondary,
   });
 
@@ -107,35 +112,67 @@ export function SplitwiseSettingsForm({
       const result = await saveSplitwiseSettings(formData);
 
       if (result.success) {
-        // Build success message
+        // Build success message - use 'in' check for optional properties
         const syncMessages = [];
-        if (result.currencySynced && result.updatedPartners?.length > 0) {
+        const groupSynced = "groupSynced" in result && result.groupSynced;
+        const currencySynced =
+          "currencySynced" in result && result.currencySynced;
+        const splitRatioSynced =
+          "splitRatioSynced" in result && result.splitRatioSynced;
+        const updatedPartners =
+          "updatedPartners" in result ? result.updatedPartners : [];
+        const partnerSyncMessage =
+          "partnerSyncMessage" in result ? result.partnerSyncMessage : null;
+        const partnerOrphaned =
+          "partnerOrphaned" in result && result.partnerOrphaned;
+        const orphanedPartnerName =
+          "orphanedPartnerName" in result ? result.orphanedPartnerName : null;
+        const inviteExpired = "inviteExpired" in result && result.inviteExpired;
+        const expiredInviteeName =
+          "expiredInviteeName" in result ? result.expiredInviteeName : null;
+
+        if (groupSynced && updatedPartners && updatedPartners.length > 0) {
+          syncMessages.push("Group synchronized");
+        }
+        if (currencySynced && updatedPartners && updatedPartners.length > 0) {
           syncMessages.push("Currency synchronized");
         }
-        if (result.splitRatioSynced && result.updatedPartners?.length > 0) {
+        if (splitRatioSynced && updatedPartners && updatedPartners.length > 0) {
           syncMessages.push("Split ratio synchronized");
         }
 
         let displayMessage = "Settings saved!";
-        const hasPartnerSync = !!result.partnerSyncMessage;
+        const hasPartnerSync = !!partnerSyncMessage;
         const hasRegularSync =
           syncMessages.length > 0 &&
-          result.updatedPartners &&
-          result.updatedPartners.length > 0;
+          updatedPartners &&
+          updatedPartners.length > 0;
 
-        if (hasPartnerSync) {
-          displayMessage = `Settings saved! ${result.partnerSyncMessage}.`;
+        if (partnerOrphaned) {
+          displayMessage = `Settings saved. ${orphanedPartnerName || "Your partner"} has been disconnected and converted to a Solo account.`;
+        } else if (inviteExpired) {
+          displayMessage = `Settings saved. The pending invite to ${expiredInviteeName || "your partner"} has been cancelled since they're not in this group.`;
+        } else if (hasPartnerSync) {
+          displayMessage = `Settings saved! ${partnerSyncMessage}.`;
         } else if (hasRegularSync) {
-          displayMessage = `Settings saved! ${syncMessages.join(" and ")} with ${result.updatedPartners.join(", ")}.`;
+          displayMessage = `Settings saved! ${syncMessages.join(" and ")} with ${updatedPartners.join(", ")}.`;
         }
 
-        if (hasPartnerSync || hasRegularSync) {
+        if (
+          hasPartnerSync ||
+          hasRegularSync ||
+          partnerOrphaned ||
+          inviteExpired
+        ) {
           setSuccessMessage(displayMessage);
-          setTimeout(() => {
-            setSuccessMessage(null);
-            form.setError(null);
-            onSaveSuccess?.();
-          }, 2000);
+          setTimeout(
+            () => {
+              setSuccessMessage(null);
+              form.setError(null);
+              onSaveSuccess?.();
+            },
+            partnerOrphaned || inviteExpired ? 3000 : 2000,
+          );
         } else {
           setSuccessMessage("Settings saved!");
           setTimeout(() => {
@@ -143,9 +180,13 @@ export function SplitwiseSettingsForm({
           }, 1000);
         }
       } else {
-        form.setError(result.error || "Failed to save settings");
+        const errorMessage = "error" in result ? result.error : null;
+        const isEmojiConflict =
+          "isEmojiConflict" in result && result.isEmojiConflict;
 
-        if (result.isEmojiConflict && form.partnerInfo?.emoji) {
+        form.setError(errorMessage || "Failed to save settings");
+
+        if (isEmojiConflict && form.partnerInfo?.emoji) {
           form.suggestDifferentEmoji(form.partnerInfo.emoji);
         }
       }
@@ -267,6 +308,8 @@ export function SplitwiseSettingsForm({
           showAdvanced={showAdvanced}
           onShowAdvancedChange={setShowAdvanced}
           budgetCurrency={budgetCurrency}
+          secondaryOrphanWarning={form.secondaryOrphanWarning}
+          inviteExpireWarning={form.inviteExpireWarning}
         />
       ) : (
         <SplitwiseSoloFormFields

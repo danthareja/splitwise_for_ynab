@@ -16,6 +16,10 @@ import {
   PartnerJoinedEmail,
   PartnerJoinedEmailProps,
 } from "@/emails/partner-joined";
+import {
+  PartnerDisconnectedEmail,
+  PartnerDisconnectedEmailProps,
+} from "@/emails/partner-disconnected";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -207,6 +211,37 @@ export async function sendPartnerJoinedEmail({
     text: await render(PartnerJoinedEmail({ userName, partnerName }), {
       plainText: true,
     }),
+  });
+
+  if (error) {
+    Sentry.captureException(error);
+    console.error(error);
+    return { success: false, error };
+  }
+
+  return { success: true, data };
+}
+
+interface SendPartnerDisconnectedEmailParams
+  extends PartnerDisconnectedEmailProps {
+  to: string;
+}
+
+export async function sendPartnerDisconnectedEmail({
+  to,
+  userName,
+  primaryName,
+  oldGroupName,
+}: SendPartnerDisconnectedEmailParams) {
+  const { data, error } = await resend.emails.send({
+    from: "Splitwise for YNAB <support@splitwiseforynab.com>",
+    to: [to],
+    subject: "Your Duo account has been disconnected",
+    react: PartnerDisconnectedEmail({ userName, primaryName, oldGroupName }),
+    text: await render(
+      PartnerDisconnectedEmail({ userName, primaryName, oldGroupName }),
+      { plainText: true },
+    ),
   });
 
   if (error) {

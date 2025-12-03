@@ -32,7 +32,7 @@ export function InviteFlow({
   const [isLinking, setIsLinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // If authenticated, automatically link and redirect to onboarding
+  // If authenticated, link and redirect appropriately
   const handleContinueToOnboarding = async () => {
     setIsLinking(true);
     setError(null);
@@ -41,8 +41,14 @@ export function InviteFlow({
       const result = await linkAsSecondary(token);
 
       if (result.success) {
-        // Redirect to onboarding - they'll start at step 0 (Connect Splitwise)
-        router.push("/dashboard/setup");
+        // If user was already fully configured (solo user rejoining),
+        // redirect to dashboard instead of onboarding
+        if ("skipOnboarding" in result && result.skipOnboarding) {
+          router.push("/dashboard");
+        } else {
+          // Redirect to onboarding - they'll start at step 0 (Connect Splitwise)
+          router.push("/dashboard/setup");
+        }
       } else {
         setError(result.error || "Failed to join Duo account");
       }

@@ -53,15 +53,15 @@ export default async function InvitePage({ params }: InvitePageProps) {
   }
 
   // If user is already authenticated and has completed onboarding, redirect to dashboard
-  if (session?.user) {
-    // Check if this user is already set up
-    const { getUserOnboardingData } = await import("@/app/actions/db");
-    const userData = await getUserOnboardingData();
+  // if (session?.user) {
+  //   // Check if this user is already set up
+  //   const { getUserOnboardingData } = await import("@/app/actions/db");
+  //   const userData = await getUserOnboardingData();
 
-    if (userData?.onboardingComplete) {
-      redirect("/dashboard");
-    }
-  }
+  //   if (userData?.onboardingComplete) {
+  //     redirect("/dashboard");
+  //   }
+  // }
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0f0f0f]">

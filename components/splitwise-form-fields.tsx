@@ -24,7 +24,15 @@ import {
   SPLIT_RATIO_PRESETS,
 } from "@/hooks/use-splitwise-form";
 import type { SplitwiseGroup } from "@/types/splitwise";
-import { ChevronDown, Info, AlertCircle, Lock, Users } from "lucide-react";
+import {
+  ChevronDown,
+  Info,
+  AlertCircle,
+  Lock,
+  Users,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
@@ -536,6 +544,20 @@ interface SplitwisePrimaryFormFieldsProps {
   // Optional
   budgetCurrency?: string | null;
   showRoleExplanation?: boolean;
+
+  // Secondary orphan warning (when primary changes to a group where secondary isn't a member)
+  secondaryOrphanWarning?: {
+    willBeOrphaned: boolean;
+    secondaryName: string;
+    isChecking: boolean;
+  };
+
+  // Invite expire warning (when primary changes to a group where invitee isn't a member)
+  inviteExpireWarning?: {
+    willBeExpired: boolean;
+    inviteeName: string;
+    isChecking: boolean;
+  };
 }
 
 /**
@@ -566,6 +588,8 @@ export function SplitwisePrimaryFormFields({
   onShowAdvancedChange,
   budgetCurrency,
   showRoleExplanation = true,
+  secondaryOrphanWarning,
+  inviteExpireWarning,
 }: SplitwisePrimaryFormFieldsProps) {
   // Use internal state if no external control provided
   const [internalShowAdvanced, setInternalShowAdvanced] =
@@ -603,6 +627,46 @@ export function SplitwisePrimaryFormFields({
           onGroupChange={onGroupChange}
           variant="shared"
         />
+
+        {/* Secondary orphan warning */}
+        {secondaryOrphanWarning?.isChecking && (
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Checking if {partnerName} is in this group...</span>
+          </div>
+        )}
+
+        {secondaryOrphanWarning?.willBeOrphaned && (
+          <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertDescription className="text-amber-800 dark:text-amber-200">
+              <strong>{secondaryOrphanWarning.secondaryName}</strong> is not a
+              member of this Splitwise group. If you save, they&apos;ll be
+              disconnected from your Duo account and converted to a Solo
+              account. They&apos;ll need to reconfigure their own Splitwise
+              settings to continue syncing.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Invite expire warning */}
+        {inviteExpireWarning?.isChecking && (
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Checking if your invited partner is in this group...</span>
+          </div>
+        )}
+
+        {inviteExpireWarning?.willBeExpired && (
+          <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertDescription className="text-amber-800 dark:text-amber-200">
+              <strong>{inviteExpireWarning.inviteeName}</strong> is not a member
+              of this Splitwise group. If you save, their pending invite will be
+              cancelled.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <SplitRatioSelector
           selectedSplitRatio={selectedSplitRatio}
