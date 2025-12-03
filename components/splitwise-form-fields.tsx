@@ -399,6 +399,15 @@ interface SplitwiseSoloFormFieldsProps {
 
   // Optional
   budgetCurrency?: string | null;
+
+  // Group conflict warning (when selecting a group already in use)
+  groupConflictWarning?: {
+    hasConflict: boolean;
+    ownerName: string;
+    ownerPersona: "solo" | "dual" | null;
+    ownerHasPartner: boolean;
+    isChecking: boolean;
+  };
 }
 
 /**
@@ -425,6 +434,7 @@ export function SplitwiseSoloFormFields({
   onPayeeModeChange,
   onCustomPayeeNameChange,
   budgetCurrency,
+  groupConflictWarning,
 }: SplitwiseSoloFormFieldsProps) {
   return (
     <div className="bg-white dark:bg-[#141414] border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-6">
@@ -435,6 +445,43 @@ export function SplitwiseSoloFormFields({
         isLoading={isLoading}
         onGroupChange={onGroupChange}
       />
+
+      {/* Group conflict warning */}
+      {groupConflictWarning?.isChecking && (
+        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Checking group availability...</span>
+        </div>
+      )}
+
+      {groupConflictWarning?.hasConflict && (
+        <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+          <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <AlertDescription className="text-amber-800 dark:text-amber-200">
+            {groupConflictWarning.ownerPersona === "dual" ? (
+              <>
+                This group is already used by{" "}
+                <strong>{groupConflictWarning.ownerName}</strong>.
+                {groupConflictWarning.ownerHasPartner ? (
+                  <>
+                    {" "}
+                    Their Duo account is full. Please select a different group.
+                  </>
+                ) : (
+                  <> Ask them to invite you to their Duo account.</>
+                )}
+              </>
+            ) : (
+              <>
+                This group is already used by{" "}
+                <strong>{groupConflictWarning.ownerName}</strong> (Solo mode).
+                To share this group, ask them to switch to Duo mode and invite
+                you.
+              </>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Advanced settings */}
       <Collapsible open={showAdvanced} onOpenChange={onShowAdvancedChange}>
@@ -558,6 +605,15 @@ interface SplitwisePrimaryFormFieldsProps {
     inviteeName: string;
     isChecking: boolean;
   };
+
+  // Group conflict warning (when selecting a group already in use by a non-partner)
+  groupConflictWarning?: {
+    hasConflict: boolean;
+    ownerName: string;
+    ownerPersona: "solo" | "dual" | null;
+    ownerHasPartner: boolean;
+    isChecking: boolean;
+  };
 }
 
 /**
@@ -590,6 +646,7 @@ export function SplitwisePrimaryFormFields({
   showRoleExplanation = true,
   secondaryOrphanWarning,
   inviteExpireWarning,
+  groupConflictWarning,
 }: SplitwisePrimaryFormFieldsProps) {
   // Use internal state if no external control provided
   const [internalShowAdvanced, setInternalShowAdvanced] =
@@ -664,6 +721,44 @@ export function SplitwisePrimaryFormFields({
               <strong>{inviteExpireWarning.inviteeName}</strong> is not a member
               of this Splitwise group. If you save, their pending invite will be
               cancelled.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Group conflict warning */}
+        {groupConflictWarning?.isChecking && (
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Checking group availability...</span>
+          </div>
+        )}
+
+        {groupConflictWarning?.hasConflict && (
+          <Alert className="border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800">
+            <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+            <AlertDescription className="text-red-800 dark:text-red-200">
+              {groupConflictWarning.ownerPersona === "dual" ? (
+                <>
+                  This group is already used by{" "}
+                  <strong>{groupConflictWarning.ownerName}</strong>.
+                  {groupConflictWarning.ownerHasPartner ? (
+                    <>
+                      {" "}
+                      Their Duo account is full. Please select a different
+                      group.
+                    </>
+                  ) : (
+                    <> Ask them to invite you to their Duo account.</>
+                  )}
+                </>
+              ) : (
+                <>
+                  This group is already used by{" "}
+                  <strong>{groupConflictWarning.ownerName}</strong> (Solo mode).
+                  To share this group, ask them to switch to Duo mode and invite
+                  you.
+                </>
+              )}
             </AlertDescription>
           </Alert>
         )}

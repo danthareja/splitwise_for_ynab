@@ -6,6 +6,7 @@ import {
   getPartnerEmoji,
   checkSecondaryInGroup,
   checkInviteInGroup,
+  detectExistingGroupUser,
 } from "@/app/actions/splitwise";
 import type { SplitwiseGroup } from "@/types/splitwise";
 
@@ -85,6 +86,19 @@ interface InviteExpireWarning {
   isChecking: boolean;
 }
 
+interface GroupConflictWarning {
+  /** Whether the group is in use by another user */
+  hasConflict: boolean;
+  /** Name of the user who owns the group */
+  ownerName: string;
+  /** Persona of the owner (solo or dual) */
+  ownerPersona: "solo" | "dual" | null;
+  /** Whether they already have a partner */
+  ownerHasPartner: boolean;
+  /** Whether we're currently checking */
+  isChecking: boolean;
+}
+
 export function useSplitwiseForm({
   initialGroupId,
   initialGroupName,
@@ -118,6 +132,16 @@ export function useSplitwiseForm({
     useState<InviteExpireWarning>({
       willBeExpired: false,
       inviteeName: "",
+      isChecking: false,
+    });
+
+  // Group conflict warning state (for users selecting a group already in use)
+  const [groupConflictWarning, setGroupConflictWarning] =
+    useState<GroupConflictWarning>({
+      hasConflict: false,
+      ownerName: "",
+      ownerPersona: null,
+      ownerHasPartner: false,
       isChecking: false,
     });
 
@@ -260,7 +284,56 @@ export function useSplitwiseForm({
         inviteeName: "",
         isChecking: false,
       });
+      setGroupConflictWarning({
+        hasConflict: false,
+        ownerName: "",
+        ownerPersona: null,
+        ownerHasPartner: false,
+        isChecking: false,
+      });
       return;
+    }
+
+    // Check if this group is already in use by another user (not a partner)
+    // This prevents ex-secondaries from selecting their old shared group
+    if (groupId && groupId !== initialGroupId) {
+      setGroupConflictWarning((prev) => ({
+        ...prev,
+        isChecking: true,
+        hasConflict: false,
+      }));
+
+      try {
+        const result = await detectExistingGroupUser(groupId);
+
+        if (result) {
+          // Group is in use by someone we're not partnered with
+          setGroupConflictWarning({
+            hasConflict: true,
+            ownerName: result.name || "Another user",
+            ownerPersona: result.persona,
+            ownerHasPartner: result.hasPartner || false,
+            isChecking: false,
+          });
+        } else {
+          setGroupConflictWarning({
+            hasConflict: false,
+            ownerName: "",
+            ownerPersona: null,
+            ownerHasPartner: false,
+            isChecking: false,
+          });
+        }
+      } catch (err) {
+        console.error("Error checking group conflict:", err);
+        setGroupConflictWarning({
+          hasConflict: false,
+          ownerName: "",
+          ownerPersona: null,
+          ownerHasPartner: false,
+          isChecking: false,
+        });
+      }
     }
 
     // If this is a primary user and they're changing to a different group,
@@ -358,14 +431,15 @@ export function useSplitwiseForm({
   const finalSplitRatio =
     selectedSplitRatio === "custom" ? customSplitRatio : selectedSplitRatio;
 
-  // Validation
+  // Validation - also check for group conflicts
   const isValid = isSecondary
     ? Boolean(selectedEmoji && !isEmojiConflict)
     : Boolean(
         selectedGroupId &&
           selectedCurrency &&
           selectedEmoji &&
-          !isEmojiConflict,
+          !isEmojiConflict &&
+          !groupConflictWarning.hasConflict,
       );
 
   return {
@@ -392,6 +466,7 @@ export function useSplitwiseForm({
     isValid,
     secondaryOrphanWarning,
     inviteExpireWarning,
+    groupConflictWarning,
 
     // Actions
     loadGroups,

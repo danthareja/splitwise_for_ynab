@@ -310,6 +310,7 @@ export function SplitwiseSettingsForm({
           budgetCurrency={budgetCurrency}
           secondaryOrphanWarning={form.secondaryOrphanWarning}
           inviteExpireWarning={form.inviteExpireWarning}
+          groupConflictWarning={form.groupConflictWarning}
         />
       ) : (
         <SplitwiseSoloFormFields
@@ -333,6 +334,7 @@ export function SplitwiseSettingsForm({
           onPayeeModeChange={form.handlePayeeModeChange}
           onCustomPayeeNameChange={(name) => form.setCustomPayeeName(name)}
           budgetCurrency={budgetCurrency}
+          groupConflictWarning={form.groupConflictWarning}
         />
       )}
 

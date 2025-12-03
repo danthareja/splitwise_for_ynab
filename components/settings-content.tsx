@@ -29,6 +29,7 @@ import { updatePersonaWithPartnerHandling } from "@/app/actions/user";
 import type { Persona } from "@/app/actions/user";
 import type { PartnershipStatus } from "@/app/actions/db";
 import { PartnerInviteCard } from "@/components/partner-invite-card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Check, AlertTriangle, Lock, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -52,6 +53,8 @@ interface SettingsContentProps {
     customPayeeName?: string | null;
   } | null;
   partnershipStatus: PartnershipStatus | null;
+  /** If true, auto-expand Splitwise settings for reconfiguration (e.g., after orphan recovery) */
+  reconfigure?: boolean;
 }
 
 interface ConfirmationState {
@@ -67,9 +70,13 @@ export function SettingsContent({
   ynabSettings,
   splitwiseSettings,
   partnershipStatus,
+  reconfigure = false,
 }: SettingsContentProps) {
   const router = useRouter();
-  const [editingSection, setEditingSection] = useState<string | null>(null);
+  // Auto-expand splitwise section if reconfigure mode (e.g., orphan recovery)
+  const [editingSection, setEditingSection] = useState<string | null>(
+    reconfigure ? "splitwise" : null,
+  );
   const [persona, setPersona] = useState<Persona | null>(
     initialPersona as Persona | null,
   );
@@ -214,9 +221,21 @@ export function SettingsContent({
   const isSecondary = partnershipStatus?.type === "secondary";
   const isPrimary = partnershipStatus?.type === "primary";
   const isInHousehold = isSecondary || isPrimary;
+  const isOrphaned = partnershipStatus?.type === "orphaned";
 
   return (
     <>
+      {/* Orphaned state alert */}
+      {isOrphaned && (
+        <Alert className="mb-6 border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <AlertDescription className="text-amber-800 dark:text-amber-200">
+            Your partner&apos;s account is no longer active. Select a new
+            Splitwise group below to continue syncing independently.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Confirmation Modal for Primary disconnecting Partner */}
       <AlertDialog
         open={
@@ -426,48 +445,14 @@ export function SettingsContent({
                   )}
                 </div>
 
-                {/*
-                TODO: It's going to take a lot more work to get this feature fully self-serve.
-                I found a bunch of errors on my first test, and think it's best to let us handle
-                it in the back-end for now (esp. with billing things that might change this UX).
-
-                Current issues: When A secondary user switches to Solo:,
-                  1. There is no error message when selecting the previous splitwise group (would expect something like "Ask Test to join their duo account")
-                  2. There is no way to re-join the Duo account (re-invite from Duo doesn't work)
-                  3. Switching back into Duo, they can invite anyone they want now to join (with a blank email address),
-
-                Full test plan:
-
-                ### Orphaned State (Secondary with missing Primary)
-                  - [ ] Dashboard shows amber warning card
-                  - [ ] Sync hero shows "disabled" state with custom message
-                  - [ ] "Reconfigure settings" CTA → settings page with ?reconfigure=true
-                  - [ ] Must select new Splitwise group (can't use primary's old group)
-
-                ### Persona Change Scenarios
-                  - [ ] **Solo → Dual**: Safe, no confirmation needed
-                    - [ ] Partner invite card appears after change
-                  - [ ] **Dual (Primary waiting) → Solo**: Expires pending invites, no confirmation
-                  - [ ] **Dual (Primary with Partner) → Solo**:
-                    - [ ] Confirmation dialog required
-                    - [ ] Shows partner's name
-                    - [ ] "Disconnect & switch to Solo"
-                    - [ ] Partner becomes orphaned
-                  - [ ] **Dual (Secondary) → Solo**:
-                    - [ ] Confirmation dialog required
-                    - [ ] Shows primary's name and group name
-                    - [ ] "Leave & switch to Solo"
-                    - [ ] Clears Splitwise settings (groupId, currency, split ratio)
-                    - [ ] User must reconfigure with different group
-               */}
-                {/* <Button
+                <Button
                   variant="outline"
                   size="sm"
                   onClick={startEditingPersona}
                   className="rounded-full"
                 >
                   Change Mode
-                </Button> */}
+                </Button>
               </div>
             )}
           </CardContent>

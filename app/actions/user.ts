@@ -3,7 +3,11 @@
 import { auth } from "@/auth";
 import { prisma } from "@/db";
 import { revalidatePath } from "next/cache";
-import { sendPartnerJoinedEmail } from "@/services/email";
+import {
+  sendPartnerJoinedEmail,
+  sendPartnerDisconnectedEmail,
+} from "@/services/email";
+import { getUserFirstName } from "@/lib/utils";
 
 export type Persona = "solo" | "dual";
 
@@ -84,6 +88,7 @@ export async function updatePersonaWithPartnerHandling(
           id: true,
           name: true,
           firstName: true,
+          email: true,
         },
       },
       splitwiseSettings: {
@@ -130,15 +135,31 @@ export async function updatePersonaWithPartnerHandling(
       };
     }
 
-    // Confirmed: Unlink the secondary user and switch to solo
+    // Confirmed: Disconnect the secondary user and switch to solo
+    // The secondary is converted to solo mode with cleared group settings
+    // (same as when they voluntarily leave)
     await prisma.$transaction([
-      // Unlink secondary user (they become orphaned but can reconfigure)
+      // Unlink and convert secondary to solo
       prisma.user.update({
         where: { id: user.secondaryUser.id },
         data: {
           primaryUserId: null,
-          // Don't change their persona - they can decide what to do
-          // Don't reset onboarding - they still have valid settings
+          persona: "solo",
+          // Reset onboarding so they can reconfigure Splitwise
+          onboardingStep: 3, // Configure Splitwise step
+          onboardingComplete: false,
+        },
+      }),
+      // Clear the secondary's group settings (they need to pick a new group)
+      // Keep personal preferences: emoji, useDescriptionAsPayee, customPayeeName
+      prisma.splitwiseSettings.updateMany({
+        where: { userId: user.secondaryUser.id },
+        data: {
+          groupId: null,
+          groupName: null,
+          currencyCode: null,
+          defaultSplitRatio: null,
+          lastPartnerSyncAt: null,
         },
       }),
       // Update current user to solo
@@ -157,6 +178,23 @@ export async function updatePersonaWithPartnerHandling(
         },
       }),
     ]);
+
+    // Send email notification to the disconnected secondary
+    const secondaryEmail = user.secondaryUser.email;
+    if (secondaryEmail) {
+      const primaryName = getUserFirstName(user) || "Your partner";
+      const groupName = user.splitwiseSettings?.groupName || undefined;
+
+      // Send email in the background - don't block the response
+      sendPartnerDisconnectedEmail({
+        to: secondaryEmail,
+        userName: getUserFirstName(user.secondaryUser) || undefined,
+        primaryName,
+        oldGroupName: groupName,
+      }).catch((error) => {
+        console.error("Failed to send partner disconnected email:", error);
+      });
+    }
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/settings");

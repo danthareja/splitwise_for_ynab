@@ -20,7 +20,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function SettingsPage() {
+interface SettingsPageProps {
+  searchParams: Promise<{ reconfigure?: string }>;
+}
+
+export default async function SettingsPage({
+  searchParams,
+}: SettingsPageProps) {
   const session = await auth();
 
   if (!session?.user) {
@@ -41,6 +47,8 @@ export default async function SettingsPage() {
   const ynabSettings = await getYNABSettings();
   const splitwiseSettings = await getSplitwiseSettings();
   const partnershipStatus = await getPartnershipStatus();
+  const params = await searchParams;
+  const reconfigure = params.reconfigure === "true";
 
   return (
     <div className="flex min-h-screen flex-col bg-[#FDFBF7] dark:bg-[#0f0f0f]">
@@ -72,6 +80,7 @@ export default async function SettingsPage() {
             ynabSettings={ynabSettings}
             splitwiseSettings={splitwiseSettings}
             partnershipStatus={partnershipStatus}
+            reconfigure={reconfigure}
           />
         </div>
       </main>
