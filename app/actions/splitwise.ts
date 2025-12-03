@@ -13,6 +13,7 @@ import {
   sendPartnerInviteEmail,
   sendPartnerDisconnectedEmail,
 } from "@/services/email";
+import { getSubscriptionStatus } from "@/services/stripe";
 import {
   getUserFirstName,
   reverseSplitRatio,
@@ -1375,6 +1376,20 @@ export async function createPartnerInvite(options?: {
       return { success: false, error: "You already have a partner connected" };
     }
 
+    // For existing users (not during onboarding), verify they have an active subscription
+    // During onboarding (options?.settings provided), skip this check - payment happens after
+    if (!options?.settings) {
+      const subscriptionStatus = await getSubscriptionStatus(session.user.id);
+      if (!subscriptionStatus.isActive) {
+        return {
+          success: false,
+          error:
+            "You need an active subscription to invite a partner. Please update your billing settings.",
+          requiresSubscription: true,
+        };
+      }
+    }
+
     // Use provided settings or fall back to database
     const effectiveSettings = options?.settings || user.splitwiseSettings;
 
@@ -1855,6 +1870,19 @@ export async function linkAsSecondary(token: string) {
         success: false,
         error:
           "This Duo account already has a partner. Please have your partner reach out to support.",
+      };
+    }
+
+    // Verify primary has an active subscription - secondary inherits from primary
+    const primarySubscription = await getSubscriptionStatus(
+      invite.primaryUserId,
+    );
+    if (!primarySubscription.isActive) {
+      return {
+        success: false,
+        error:
+          "Your partner's subscription is not active. Please ask them to update their billing settings before you can join their plan.",
+        requiresSubscription: true,
       };
     }
 

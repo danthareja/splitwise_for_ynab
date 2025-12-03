@@ -306,22 +306,23 @@ describe("actions/user - Persona Changes", () => {
 
       expect(result.success).toBe(true);
 
-      // Verify secondary is unlinked and solo
+      // Verify secondary is unlinked and solo with reset onboarding
       const updatedSecondary = await prisma.user.findUnique({
         where: { id: secondary.id },
+        include: { splitwiseSettings: true },
       });
       expect(updatedSecondary?.primaryUserId).toBeNull();
       expect(updatedSecondary?.persona).toBe("solo");
+      // Onboarding reset so they can reconfigure Splitwise and pay
+      expect(updatedSecondary?.onboardingComplete).toBe(false);
+      expect(updatedSecondary?.onboardingStep).toBe(3); // Configure Splitwise step
 
       // Verify group settings are cleared (but emoji kept)
-      const secondarySettings = await prisma.splitwiseSettings.findUnique({
-        where: { userId: secondary.id },
-      });
-      expect(secondarySettings?.groupId).toBeNull();
-      expect(secondarySettings?.currencyCode).toBeNull();
-      expect(secondarySettings?.defaultSplitRatio).toBeNull();
+      expect(updatedSecondary?.splitwiseSettings?.groupId).toBeNull();
+      expect(updatedSecondary?.splitwiseSettings?.currencyCode).toBeNull();
+      expect(updatedSecondary?.splitwiseSettings?.defaultSplitRatio).toBeNull();
       // Personal settings are kept
-      expect(secondarySettings?.emoji).toBe("🔄");
+      expect(updatedSecondary?.splitwiseSettings?.emoji).toBe("🔄");
     });
   });
 

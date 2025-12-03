@@ -6,6 +6,7 @@ import { StepSplitwise } from "@/components/onboarding/step-splitwise";
 import { StepPersona } from "@/components/onboarding/step-persona";
 import { StepYnab } from "@/components/onboarding/step-ynab";
 import { StepSplitwiseConfig } from "@/components/onboarding/step-splitwise-config";
+import { StepPayment } from "@/components/onboarding/step-payment";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -19,11 +20,14 @@ export const metadata: Metadata = {
 };
 
 interface SetupPageProps {
-  searchParams: Promise<{ auth_error?: string }>;
+  searchParams: Promise<{
+    auth_error?: string;
+    checkout?: "success" | "canceled";
+  }>;
 }
 
 export default async function SetupPage({ searchParams }: SetupPageProps) {
-  const { auth_error } = await searchParams;
+  const { auth_error, checkout } = await searchParams;
   const session = await auth();
 
   if (!session?.user) {
@@ -88,6 +92,27 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
   ) {
     effectiveStep = 3;
   }
+  // If has Splitwise settings but no subscription, should be at step 4
+  // (only for solo/primary users - secondary users skip payment)
+  else if (
+    !onboardingData.isSecondary &&
+    onboardingData.hasSplitwiseSettings &&
+    !onboardingData.hasSubscription &&
+    effectiveStep > 4
+  ) {
+    effectiveStep = 4;
+  }
+
+  // If returning from Stripe Checkout, stay at step 4 to show success/cancel
+  if (checkout && !onboardingData.isSecondary) {
+    effectiveStep = 4;
+  }
+
+  // Get currency code for payment step
+  const currencyCode =
+    onboardingData.splitwiseSettings?.currencyCode ||
+    onboardingData.primarySettings?.currencyCode ||
+    "USD";
 
   // Render the current step content
   const renderStepContent = () => {
@@ -113,6 +138,13 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
             isSecondary={onboardingData.isSecondary}
             primarySettings={onboardingData.primarySettings}
             primaryName={onboardingData.primaryName}
+          />
+        );
+      case 4:
+        return (
+          <StepPayment
+            currencyCode={currencyCode}
+            isDuo={onboardingData.persona === "dual"}
           />
         );
       default:

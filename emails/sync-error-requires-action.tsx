@@ -20,10 +20,6 @@ export const SyncErrorRequiresActionEmail = ({
 
   return (
     <EmailLayout previewText={previewText}>
-      <Section style={urgentBanner}>
-        <Text style={urgentText}>⚠️ Action required</Text>
-      </Section>
-
       <Heading style={emailStyles.h1}>Your sync is paused</Heading>
 
       <Text style={emailStyles.text}>Hi {userName},</Text>

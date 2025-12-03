@@ -191,6 +191,7 @@ export async function updatePersonaWithPartnerHandling(
         userName: getUserFirstName(user.secondaryUser) || undefined,
         primaryName,
         oldGroupName: groupName,
+        reason: "mode_change", // Primary switched to solo mode
       }).catch((error) => {
         console.error("Failed to send partner disconnected email:", error);
       });
@@ -257,12 +258,18 @@ export async function updatePersonaWithPartnerHandling(
 
     // Confirmed: Unlink from primary, switch to solo, and clear shared group settings
     // Under duo-only architecture, ex-secondary can't use the same group as the primary
+    // They must go through onboarding again to:
+    // 1. Configure their own Splitwise group (step 3)
+    // 2. Subscribe/pay for their own account (step 4)
     await prisma.$transaction([
       prisma.user.update({
         where: { id: session.user.id },
         data: {
           primaryUserId: null,
           persona: "solo",
+          // Reset onboarding - they need to configure Splitwise and pay
+          onboardingStep: 3, // Configure Splitwise step
+          onboardingComplete: false,
         },
       }),
       // Clear group-specific settings (they'll need to pick a new group)

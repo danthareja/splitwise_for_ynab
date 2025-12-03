@@ -8,7 +8,7 @@ import { updateOnboardingStep, completeOnboarding } from "@/app/actions/user";
 import type { Persona } from "@/app/actions/user";
 
 // Step definitions
-// Step 4 (Partner Setup) has been removed - joining a household now happens in Step 3
+// Step 4 is the payment/trial step
 export const ONBOARDING_STEPS = [
   {
     id: 0,
@@ -25,6 +25,11 @@ export const ONBOARDING_STEPS = [
     id: 3,
     title: "Configure Splitwise",
     description: "Select your group and currency",
+  },
+  {
+    id: 4,
+    title: "Start Trial",
+    description: "Begin your free trial",
   },
 ] as const;
 
@@ -51,9 +56,10 @@ export function OnboardingWizard({
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [isNavigating, setIsNavigating] = useState(false);
 
-  // Secondary users skip step 1 (persona) since they're already set to "dual"
+  // Secondary users skip step 1 (persona) and step 4 (payment)
+  // They inherit subscription from primary user
   const visibleSteps = isSecondary
-    ? ONBOARDING_STEPS.filter((step) => step.id !== 1)
+    ? ONBOARDING_STEPS.filter((step) => step.id !== 1 && step.id !== 4)
     : ONBOARDING_STEPS;
 
   // Calculate completion status for each step
@@ -90,8 +96,16 @@ export function OnboardingWizard({
       nextStepIndex = 2;
     }
 
-    // All users complete after step 3 (Configure Splitwise)
-    if (nextStepIndex > 3) {
+    // Secondary users skip step 4 (payment) - complete after step 3
+    // They're covered by primary user's subscription
+    if (isSecondary && nextStepIndex > 3) {
+      await completeOnboarding();
+      router.push("/dashboard");
+      return;
+    }
+
+    // Solo/Primary users complete after step 4 (Start Trial / Payment)
+    if (nextStepIndex > 4) {
       await completeOnboarding();
       router.push("/dashboard");
       return;

@@ -27,7 +27,7 @@ export const WelcomeEmail = ({
 
   return (
     <EmailLayout previewText={previewText}>
-      <Heading style={emailStyles.h1}>Welcome aboard, {userName}! 🎉</Heading>
+      <Heading style={emailStyles.h1}>Welcome aboard, {userName}!</Heading>
 
       <Text style={emailStyles.text}>
         You&apos;re all set up and ready to go. From now on, your shared

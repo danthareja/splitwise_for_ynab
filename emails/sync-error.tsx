@@ -18,7 +18,7 @@ export const SyncErrorEmail = ({
 
   return (
     <EmailLayout previewText={previewText}>
-      <Heading style={emailStyles.h1}>Sync hiccup</Heading>
+      <Heading style={emailStyles.h1}>Sync error</Heading>
 
       <Text style={emailStyles.text}>Hi {userName},</Text>
 

@@ -34,6 +34,8 @@ interface SyncHeroCardProps {
   // Disabled state props
   disabledReason?: string | null;
   suggestedFix?: string | null;
+  /** True if the disabled reason is due to subscription issues (can't be re-enabled manually) */
+  isSubscriptionIssue?: boolean;
   // Rate limit info
   initialRateLimitRemaining?: number;
   initialRateLimitResetSeconds?: number;
@@ -49,6 +51,7 @@ export function SyncHeroCard({
   budgetName,
   disabledReason,
   suggestedFix,
+  isSubscriptionIssue = false,
   initialRateLimitRemaining = 2,
   initialRateLimitResetSeconds = 3600,
   maxRequests = 2,
@@ -180,6 +183,14 @@ export function SyncHeroCard({
         if (result.error?.includes("manual syncs every")) {
           setState("rate_limited");
           await refreshRateLimitStatus();
+        } else if (
+          "requiresSubscription" in result &&
+          result.requiresSubscription
+        ) {
+          // Subscription issue - refresh page to show proper disabled state
+          // This handles the case where subscription lapsed after page load
+          router.refresh();
+          setState("disabled");
         } else {
           setState("ready");
         }
@@ -259,61 +270,73 @@ export function SyncHeroCard({
                 </p>
               </div>
             </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  disabled={isReenabling}
-                  variant="outline"
-                  className="rounded-full border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex-shrink-0"
-                >
-                  {isReenabling ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Re-enabling...
-                    </>
-                  ) : (
-                    "Re-enable Sync"
-                  )}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="max-w-md bg-white dark:bg-[#141414]">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="font-serif">
-                    Ready to re-enable sync?
-                  </AlertDialogTitle>
-                  <AlertDialogDescription asChild>
-                    <div className="space-y-3">
-                      <p>
-                        Make sure you&apos;ve resolved the issue before
-                        re-enabling:
-                      </p>
-                      {suggestedFix && (
-                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-                          <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                            {suggestedFix}
-                          </p>
-                        </div>
-                      )}
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        If the issue isn&apos;t fixed, sync will be paused again
-                        on the next attempt.
-                      </p>
-                    </div>
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel className="rounded-full">
-                    Cancel
-                  </AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleReenableAccount}
-                    className="rounded-full bg-gray-900 hover:bg-gray-800 text-white"
+
+            {/* For subscription issues, show link to settings instead of re-enable button */}
+            {isSubscriptionIssue ? (
+              <Button
+                asChild
+                variant="outline"
+                className="rounded-full border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex-shrink-0"
+              >
+                <a href="/dashboard/settings">Manage Billing</a>
+              </Button>
+            ) : (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    disabled={isReenabling}
+                    variant="outline"
+                    className="rounded-full border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex-shrink-0"
                   >
-                    Re-enable Sync
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                    {isReenabling ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Re-enabling...
+                      </>
+                    ) : (
+                      "Re-enable Sync"
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="max-w-md bg-white dark:bg-[#141414]">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="font-serif">
+                      Ready to re-enable sync?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription asChild>
+                      <div className="space-y-3">
+                        <p>
+                          Make sure you&apos;ve resolved the issue before
+                          re-enabling:
+                        </p>
+                        {suggestedFix && (
+                          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                            <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                              {suggestedFix}
+                            </p>
+                          </div>
+                        )}
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          If the issue isn&apos;t fixed, sync will be paused
+                          again on the next attempt.
+                        </p>
+                      </div>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="rounded-full">
+                      Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleReenableAccount}
+                      className="rounded-full bg-gray-900 hover:bg-gray-800 text-white"
+                    >
+                      Re-enable Sync
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         </CardContent>
       </Card>

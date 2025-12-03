@@ -20,6 +20,11 @@ import {
   PartnerDisconnectedEmail,
   PartnerDisconnectedEmailProps,
 } from "@/emails/partner-disconnected";
+import { TrialEndingEmail, TrialEndingEmailProps } from "@/emails/trial-ending";
+import {
+  SubscriptionExpiredEmail,
+  SubscriptionExpiredEmailProps,
+} from "@/emails/subscription-expired";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -232,14 +237,82 @@ export async function sendPartnerDisconnectedEmail({
   userName,
   primaryName,
   oldGroupName,
+  reason = "group_change",
 }: SendPartnerDisconnectedEmailParams) {
   const { data, error } = await resend.emails.send({
     from: "Splitwise for YNAB <support@splitwiseforynab.com>",
     to: [to],
-    subject: "Your Duo account has been disconnected",
-    react: PartnerDisconnectedEmail({ userName, primaryName, oldGroupName }),
+    subject: "You've been removed from your partner's Duo plan",
+    react: PartnerDisconnectedEmail({
+      userName,
+      primaryName,
+      oldGroupName,
+      reason,
+    }),
     text: await render(
-      PartnerDisconnectedEmail({ userName, primaryName, oldGroupName }),
+      PartnerDisconnectedEmail({ userName, primaryName, oldGroupName, reason }),
+      { plainText: true },
+    ),
+  });
+
+  if (error) {
+    Sentry.captureException(error);
+    console.error(error);
+    return { success: false, error };
+  }
+
+  return { success: true, data };
+}
+
+interface SendTrialEndingEmailParams extends TrialEndingEmailProps {
+  to: string;
+}
+
+export async function sendTrialEndingEmail({
+  to,
+  userName,
+  trialEndsAt,
+  planName,
+  planPrice,
+}: SendTrialEndingEmailParams) {
+  const { data, error } = await resend.emails.send({
+    from: "Splitwise for YNAB <support@splitwiseforynab.com>",
+    to: [to],
+    subject: "Your free trial ends in 3 days",
+    react: TrialEndingEmail({ userName, trialEndsAt, planName, planPrice }),
+    text: await render(
+      TrialEndingEmail({ userName, trialEndsAt, planName, planPrice }),
+      { plainText: true },
+    ),
+  });
+
+  if (error) {
+    Sentry.captureException(error);
+    console.error(error);
+    return { success: false, error };
+  }
+
+  return { success: true, data };
+}
+
+interface SendSubscriptionExpiredEmailParams
+  extends SubscriptionExpiredEmailProps {
+  to: string;
+}
+
+export async function sendSubscriptionExpiredEmail({
+  to,
+  userName,
+  expiredAt,
+  isSecondary,
+}: SendSubscriptionExpiredEmailParams) {
+  const { data, error } = await resend.emails.send({
+    from: "Splitwise for YNAB <support@splitwiseforynab.com>",
+    to: [to],
+    subject: "Your Splitwise for YNAB subscription has ended",
+    react: SubscriptionExpiredEmail({ userName, expiredAt, isSecondary }),
+    text: await render(
+      SubscriptionExpiredEmail({ userName, expiredAt, isSecondary }),
       { plainText: true },
     ),
   });

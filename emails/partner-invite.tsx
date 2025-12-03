@@ -43,7 +43,8 @@ export const PartnerInviteEmail = ({
         <Text style={highlightText}>
           <strong>What you&apos;ll get:</strong> Shared expenses automatically
           appear in your YNAB with the correct categories and amounts—no manual
-          entry needed.
+          entry needed. As part of {inviterName}&apos;s Duo plan, you won&apos;t
+          need your own subscription.
         </Text>
       </Section>
 

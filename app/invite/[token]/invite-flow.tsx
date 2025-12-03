@@ -173,6 +173,10 @@ export function InviteFlow({
           <li>• Currency: {invite.currencyCode}</li>
           <li>• Split ratio: {reverseSplitRatio(invite.defaultSplitRatio)}</li>
         </ul>
+        <p className="text-gray-500 dark:text-gray-400 mt-3">
+          As part of {invite.primaryName}&apos;s Duo plan, you won&apos;t need
+          your own subscription.
+        </p>
       </div>
     </div>
   );

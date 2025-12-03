@@ -416,16 +416,18 @@ export default async function HelpPage() {
                   </AccordionTrigger>
                   <AccordionContent>
                     <strong>Primary</strong> is the first person to set up the
-                    Duo account. They control the shared settings:
+                    Duo account. They control the shared settings and the
+                    subscription:
                     <ul className="list-disc list-inside mt-2 space-y-1">
                       <li>Which Splitwise group to use</li>
                       <li>The currency for expenses</li>
                       <li>The default split ratio</li>
+                      <li>Billing and subscription management</li>
                     </ul>
                     <div className="mt-3">
-                      <strong>Secondary</strong> joins the primary&apos;s duo
-                      account and inherits these shared settings. They can only
-                      customize their own:
+                      <strong>Secondary</strong> joins the primary&apos;s Duo
+                      plan at no extra cost. They inherit shared settings and
+                      can only customize their own:
                     </div>
                     <ul className="list-disc list-inside mt-2 space-y-1">
                       <li>
@@ -434,6 +436,10 @@ export default async function HelpPage() {
                       </li>
                       <li>Payee name preferences in YNAB</li>
                     </ul>
+                    <div className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                      The Secondary&apos;s access depends on the Primary&apos;s
+                      subscription remaining active.
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
 
@@ -529,14 +535,16 @@ export default async function HelpPage() {
                   </AccordionTrigger>
                   <AccordionContent>
                     <strong>If you&apos;re Secondary:</strong> You&apos;ll be
-                    disconnected and your Splitwise group settings will be
-                    cleared. You&apos;ll need to set up a new Splitwise group
-                    since the old one is still used by your former Primary.
+                    removed from your partner&apos;s plan and will need to start
+                    your own subscription. Pick a different Splitwise group
+                    (since the shared one is still used by your former Primary)
+                    and set up your account fresh. A free trial is available if
+                    you haven&apos;t used one.
                     <div className="mt-3">
-                      <strong>If you&apos;re Primary:</strong> Your partner
-                      (Secondary) will be disconnected. They&apos;ll need to
-                      reconfigure their Splitwise settings to continue syncing
-                      independently.
+                      <strong>If you&apos;re Primary:</strong> Your partner will
+                      be removed from your plan. They&apos;ll need to start
+                      their own subscription and select a new Splitwise group to
+                      continue syncing independently.
                     </div>
                   </AccordionContent>
                 </AccordionItem>

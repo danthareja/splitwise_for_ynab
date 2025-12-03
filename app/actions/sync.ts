@@ -16,6 +16,7 @@ import {
 } from "@/lib/rate-limit";
 import { Prisma } from "@/prisma/generated/client";
 import { isUserFullyConfigured } from "./db";
+import { getSubscriptionStatus } from "@/services/stripe";
 
 export async function syncUserDataAction() {
   const session = await auth();
@@ -43,6 +44,24 @@ export async function syncUserDataAction() {
         session.user.suggestedFix ||
         session.user.disabledReason ||
         "Your account has been disabled",
+    };
+  }
+
+  // Check for active subscription (secondary users check primary's subscription)
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { primaryUserId: true },
+  });
+  const subscriptionUserId = user?.primaryUserId || session.user.id;
+  const subscriptionStatus = await getSubscriptionStatus(subscriptionUserId);
+
+  if (!subscriptionStatus.isActive) {
+    return {
+      success: false,
+      error: user?.primaryUserId
+        ? "Your partner's subscription is not active. Syncing is paused until they update their billing."
+        : "Your subscription is not active. Please update your billing settings to continue syncing.",
+      requiresSubscription: true,
     };
   }
 

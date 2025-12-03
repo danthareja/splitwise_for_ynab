@@ -10,20 +10,17 @@ import {
 } from "@/app/actions/splitwise";
 import type { SplitwiseGroup } from "@/types/splitwise";
 import { SUGGESTED_EMOJIS } from "@/lib/utils";
+import {
+  CURRENCY_OPTIONS,
+  COMMON_CURRENCIES,
+  ALL_CURRENCIES,
+  type CurrencyOption,
+} from "@/lib/currencies";
 
 // Re-export for backwards compatibility
 export { SUGGESTED_EMOJIS };
-
-// Currency options
-export const CURRENCY_OPTIONS = [
-  { value: "USD", label: "USD - US Dollar" },
-  { value: "CAD", label: "CAD - Canadian Dollar" },
-  { value: "EUR", label: "EUR - Euro" },
-  { value: "GBP", label: "GBP - British Pound" },
-  { value: "AUD", label: "AUD - Australian Dollar" },
-  { value: "JPY", label: "JPY - Japanese Yen" },
-  { value: "CHF", label: "CHF - Swiss Franc" },
-];
+export { CURRENCY_OPTIONS, COMMON_CURRENCIES, ALL_CURRENCIES };
+export type { CurrencyOption };
 
 // Common split ratios for easy selection
 export const SPLIT_RATIO_PRESETS = [

@@ -230,8 +230,9 @@ export function SettingsContent({
         <Alert className="mb-6 border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
           <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           <AlertDescription className="text-amber-800 dark:text-amber-200">
-            Your partner&apos;s account is no longer active. Select a new
-            Splitwise group below to continue syncing independently.
+            Your partner&apos;s account is no longer active. You&apos;ll need to
+            set up your own account with your own subscription to continue
+            syncing. A free trial is available if you haven&apos;t used one.
           </AlertDescription>
         </Alert>
       )}
@@ -247,17 +248,18 @@ export function SettingsContent({
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
-              Disconnect your partner?
+              Remove your partner from your plan?
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
               <p>
-                Switching to Solo mode will disconnect{" "}
+                Switching to Solo mode will remove{" "}
                 <strong>{confirmation.partnerName || "your partner"}</strong>{" "}
-                from your Duo account.
+                from your Duo plan.
               </p>
               <p>
-                They&apos;ll need to reconfigure their own Splitwise settings to
-                continue syncing independently.
+                They&apos;ll need to <strong>create their own account</strong>{" "}
+                with their own subscription to continue syncing. They can use a
+                free trial if they haven&apos;t already.
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -267,7 +269,7 @@ export function SettingsContent({
               onClick={handleConfirmPersonaChange}
               className="bg-amber-600 hover:bg-amber-700"
             >
-              Disconnect &amp; switch to Solo
+              Remove &amp; switch to Solo
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -282,20 +284,20 @@ export function SettingsContent({
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
-              Leave Duo account?
+              Leave your partner&apos;s plan?
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
               <p>
-                You&apos;ll be disconnected from{" "}
+                You&apos;ll be removed from{" "}
                 <strong>
                   {confirmation.partnerName || "your partner"}&apos;s
                 </strong>{" "}
-                Duo account.
+                Duo plan.
               </p>
               <p>
-                You&apos;ll need to select a{" "}
-                <strong>different Splitwise group</strong> for solo syncing,
-                since{" "}
+                You&apos;ll need to <strong>start your own subscription</strong>{" "}
+                (free trial available) and select a{" "}
+                <strong>different Splitwise group</strong>, since{" "}
                 <strong>
                   &ldquo;{confirmation.groupName || "the shared group"}&rdquo;
                 </strong>{" "}

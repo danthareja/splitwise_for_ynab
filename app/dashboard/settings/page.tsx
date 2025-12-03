@@ -3,9 +3,14 @@ import { redirect } from "next/navigation";
 import { getUserOnboardingData, getPartnershipStatus } from "@/app/actions/db";
 import { getSplitwiseSettings } from "@/app/actions/splitwise";
 import { getYNABSettings } from "@/app/actions/ynab";
+import { getSubscriptionInfo } from "@/app/actions/subscription";
 import { AppHeader } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { SettingsContent } from "@/components/settings-content";
+import {
+  BillingSettings,
+  NoSubscriptionCard,
+} from "@/components/billing-settings";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -47,6 +52,7 @@ export default async function SettingsPage({
   const ynabSettings = await getYNABSettings();
   const splitwiseSettings = await getSplitwiseSettings();
   const partnershipStatus = await getPartnershipStatus();
+  const subscriptionInfo = await getSubscriptionInfo();
   const params = await searchParams;
   const reconfigure = params.reconfigure === "true";
 
@@ -82,6 +88,25 @@ export default async function SettingsPage({
             partnershipStatus={partnershipStatus}
             reconfigure={reconfigure}
           />
+
+          {/* Billing section */}
+          <div className="mt-8">
+            <h2 className="text-xl font-serif text-gray-900 dark:text-white mb-4">
+              Subscription
+            </h2>
+            {subscriptionInfo?.hasSubscription ? (
+              <BillingSettings subscription={subscriptionInfo} />
+            ) : (
+              <NoSubscriptionCard
+                hadPreviousSubscription={
+                  subscriptionInfo?.hadPreviousSubscription ?? false
+                }
+                expiredAt={subscriptionInfo?.currentPeriodEnd}
+                currencyCode={splitwiseSettings?.currencyCode ?? undefined}
+                isSecondary={partnershipStatus?.type === "secondary"}
+              />
+            )}
+          </div>
         </div>
       </main>
 

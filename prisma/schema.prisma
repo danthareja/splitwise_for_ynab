@@ -48,6 +48,15 @@ model User {
   // Splitwise user ID (for partner detection when selecting same group)
   splitwiseUserId    String?
   
+  // Stripe subscription fields
+  stripeCustomerId     String?         @unique
+  stripeSubscriptionId String?         @unique
+  stripePriceId        String?
+  stripeCurrentPeriodEnd DateTime?
+  subscriptionStatus   String?         // "trialing" | "active" | "canceled" | "past_due" | "unpaid"
+  trialEndsAt          DateTime?
+  cancelAtPeriodEnd    Boolean         @default(false)
+  
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 }

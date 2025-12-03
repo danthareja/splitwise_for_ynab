@@ -16,7 +16,7 @@ export const PartnerJoinedEmail = ({
 
   return (
     <EmailLayout previewText={previewText}>
-      <Heading style={emailStyles.h1}>{partnerName} is in! 🎉</Heading>
+      <Heading style={emailStyles.h1}>{partnerName} is in!</Heading>
 
       <Text style={emailStyles.text}>Hi {userName},</Text>
 

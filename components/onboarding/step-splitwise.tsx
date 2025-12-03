@@ -126,93 +126,140 @@ export function StepSplitwise({
         title="Splitwise Connected!"
         description="Confirm this is the right account before continuing."
       >
-        {/* Secondary user - group access error */}
-        {showGroupAccessError && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="flex flex-col gap-3">
-              <span>
-                Your Splitwise account doesn&apos;t have access to {primaryName}
-                &apos;s group ({primarySettings?.groupName || "Shared group"}).
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDisconnect}
-                disabled={isDisconnecting}
-                className="w-fit bg-white dark:bg-gray-900 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950"
-              >
-                <LogOut className="mr-2 h-3.5 w-3.5" />
-                {isDisconnecting
-                  ? "Disconnecting..."
-                  : "Disconnect & try again"}
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Secondary user - checking access */}
-        {isSecondary && isCheckingAccess && (
-          <Alert className="mb-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-            <Loader2 className="h-4 w-4 text-blue-600 dark:text-blue-400 animate-spin" />
-            <AlertDescription className="text-blue-800 dark:text-blue-200">
-              Checking access to {primaryName}&apos;s Splitwise group...
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Secondary user - has access (confirmed) */}
-        {isSecondary &&
-          !isCheckingAccess &&
-          hasGroupAccess === true &&
-          primarySettings?.groupId && (
-            <Alert className="mb-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-              <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
-              <AlertDescription className="text-green-800 dark:text-green-200">
-                This account has access to {primaryName}&apos;s group (
-                {primarySettings?.groupName}).
+        {/* Add padding at bottom on mobile to account for sticky footer */}
+        <div className="pb-28 sm:pb-0">
+          {/* Secondary user - group access error */}
+          {showGroupAccessError && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="flex flex-col gap-3">
+                <span>
+                  Your Splitwise account doesn&apos;t have access to{" "}
+                  {primaryName}
+                  &apos;s group ({primarySettings?.groupName || "Shared group"}
+                  ).
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDisconnect}
+                  disabled={isDisconnecting}
+                  className="w-fit bg-white dark:bg-gray-900 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950"
+                >
+                  <LogOut className="mr-2 h-3.5 w-3.5" />
+                  {isDisconnecting
+                    ? "Disconnecting..."
+                    : "Disconnect & try again"}
+                </Button>
               </AlertDescription>
             </Alert>
           )}
 
-        {/* Profile card */}
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6">
-          <div className="flex items-center gap-4">
-            {userProfile?.image ? (
-              <Image
-                src={userProfile.image}
-                alt=""
-                width={56}
-                height={56}
-                className="h-14 w-14 rounded-full object-cover"
-                unoptimized
-              />
-            ) : (
-              <div className="h-14 w-14 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
-                <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
-              </div>
+          {/* Secondary user - checking access */}
+          {isSecondary && isCheckingAccess && (
+            <Alert className="mb-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+              <Loader2 className="h-4 w-4 text-blue-600 dark:text-blue-400 animate-spin" />
+              <AlertDescription className="text-blue-800 dark:text-blue-200">
+                Checking access to {primaryName}&apos;s Splitwise group...
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Secondary user - has access (confirmed) */}
+          {isSecondary &&
+            !isCheckingAccess &&
+            hasGroupAccess === true &&
+            primarySettings?.groupId && (
+              <Alert className="mb-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <AlertDescription className="text-green-800 dark:text-green-200">
+                  This account has access to {primaryName}&apos;s group (
+                  {primarySettings?.groupName}).
+                </AlertDescription>
+              </Alert>
             )}
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-gray-900 dark:text-white truncate">
-                {userProfile?.name || "Splitwise User"}
-              </p>
-              {userProfile?.email && (
-                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                  {userProfile.email}
-                </p>
+
+          {/* Profile card */}
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6">
+            <div className="flex items-center gap-4">
+              {userProfile?.image ? (
+                <Image
+                  src={userProfile.image}
+                  alt=""
+                  width={56}
+                  height={56}
+                  className="h-14 w-14 rounded-full object-cover"
+                  unoptimized
+                />
+              ) : (
+                <div className="h-14 w-14 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+                  <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
               )}
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900 dark:text-white truncate">
+                  {userProfile?.name || "Splitwise User"}
+                </p>
+                {userProfile?.email && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                    {userProfile.email}
+                  </p>
+                )}
+              </div>
+              <div className="flex-shrink-0">
+                <span className="inline-flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400">
+                  <Check className="h-4 w-4" />
+                  Connected
+                </span>
+              </div>
             </div>
-            <div className="flex-shrink-0">
-              <span className="inline-flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400">
-                <Check className="h-4 w-4" />
-                Connected
-              </span>
-            </div>
+          </div>
+
+          {/* Desktop actions */}
+          <div className="hidden sm:block space-y-3">
+            <Button
+              onClick={nextStep}
+              disabled={
+                isNavigating ||
+                isDisconnecting ||
+                isCheckingAccess ||
+                !!showGroupAccessError
+              }
+              className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-full h-12 text-base"
+            >
+              {isCheckingAccess ? "Checking access..." : "Continue"}
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+
+            <button
+              onClick={handleDisconnect}
+              disabled={isDisconnecting || isNavigating}
+              className="w-full text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 flex items-center justify-center gap-2 py-2"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              {isDisconnecting
+                ? "Disconnecting..."
+                : "Wrong account? Disconnect"}
+            </button>
+          </div>
+
+          {/* Mobile: disconnect link only (CTA in sticky footer) */}
+          <div className="sm:hidden">
+            <button
+              onClick={handleDisconnect}
+              disabled={isDisconnecting || isNavigating}
+              className="w-full text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 flex items-center justify-center gap-2 py-2"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              {isDisconnecting
+                ? "Disconnecting..."
+                : "Wrong account? Disconnect"}
+            </button>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="space-y-3">
+        {/* Mobile sticky footer */}
+        <div className="fixed bottom-0 left-0 right-0 sm:hidden bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 p-4 z-50 shadow-lg">
           <Button
             onClick={nextStep}
             disabled={
@@ -221,20 +268,12 @@ export function StepSplitwise({
               isCheckingAccess ||
               !!showGroupAccessError
             }
-            className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-full h-12 text-base"
+            size="lg"
+            className="w-full bg-gray-900 hover:bg-gray-800 text-white"
           >
             {isCheckingAccess ? "Checking access..." : "Continue"}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
-
-          <button
-            onClick={handleDisconnect}
-            disabled={isDisconnecting || isNavigating}
-            className="w-full text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 flex items-center justify-center gap-2 py-2"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            {isDisconnecting ? "Disconnecting..." : "Wrong account? Disconnect"}
-          </button>
         </div>
       </StepContainer>
     );

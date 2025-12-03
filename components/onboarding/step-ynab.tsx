@@ -87,47 +87,75 @@ export function StepYnab({ initialSettings }: StepYnabProps) {
       title="Configure YNAB"
       description='Select your plan and "phantom" account'
     >
-      <YNABFormFields
-        budgets={form.budgets}
-        accounts={form.accounts}
-        isLoading={form.isLoading}
-        selectedBudgetId={form.selectedBudgetId}
-        selectedAccountId={form.selectedAccountId}
-        manualFlagColor={form.manualFlagColor}
-        syncedFlagColor={form.syncedFlagColor}
-        showAdvanced={showAdvanced}
-        onShowAdvancedChange={setShowAdvanced}
-        onBudgetChange={form.handleBudgetChange}
-        onAccountChange={form.handleAccountChange}
-        onManualFlagColorChange={form.setManualFlagColor}
-        onSyncedFlagColorChange={form.handleSyncedFlagColorChange}
-      />
+      {/* Add padding at bottom on mobile to account for sticky footer */}
+      <div className="pb-28 sm:pb-0">
+        <YNABFormFields
+          budgets={form.budgets}
+          accounts={form.accounts}
+          isLoading={form.isLoading}
+          selectedBudgetId={form.selectedBudgetId}
+          selectedAccountId={form.selectedAccountId}
+          manualFlagColor={form.manualFlagColor}
+          syncedFlagColor={form.syncedFlagColor}
+          showAdvanced={showAdvanced}
+          onShowAdvancedChange={setShowAdvanced}
+          onBudgetChange={form.handleBudgetChange}
+          onAccountChange={form.handleAccountChange}
+          onManualFlagColorChange={form.setManualFlagColor}
+          onSyncedFlagColorChange={form.handleSyncedFlagColorChange}
+        />
 
-      {form.error && (
-        <Alert variant="destructive" className="mt-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{form.error}</AlertDescription>
-        </Alert>
-      )}
+        {form.error && (
+          <Alert variant="destructive" className="mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{form.error}</AlertDescription>
+          </Alert>
+        )}
 
-      <div className="mt-8 flex justify-between">
-        <Button
-          variant="outline"
-          onClick={previousStep}
-          disabled={isNavigating || isSaving}
-          className="rounded-full"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-        <Button
-          onClick={handleContinue}
-          disabled={!form.isValid || isNavigating || isSaving}
-          className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-6"
-        >
-          {isSaving ? "Saving..." : "Continue"}
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
+        {/* Desktop buttons */}
+        <div className="mt-8 hidden sm:flex justify-between">
+          <Button
+            variant="outline"
+            onClick={previousStep}
+            disabled={isNavigating || isSaving}
+            className="rounded-full"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+          <Button
+            onClick={handleContinue}
+            disabled={!form.isValid || isNavigating || isSaving}
+            className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-6"
+          >
+            {isSaving ? "Saving..." : "Continue"}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Mobile sticky footer */}
+      <div className="fixed bottom-0 left-0 right-0 sm:hidden bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 p-4 z-50 shadow-lg">
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={previousStep}
+            disabled={isNavigating || isSaving}
+            size="lg"
+            className="px-4"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            onClick={handleContinue}
+            disabled={!form.isValid || isNavigating || isSaving}
+            size="lg"
+            className="flex-1 bg-gray-900 hover:bg-gray-800 text-white"
+          >
+            {isSaving ? "Saving..." : "Continue"}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       <YNABCreateAccountDialog

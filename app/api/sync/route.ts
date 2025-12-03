@@ -4,6 +4,7 @@ import { syncAllUsers, syncUserData } from "@/services/sync";
 import { enforcePerUserRateLimit } from "@/services/rate-limit";
 import { getRateLimitOptions } from "@/lib/rate-limit";
 import { isUserFullyConfigured } from "@/app/actions/db";
+import { getSubscriptionStatus } from "@/services/stripe";
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -26,6 +27,13 @@ export async function GET(request: NextRequest) {
 
   const user = await prisma.user.findFirst({
     where: { apiKey: token },
+    select: {
+      id: true,
+      disabled: true,
+      disabledReason: true,
+      suggestedFix: true,
+      primaryUserId: true,
+    },
   });
 
   if (!user) {
@@ -58,6 +66,24 @@ export async function GET(request: NextRequest) {
         success: false,
         error: user.disabledReason || "Your account has been disabled",
         suggestedFix: user.suggestedFix,
+      },
+      {
+        status: 403,
+      },
+    );
+  }
+
+  // Check for active subscription (secondary users check primary's subscription)
+  const subscriptionUserId = user.primaryUserId || user.id;
+  const subscriptionStatus = await getSubscriptionStatus(subscriptionUserId);
+  if (!subscriptionStatus.isActive) {
+    return Response.json(
+      {
+        success: false,
+        error: user.primaryUserId
+          ? "Your partner's subscription is not active. Syncing is paused until they update their billing."
+          : "Your subscription is not active. Please update your billing settings to continue syncing.",
+        requiresSubscription: true,
       },
       {
         status: 403,

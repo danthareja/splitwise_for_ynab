@@ -18,10 +18,8 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  CURRENCY_OPTIONS,
-  SPLIT_RATIO_PRESETS,
-} from "@/hooks/use-splitwise-form";
+import { SPLIT_RATIO_PRESETS } from "@/hooks/use-splitwise-form";
+import { CURRENCY_OPTIONS, COMMON_CURRENCIES } from "@/lib/currencies";
 import type { SplitwiseGroup } from "@/types/splitwise";
 import {
   ChevronDown,
@@ -134,7 +132,7 @@ function GroupSelector({
   );
 }
 
-/** Reusable currency selector */
+/** Reusable currency selector with grouped options */
 function CurrencySelector({
   selectedCurrency,
   budgetCurrency,
@@ -153,6 +151,10 @@ function CurrencySelector({
       ? "bg-white dark:bg-gray-900 border-blue-200 dark:border-blue-700"
       : "bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700";
 
+  // Separate common and all currencies
+  const commonCurrencies = CURRENCY_OPTIONS.filter((c) => c.group === "common");
+  const allCurrencies = CURRENCY_OPTIONS.filter((c) => c.group === "all");
+
   return (
     <div className="space-y-2">
       <Label htmlFor="currencyCode">Currency</Label>
@@ -166,11 +168,40 @@ function CurrencySelector({
         <SelectTrigger className={triggerClass}>
           <SelectValue placeholder="Select currency" />
         </SelectTrigger>
-        <SelectContent>
-          {CURRENCY_OPTIONS.map((currency) => (
+        <SelectContent className="max-h-[300px]">
+          {/* Common Currencies Group */}
+          <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 -mx-1 mb-1">
+            ⭐ Common Currencies
+          </div>
+          {commonCurrencies.map((currency) => (
             <SelectItem key={currency.value} value={currency.value}>
-              {currency.label}
-              {currency.value === budgetCurrency && " (from YNAB)"}
+              <span className="font-medium">{currency.value}</span>
+              <span className="text-gray-500 dark:text-gray-400 ml-2">
+                {currency.label}
+              </span>
+              {currency.value === budgetCurrency && (
+                <span className="text-amber-600 dark:text-amber-400 ml-1">
+                  (YNAB)
+                </span>
+              )}
+            </SelectItem>
+          ))}
+
+          {/* All Currencies Group */}
+          <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 -mx-1 mt-2 mb-1">
+            All Currencies
+          </div>
+          {allCurrencies.map((currency) => (
+            <SelectItem key={currency.value} value={currency.value}>
+              <span className="font-medium">{currency.value}</span>
+              <span className="text-gray-500 dark:text-gray-400 ml-2">
+                {currency.label}
+              </span>
+              {currency.value === budgetCurrency && (
+                <span className="text-amber-600 dark:text-amber-400 ml-1">
+                  (YNAB)
+                </span>
+              )}
             </SelectItem>
           ))}
         </SelectContent>
@@ -1079,7 +1110,7 @@ export function SplitwiseSecondaryFormFields({
           </div>
         </div>
         <p className="text-xs text-blue-600 dark:text-blue-400 mt-3">
-          These settings are managed by {partnerName}.
+          These settings are managed by {partnerName || "your partner"}.
         </p>
       </div>
 

@@ -12,11 +12,13 @@ import { prisma } from "../db";
  *
  * Onboarding steps:
  * - Step 0: No Splitwise account connected
- * - Step 1: Splitwise connected, needs persona selection
+ * - Step 1: Splitwise connected, needs persona selection (solo/primary only)
  * - Step 2: Persona set, needs YNAB configuration
  * - Step 3: YNAB configured, needs Splitwise group/currency configuration
- * - Step 4: Dual users need partner verification (for new signups)
+ * - Step 4: Payment/trial step (solo/primary only - secondary users skip)
  * - Complete: All configuration done
+ *
+ * Secondary users: Skip steps 1 and 4 (persona and payment)
  */
 
 interface UserWithRelations {
@@ -27,6 +29,8 @@ interface UserWithRelations {
   onboardingStep: number;
   onboardingComplete: boolean;
   primaryUserId: string | null;
+  stripeSubscriptionId: string | null;
+  subscriptionStatus: string | null;
   accounts: { provider: string }[];
   ynabSettings: { budgetId: string; splitwiseAccountId: string | null } | null;
   splitwiseSettings: {
@@ -73,7 +77,16 @@ async function main() {
 
   // Fetch all users with their related data
   const users = (await prisma.user.findMany({
-    include: {
+    select: {
+      id: true,
+      email: true,
+      createdAt: true,
+      persona: true,
+      onboardingStep: true,
+      onboardingComplete: true,
+      primaryUserId: true,
+      stripeSubscriptionId: true,
+      subscriptionStatus: true,
       accounts: { select: { provider: true } },
       ynabSettings: { select: { budgetId: true, splitwiseAccountId: true } },
       splitwiseSettings: { select: { groupId: true, currencyCode: true } },
@@ -177,6 +190,11 @@ async function main() {
     const hasSplitwiseConfig = !!(
       user.splitwiseSettings?.groupId && user.splitwiseSettings?.currencyCode
     );
+    const hasSubscription = !!(
+      user.stripeSubscriptionId &&
+      (user.subscriptionStatus === "active" ||
+        user.subscriptionStatus === "trialing")
+    );
     const isFullyConfigured =
       hasSplitwiseAccount && hasYnabConfig && hasSplitwiseConfig;
 
@@ -208,11 +226,15 @@ async function main() {
     let newOnboardingStep = 0;
     let newOnboardingComplete = false;
 
+    // Is this user a secondary? (based on what we calculated above)
+    const isSecondary = duoRole?.role === "secondary";
+
     if (!hasSplitwiseAccount) {
       // Step 0: Need to connect Splitwise
       newOnboardingStep = 0;
-    } else if (!newPersona && !hasSplitwiseConfig) {
+    } else if (!newPersona && !hasSplitwiseConfig && !isSecondary) {
       // Step 1: Splitwise connected, but no group selected yet - needs persona
+      // (Secondary users skip this step)
       newOnboardingStep = 1;
     } else if (!hasYnabConfig) {
       // Step 2: Needs YNAB configuration
@@ -220,6 +242,9 @@ async function main() {
     } else if (!hasSplitwiseConfig) {
       // Step 3: Needs Splitwise group/currency configuration
       newOnboardingStep = 3;
+    } else if (!isSecondary && !hasSubscription) {
+      // Step 4: Solo/primary users need subscription (secondary users skip)
+      newOnboardingStep = 4;
     } else {
       // Fully configured - mark complete and preserve existing step if it was already complete
       newOnboardingComplete = true;

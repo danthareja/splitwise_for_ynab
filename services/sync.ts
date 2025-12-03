@@ -108,10 +108,10 @@ export async function syncAllUsers(): Promise<{
   errorCount: number;
   results: Record<string, SyncResult>;
 }> {
-  // Find all fully configured and enabled users
+  // Find all fully configured, enabled users with active subscriptions
   // Includes both:
-  // - Primary users with their own SplitwiseSettings
-  // - Secondary users who inherit from their primaryUser
+  // - Primary users with their own SplitwiseSettings AND active subscription
+  // - Secondary users who inherit from their primaryUser (subscription checked via primary)
   const configuredUsers = await prisma.user.findMany({
     where: {
       disabled: false,
@@ -121,19 +121,21 @@ export async function syncAllUsers(): Promise<{
         },
       },
       OR: [
-        // Primary users with their own SplitwiseSettings
+        // Primary/Solo users with their own SplitwiseSettings AND active subscription
         {
           primaryUserId: null,
+          subscriptionStatus: { in: ["active", "trialing"] },
           splitwiseSettings: {
             groupId: { not: null },
             currencyCode: { not: null },
           },
         },
-        // Secondary users with a valid primary
+        // Secondary users - check primary's subscription status
         {
           primaryUserId: { not: null },
           primaryUser: {
             disabled: false,
+            subscriptionStatus: { in: ["active", "trialing"] },
             splitwiseSettings: {
               groupId: { not: null },
               currencyCode: { not: null },

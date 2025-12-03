@@ -9,6 +9,7 @@ import { Footer } from "@/components/footer";
 import { getSplitwiseSettings } from "@/app/actions/splitwise";
 import { getYNABSettings } from "@/app/actions/ynab";
 import { getSyncHistory, getSyncRateLimitStatus } from "@/app/actions/sync";
+import { getSubscriptionInfo } from "@/app/actions/subscription";
 import { SyncHistory } from "@/components/sync-history";
 import { SyncHeroCard, type SyncHeroState } from "@/components/sync-hero-card";
 import { PartnerInviteCard } from "@/components/partner-invite-card";
@@ -70,20 +71,37 @@ export default async function DashboardPage() {
   // Get rate limit status
   const rateLimitStatus = await getSyncRateLimitStatus();
 
+  // Get subscription status
+  const subscriptionInfo = await getSubscriptionInfo();
+
   // Determine SyncHeroCard state
   let syncHeroState: SyncHeroState = "ready";
   let disabledReason = user.disabledReason;
   let suggestedFix = user.suggestedFix;
+  let isSubscriptionIssue = false;
 
   // Check for orphan state - secondary with missing primary
   const isOrphaned = partnershipStatus?.type === "orphaned";
+
+  // Check subscription status - syncing requires active subscription
+  const hasActiveSubscription = subscriptionInfo?.isActive ?? false;
 
   if (user.disabled) {
     syncHeroState = "disabled";
   } else if (isOrphaned) {
     syncHeroState = "disabled";
-    disabledReason = "Your partner's account is no longer active";
-    suggestedFix = "Reconfigure your Splitwise settings to continue syncing";
+    disabledReason = "You've been removed from your partner's plan";
+    suggestedFix = "Set up your own account with your own subscription";
+  } else if (!hasActiveSubscription) {
+    syncHeroState = "disabled";
+    isSubscriptionIssue = true;
+    if (subscriptionInfo?.isSharedFromPrimary) {
+      disabledReason = "Your partner's subscription is not active";
+      suggestedFix = "Ask your partner to update their billing settings";
+    } else {
+      disabledReason = "Your subscription is not active";
+      suggestedFix = "Update your billing settings to continue syncing";
+    }
   } else if (syncHistory.length === 0) {
     syncHeroState = "empty";
   } else if (rateLimitStatus && rateLimitStatus.remaining === 0) {
@@ -142,6 +160,7 @@ export default async function DashboardPage() {
               budgetName={ynabSettings?.budgetName || undefined}
               disabledReason={disabledReason}
               suggestedFix={suggestedFix}
+              isSubscriptionIssue={isSubscriptionIssue}
               initialRateLimitRemaining={
                 rateLimitStatus?.remaining ?? MAX_REQUESTS
               }
@@ -170,12 +189,12 @@ export default async function DashboardPage() {
                   </div>
                   <div className="flex-1">
                     <h3 className="font-medium text-amber-900 dark:text-amber-100 mb-1">
-                      Partner account unavailable
+                      You&apos;ve been removed from your partner&apos;s plan
                     </h3>
                     <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
-                      Your partner&apos;s account is no longer active. You can
-                      continue syncing independently, but you&apos;ll need to
-                      configure your own Splitwise settings.
+                      To continue syncing, you&apos;ll need to set up your own
+                      account with your own subscription. A free trial is
+                      available if you haven&apos;t used one.
                     </p>
                     <Button
                       asChild
@@ -183,9 +202,7 @@ export default async function DashboardPage() {
                       size="sm"
                       className="rounded-full"
                     >
-                      <Link href="/dashboard/settings?reconfigure=true">
-                        Reconfigure settings
-                      </Link>
+                      <Link href="/dashboard/setup">Set up my account</Link>
                     </Button>
                   </div>
                 </div>

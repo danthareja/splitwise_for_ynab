@@ -86,6 +86,10 @@ export async function getUserOnboardingData() {
         accounts: true,
         splitwiseSettings: true,
         ynabSettings: true,
+        // Subscription fields
+        stripeSubscriptionId: true,
+        subscriptionStatus: true,
+        trialEndsAt: true,
         // Include primary user's settings for secondary users
         primaryUser: {
           select: {
@@ -121,6 +125,13 @@ export async function getUserOnboardingData() {
       user.splitwiseSettings?.groupId && user.splitwiseSettings?.currencyCode
     );
 
+    // Check if user has an active subscription or trial
+    const hasSubscription = !!(
+      user.stripeSubscriptionId &&
+      (user.subscriptionStatus === "active" ||
+        user.subscriptionStatus === "trialing")
+    );
+
     // Secondary users have a primaryUserId set
     const isSecondary = !!user.primaryUserId;
 
@@ -139,6 +150,7 @@ export async function getUserOnboardingData() {
       hasSplitwiseConnection,
       hasYnabSettings,
       hasSplitwiseSettings,
+      hasSubscription,
       isSecondary,
       ynabSettings: user.ynabSettings,
       splitwiseSettings: user.splitwiseSettings,
@@ -190,17 +202,33 @@ export async function unlinkFromPrimary() {
       return { success: false, error: "Not a secondary user" };
     }
 
-    // Remove the link to primary and set persona to solo for reconfiguration
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
-        primaryUserId: null,
-        persona: "solo",
-        // Reset onboarding to step 3 (Configure Splitwise) so they can set up their own settings
-        onboardingStep: 3,
-        onboardingComplete: false,
-      },
-    });
+    // Remove the link to primary, set persona to solo, and clear shared settings
+    // They'll need to:
+    // 1. Configure their own Splitwise group (step 3)
+    // 2. Subscribe/pay for their own account (step 4)
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: session.user.id },
+        data: {
+          primaryUserId: null,
+          persona: "solo",
+          onboardingStep: 3, // Configure Splitwise step
+          onboardingComplete: false,
+        },
+      }),
+      // Clear group-specific settings (they'll need to pick a new group)
+      // Keep personal preferences: emoji, useDescriptionAsPayee, customPayeeName
+      prisma.splitwiseSettings.updateMany({
+        where: { userId: session.user.id },
+        data: {
+          groupId: null,
+          groupName: null,
+          currencyCode: null,
+          defaultSplitRatio: null,
+          lastPartnerSyncAt: null,
+        },
+      }),
+    ]);
 
     return { success: true };
   } catch (error) {

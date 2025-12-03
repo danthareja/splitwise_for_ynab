@@ -11,7 +11,7 @@ import {
   checkSplitwiseGroupAccess,
 } from "@/app/actions/splitwise";
 import { getYNABBudgetsForUser } from "@/app/actions/ynab";
-import { completeOnboarding } from "@/app/actions/user";
+import { completeOnboarding } from "@/app/actions/user"; // For secondary users who skip payment
 import {
   ArrowRight,
   ArrowLeft,
@@ -176,7 +176,7 @@ export function StepSplitwiseConfig({
   primaryName,
 }: StepSplitwiseConfigProps) {
   const router = useRouter();
-  const { previousStep, persona, isNavigating } = useOnboardingStep();
+  const { previousStep, nextStep, persona, isNavigating } = useOnboardingStep();
 
   const [isSaving, setIsSaving] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
@@ -356,7 +356,9 @@ export function StepSplitwiseConfig({
           await completeOnboarding();
           router.push("/dashboard");
         } else {
-          form.setError(result.error || "Failed to save settings");
+          form.setError(
+            "error" in result ? result.error : "Failed to save settings",
+          );
         }
       } catch (error) {
         form.setError(
@@ -392,7 +394,8 @@ export function StepSplitwiseConfig({
       const result = await saveSplitwiseSettings(formData);
 
       if (result.success) {
-        // For dual users with partner info, create and send invite automatically
+        // For dual users with partner info, create invite but DON'T send email yet
+        // Email will be sent after checkout succeeds (in webhook handler)
         if (
           persona === "dual" &&
           partnerInviteInfo?.email &&
@@ -409,19 +412,25 @@ export function StepSplitwiseConfig({
               },
               partnerEmail: partnerInviteInfo.email,
               partnerName: partnerInviteInfo.name,
-              sendEmail: true,
+              sendEmail: false, // Email sent after checkout completes
             });
           } catch (inviteError) {
             // Don't block onboarding if invite fails - they can resend from dashboard
-            console.error("Failed to send partner invite:", inviteError);
+            console.error("Failed to create partner invite:", inviteError);
           }
         }
 
-        await completeOnboarding();
-        router.push("/dashboard");
+        // Solo/primary users proceed to payment step
+        await nextStep();
       } else {
-        form.setError(result.error || "Failed to save settings");
-        if (result.isEmojiConflict && form.partnerInfo?.emoji) {
+        form.setError(
+          "error" in result ? result.error : "Failed to save settings",
+        );
+        if (
+          "isEmojiConflict" in result &&
+          result.isEmojiConflict &&
+          form.partnerInfo?.emoji
+        ) {
           form.suggestDifferentEmoji(form.partnerInfo.emoji);
         }
       }
@@ -457,84 +466,113 @@ export function StepSplitwiseConfig({
     const hasGroupAccess = secondaryGroupAccess.hasAccess === true;
     const isCheckingAccess = secondaryGroupAccess.isChecking;
 
+    const secondaryButtonDisabled =
+      isNavigating ||
+      isSaving ||
+      !form.selectedEmoji ||
+      isCheckingAccess ||
+      !hasGroupAccess ||
+      form.selectedEmoji === primarySettings?.emoji;
+
     return (
       <StepContainer
         title="Your Splitwise Settings"
         description="Pick your sync marker and payee preferences"
       >
-        {/* Group access error */}
-        {!isCheckingAccess &&
-          primaryGroupId &&
-          secondaryGroupAccess.hasAccess === false && (
-            <Alert variant="destructive" className="mb-4">
+        {/* Add padding at bottom on mobile to account for sticky footer */}
+        <div className="pb-28 sm:pb-0">
+          {/* Group access error */}
+          {!isCheckingAccess &&
+            primaryGroupId &&
+            secondaryGroupAccess.hasAccess === false && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Your Splitwise account doesn&apos;t have access to{" "}
+                  {primaryName}
+                  &apos;s group ({primarySettings?.groupName || "Shared group"}
+                  ). Please disconnect and reconnect with the correct Splitwise
+                  account.
+                </AlertDescription>
+              </Alert>
+            )}
+
+          <SplitwiseSecondaryFormFields
+            groupName={primarySettings?.groupName || ""}
+            currencyCode={primarySettings?.currencyCode || "USD"}
+            splitRatio={reverseSplitRatio(primarySettings?.defaultSplitRatio)}
+            partnerName={primaryName || "your partner"}
+            selectedEmoji={form.selectedEmoji}
+            useDescriptionAsPayee={form.useDescriptionAsPayee}
+            customPayeeName={form.customPayeeName}
+            partnerEmoji={primarySettings?.emoji}
+            isEmojiConflict={form.selectedEmoji === primarySettings?.emoji}
+            onEmojiChange={form.handleEmojiChange}
+            onPayeeModeChange={form.handlePayeeModeChange}
+            onCustomPayeeNameChange={(name) => form.setCustomPayeeName(name)}
+            showRoleExplanation={false}
+          />
+
+          {form.error && (
+            <Alert variant="destructive" className="mt-4">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Your Splitwise account doesn&apos;t have access to {primaryName}
-                &apos;s group ({primarySettings?.groupName || "Shared group"}).
-                Please disconnect and reconnect with the correct Splitwise
-                account.
-              </AlertDescription>
+              <AlertDescription>{form.error}</AlertDescription>
             </Alert>
           )}
 
-        <SplitwiseSecondaryFormFields
-          groupName={primarySettings?.groupName || ""}
-          currencyCode={primarySettings?.currencyCode || "USD"}
-          splitRatio={reverseSplitRatio(primarySettings?.defaultSplitRatio)}
-          partnerName={primaryName || "your partner"}
-          selectedEmoji={form.selectedEmoji}
-          useDescriptionAsPayee={form.useDescriptionAsPayee}
-          customPayeeName={form.customPayeeName}
-          partnerEmoji={primarySettings?.emoji}
-          isEmojiConflict={form.selectedEmoji === primarySettings?.emoji}
-          onEmojiChange={form.handleEmojiChange}
-          onPayeeModeChange={form.handlePayeeModeChange}
-          onCustomPayeeNameChange={(name) => form.setCustomPayeeName(name)}
-          showRoleExplanation={false}
-        />
+          {/* Desktop Navigation */}
+          <div className="mt-8 hidden sm:flex justify-between">
+            <Button
+              variant="outline"
+              onClick={previousStep}
+              disabled={isNavigating || isSaving}
+              className="rounded-full"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+            <Button
+              onClick={handleContinue}
+              disabled={secondaryButtonDisabled}
+              className="rounded-full bg-gray-900 hover:bg-gray-800 text-white dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  Continue
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
 
-        {form.error && (
-          <Alert variant="destructive" className="mt-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{form.error}</AlertDescription>
-          </Alert>
-        )}
-
-        {/* Navigation */}
-        <div className="mt-8 flex justify-between">
-          <Button
-            variant="outline"
-            onClick={previousStep}
-            disabled={isNavigating || isSaving}
-            className="rounded-full"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
-          <Button
-            onClick={handleContinue}
-            disabled={
-              isNavigating ||
-              isSaving ||
-              !form.selectedEmoji ||
-              isCheckingAccess ||
-              !hasGroupAccess ||
-              form.selectedEmoji === primarySettings?.emoji
-            }
-            className="rounded-full bg-gray-900 hover:bg-gray-800 text-white dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                Complete setup
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </>
-            )}
-          </Button>
+        {/* Mobile sticky footer */}
+        <div className="fixed bottom-0 left-0 right-0 sm:hidden bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 p-4 z-50 shadow-lg">
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={previousStep}
+              disabled={isNavigating || isSaving}
+              size="lg"
+              className="px-4"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              onClick={handleContinue}
+              disabled={secondaryButtonDisabled}
+              size="lg"
+              className="flex-1 bg-gray-900 hover:bg-gray-800 text-white dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+            >
+              {isSaving ? "Saving..." : "Continue"}
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </StepContainer>
     );
@@ -578,184 +616,270 @@ export function StepSplitwiseConfig({
       {/* Join existing household prompt - for dual primaries without a partner */}
       {canJoinHousehold && existingGroupUser ? (
         <>
-          <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-5">
-            <div className="flex items-start gap-4">
-              <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center flex-shrink-0">
-                <Users className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-900 dark:text-white mb-1">
-                  Join {existingGroupUser.name}&apos;s Duo account?
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  {existingGroupUser.name} has already set up this group. You
-                  can join their Duo account and share their settings.
-                </p>
+          {/* Add padding at bottom on mobile to account for sticky footer */}
+          <div className="pb-28 sm:pb-0">
+            <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-5">
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center flex-shrink-0">
+                  <Users className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 dark:text-white mb-1">
+                    Join {existingGroupUser.name}&apos;s Duo account?
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    {existingGroupUser.name} has already set up this group. You
+                    can join their Duo account and share their settings.
+                  </p>
 
-                {/* Show inherited settings preview */}
-                {existingGroupUser.settings && (
-                  <div className="bg-white dark:bg-gray-900/50 rounded-lg p-3 mb-4 text-sm">
-                    <p className="text-gray-500 dark:text-gray-400 mb-2">
-                      You&apos;ll share:
-                    </p>
-                    <ul className="space-y-1 text-gray-700 dark:text-gray-300">
-                      <li>
-                        • Currency:{" "}
-                        {existingGroupUser.settings.currencyCode || "Not set"}
-                      </li>
-                      <li>
-                        • Split ratio:{" "}
-                        {reverseSplitRatio(
-                          existingGroupUser.settings.defaultSplitRatio,
-                        )}
-                      </li>
-                    </ul>
+                  {/* Show inherited settings preview */}
+                  {existingGroupUser.settings && (
+                    <div className="bg-white dark:bg-gray-900/50 rounded-lg p-3 mb-4 text-sm">
+                      <p className="text-gray-500 dark:text-gray-400 mb-2">
+                        You&apos;ll share:
+                      </p>
+                      <ul className="space-y-1 text-gray-700 dark:text-gray-300">
+                        <li>
+                          • Currency:{" "}
+                          {existingGroupUser.settings.currencyCode || "Not set"}
+                        </li>
+                        <li>
+                          • Split ratio:{" "}
+                          {reverseSplitRatio(
+                            existingGroupUser.settings.defaultSplitRatio,
+                          )}
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Emoji picker for joining */}
+                  <JoinHouseholdEmojiPicker
+                    joinEmoji={joinEmoji}
+                    setJoinEmoji={setJoinEmoji}
+                    partnerEmoji={existingGroupUser.settings?.emoji}
+                    partnerName={existingGroupUser.name}
+                  />
+
+                  {/* Desktop buttons */}
+                  <div className="hidden sm:flex gap-3">
+                    <Button
+                      onClick={handleJoinHousehold}
+                      disabled={isJoining || !joinEmoji}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
+                    >
+                      {isJoining ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Joining...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="mr-2 h-4 w-4" />
+                          Join Duo account
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        // Reset group selection so user can pick a different one
+                        form.handleGroupChange("");
+                        setExistingGroupUser(null);
+                        setJoinEmoji("");
+                      }}
+                      disabled={isJoining}
+                      className="rounded-full"
+                    >
+                      Choose a different group
+                    </Button>
                   </div>
-                )}
 
-                {/* Emoji picker for joining */}
-                <JoinHouseholdEmojiPicker
-                  joinEmoji={joinEmoji}
-                  setJoinEmoji={setJoinEmoji}
-                  partnerEmoji={existingGroupUser.settings?.emoji}
-                  partnerName={existingGroupUser.name}
-                />
-
-                <div className="flex gap-3">
-                  <Button
-                    onClick={handleJoinHousehold}
-                    disabled={isJoining || !joinEmoji}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
-                  >
-                    {isJoining ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Joining...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="mr-2 h-4 w-4" />
-                        Join Duo account
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      // Reset group selection so user can pick a different one
-                      form.handleGroupChange("");
-                      setExistingGroupUser(null);
-                      setJoinEmoji("");
-                    }}
-                    disabled={isJoining}
-                    className="rounded-full"
-                  >
-                    Choose a different group
-                  </Button>
+                  {/* Mobile: just the "choose different group" link */}
+                  <div className="sm:hidden">
+                    <button
+                      onClick={() => {
+                        form.handleGroupChange("");
+                        setExistingGroupUser(null);
+                        setJoinEmoji("");
+                      }}
+                      disabled={isJoining}
+                      className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                    >
+                      Choose a different group
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {form.error && (
+              <Alert variant="destructive" className="mt-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{form.error}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* Desktop: Back button only when in join mode */}
+            <div className="mt-8 hidden sm:block">
+              <Button
+                variant="outline"
+                onClick={previousStep}
+                disabled={isNavigating || isJoining}
+                className="rounded-full"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+              </Button>
+            </div>
           </div>
 
-          {form.error && (
-            <Alert variant="destructive" className="mt-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{form.error}</AlertDescription>
-            </Alert>
-          )}
-
-          {/* Back button only when in join mode */}
-          <div className="mt-8">
-            <Button
-              variant="outline"
-              onClick={previousStep}
-              disabled={isNavigating || isJoining}
-              className="rounded-full"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
+          {/* Mobile sticky footer for join mode */}
+          <div className="fixed bottom-0 left-0 right-0 sm:hidden bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 p-4 z-50 shadow-lg">
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={previousStep}
+                disabled={isNavigating || isJoining}
+                size="lg"
+                className="px-4"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                onClick={handleJoinHousehold}
+                disabled={isJoining || !joinEmoji}
+                size="lg"
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                {isJoining ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Joining...
+                  </>
+                ) : (
+                  <>
+                    <Check className="mr-2 h-4 w-4" />
+                    Join Duo account
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </>
       ) : (
         <>
-          {/* Regular form using shared component */}
-          <SplitwiseFormFields
-            validGroups={form.validGroups}
-            invalidGroups={form.invalidGroups}
-            isLoading={form.isLoading}
-            selectedGroupId={form.selectedGroupId}
-            selectedGroupName={form.selectedGroupName}
-            selectedCurrency={form.selectedCurrency}
-            selectedEmoji={form.selectedEmoji}
-            selectedSplitRatio={form.selectedSplitRatio}
-            customSplitRatio={form.customSplitRatio}
-            useDescriptionAsPayee={form.useDescriptionAsPayee}
-            customPayeeName={form.customPayeeName}
-            partnerInfo={form.partnerInfo}
-            isEmojiConflict={form.isEmojiConflict}
-            showAdvanced={showAdvanced}
-            onShowAdvancedChange={setShowAdvanced}
-            onGroupChange={form.handleGroupChange}
-            onCurrencyChange={form.setSelectedCurrency}
-            onEmojiChange={form.handleEmojiChange}
-            onSplitRatioChange={form.handleSplitRatioChange}
-            onCustomSplitRatioChange={(ratio) =>
-              form.setCustomSplitRatio(ratio)
-            }
-            onPayeeModeChange={form.handlePayeeModeChange}
-            onCustomPayeeNameChange={(name) => form.setCustomPayeeName(name)}
-            isSolo={persona === "solo"}
-            isDual={persona === "dual"}
-            budgetCurrency={budgetCurrency}
-          />
+          {/* Add padding at bottom on mobile to account for sticky footer */}
+          <div className="pb-28 sm:pb-0">
+            {/* Regular form using shared component */}
+            <SplitwiseFormFields
+              validGroups={form.validGroups}
+              invalidGroups={form.invalidGroups}
+              isLoading={form.isLoading}
+              selectedGroupId={form.selectedGroupId}
+              selectedGroupName={form.selectedGroupName}
+              selectedCurrency={form.selectedCurrency}
+              selectedEmoji={form.selectedEmoji}
+              selectedSplitRatio={form.selectedSplitRatio}
+              customSplitRatio={form.customSplitRatio}
+              useDescriptionAsPayee={form.useDescriptionAsPayee}
+              customPayeeName={form.customPayeeName}
+              partnerInfo={form.partnerInfo}
+              isEmojiConflict={form.isEmojiConflict}
+              showAdvanced={showAdvanced}
+              onShowAdvancedChange={setShowAdvanced}
+              onGroupChange={form.handleGroupChange}
+              onCurrencyChange={form.setSelectedCurrency}
+              onEmojiChange={form.handleEmojiChange}
+              onSplitRatioChange={form.handleSplitRatioChange}
+              onCustomSplitRatioChange={(ratio) =>
+                form.setCustomSplitRatio(ratio)
+              }
+              onPayeeModeChange={form.handlePayeeModeChange}
+              onCustomPayeeNameChange={(name) => form.setCustomPayeeName(name)}
+              isSolo={persona === "solo"}
+              isDual={persona === "dual"}
+              budgetCurrency={budgetCurrency}
+            />
 
-          {form.error && (
-            <Alert variant="destructive" className="mt-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{form.error}</AlertDescription>
-            </Alert>
-          )}
-
-          {/* Partner invite setup for new dual primaries (no existing user in this group) */}
-          {persona === "dual" &&
-            form.selectedGroupId &&
-            form.selectedEmoji &&
-            !existingGroupUser && (
-              <PartnerInviteSetup
-                groupId={form.selectedGroupId}
-                groupName={form.selectedGroupName}
-                onPartnerInfoChange={setPartnerInviteInfo}
-                className="mt-6"
-              />
+            {form.error && (
+              <Alert variant="destructive" className="mt-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{form.error}</AlertDescription>
+              </Alert>
             )}
 
-          {/* Navigation */}
-          <div className="mt-8 flex justify-between">
-            <Button
-              variant="outline"
-              onClick={previousStep}
-              disabled={isNavigating || isSaving}
-              className="rounded-full"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-            <Button
-              onClick={handleContinue}
-              disabled={
-                !form.isValid ||
-                form.isEmojiConflict ||
-                isNavigating ||
-                isSaving ||
-                isGroupBlockedBySolo ||
-                isGroupBlockedByFullHousehold
-              }
-              className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-6"
-            >
-              {isSaving ? "Completing..." : "Complete Setup"}
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            {/* Partner invite setup for new dual primaries (no existing user in this group) */}
+            {persona === "dual" &&
+              form.selectedGroupId &&
+              form.selectedEmoji &&
+              !existingGroupUser && (
+                <PartnerInviteSetup
+                  groupId={form.selectedGroupId}
+                  groupName={form.selectedGroupName}
+                  onPartnerInfoChange={setPartnerInviteInfo}
+                  className="mt-6"
+                />
+              )}
+
+            {/* Desktop Navigation */}
+            <div className="mt-8 hidden sm:flex justify-between">
+              <Button
+                variant="outline"
+                onClick={previousStep}
+                disabled={isNavigating || isSaving}
+                className="rounded-full"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+              </Button>
+              <Button
+                onClick={handleContinue}
+                disabled={
+                  !form.isValid ||
+                  form.isEmojiConflict ||
+                  isNavigating ||
+                  isSaving ||
+                  isGroupBlockedBySolo ||
+                  isGroupBlockedByFullHousehold
+                }
+                className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-6"
+              >
+                {isSaving ? "Saving..." : "Continue"}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Mobile sticky footer */}
+          <div className="fixed bottom-0 left-0 right-0 sm:hidden bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 p-4 z-50 shadow-lg">
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={previousStep}
+                disabled={isNavigating || isSaving}
+                size="lg"
+                className="px-4"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                onClick={handleContinue}
+                disabled={
+                  !form.isValid ||
+                  form.isEmojiConflict ||
+                  isNavigating ||
+                  isSaving ||
+                  isGroupBlockedBySolo ||
+                  isGroupBlockedByFullHousehold
+                }
+                size="lg"
+                className="flex-1 bg-gray-900 hover:bg-gray-800 text-white"
+              >
+                {isSaving ? "Saving..." : "Continue"}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </>
       )}

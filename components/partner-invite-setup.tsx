@@ -197,7 +197,7 @@ export function PartnerInviteSetup({
             Invite {partnerName} to join your Duo account
           </p>
           <p className="text-sm text-violet-700 dark:text-violet-300 mt-1 mb-3">
-            We&apos;ll email them an invite when you complete setup.
+            We&apos;ll email them an invite when you start your trial.
             They&apos;ll connect their own YNAB plan and expenses will sync for
             both of you.
           </p>

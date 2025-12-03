@@ -251,7 +251,7 @@ export function PartnerEmailPreview({
               {!compact && email && isValidEmail(email) && (
                 <p className="text-xs text-violet-600 dark:text-violet-400">
                   We&apos;ll email {partnerName || "your partner"} when you
-                  complete setup. They can sign up and join your Duo account.
+                  start your trial. They can sign up and join your Duo account.
                 </p>
               )}
             </div>
