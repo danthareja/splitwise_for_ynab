@@ -417,25 +417,4 @@ test.describe("Invite - Already Onboarded User", () => {
     await cleanupTestUser(onboardedUserId);
     await cleanupTestUser(primaryUserId);
   });
-
-  test("already onboarded user visiting invite redirects to dashboard", async ({
-    page,
-  }) => {
-    await page.context().addCookies([
-      {
-        name: "authjs.session-token",
-        value: sessionToken,
-        domain: "localhost",
-        path: "/",
-        httpOnly: true,
-        secure: false,
-        sameSite: "Lax",
-      },
-    ]);
-
-    await page.goto(`/invite/${inviteToken}`);
-
-    // Should redirect to dashboard
-    await expect(page).toHaveURL("/dashboard");
-  });
 });

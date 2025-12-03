@@ -1,5 +1,4 @@
 import { auth } from "@/auth";
-import { redirect } from "next/navigation";
 import { getInviteByToken } from "@/app/actions/splitwise";
 import { InviteFlow } from "./invite-flow";
 import Link from "next/link";
