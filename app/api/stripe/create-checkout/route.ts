@@ -29,11 +29,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Get user name
+  // Get user info including subscription history
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { name: true },
+    select: {
+      name: true,
+      stripeCustomerId: true,
+      trialEndsAt: true,
+    },
   });
+
+  // Skip trial for returning users (they've had a subscription/trial before)
+  const hadPreviousSubscription = !!(
+    user?.stripeCustomerId || user?.trialEndsAt
+  );
 
   const checkoutSession = await createCheckoutSession({
     userId: session.user.id,
@@ -43,6 +52,7 @@ export async function POST(request: NextRequest) {
     currencyCode: currencyCode || undefined,
     successUrl,
     cancelUrl,
+    skipTrial: hadPreviousSubscription,
   });
 
   return NextResponse.json({

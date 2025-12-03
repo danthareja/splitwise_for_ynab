@@ -46,7 +46,7 @@ async function main() {
   });
 
   let product = existingProducts.data.find(
-    (p) => p.metadata.app === "splitwise-for-ynab",
+    (p) => p.metadata.app === "splitwise-for-ynab" && p.active,
   );
 
   if (product) {

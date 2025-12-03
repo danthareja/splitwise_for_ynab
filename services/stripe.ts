@@ -1,5 +1,9 @@
 import { stripe } from "@/lib/stripe";
-import { getStripePriceId, type PricingInterval } from "@/lib/stripe-pricing";
+import {
+  getStripePriceId,
+  TRIAL_DAYS,
+  type PricingInterval,
+} from "@/lib/stripe-pricing";
 import { prisma } from "@/db";
 import type Stripe from "stripe";
 
@@ -41,8 +45,7 @@ export async function getOrCreateStripeCustomer(
 
 /**
  * Create a Stripe Checkout Session for subscription
- * Trial period is defined on the Price object in Stripe - no need to set here.
- * Stripe automatically handles trial eligibility (one trial per customer).
+ * Trial period must be set here - Checkout doesn't inherit from Price.
  */
 export async function createCheckoutSession({
   userId,
@@ -52,6 +55,7 @@ export async function createCheckoutSession({
   currencyCode,
   successUrl,
   cancelUrl,
+  skipTrial = false,
 }: {
   userId: string;
   email: string;
@@ -60,6 +64,8 @@ export async function createCheckoutSession({
   currencyCode?: string;
   successUrl: string;
   cancelUrl: string;
+  /** Skip trial for returning users who've already had one */
+  skipTrial?: boolean;
 }): Promise<Stripe.Checkout.Session> {
   const customerId = await getOrCreateStripeCustomer(userId, email, name);
   const priceId = getStripePriceId(interval);
@@ -81,6 +87,8 @@ export async function createCheckoutSession({
       },
     ],
     subscription_data: {
+      // Only offer trial to new users - returning users pay immediately
+      ...(skipTrial ? {} : { trial_period_days: TRIAL_DAYS }),
       metadata: {
         userId,
       },

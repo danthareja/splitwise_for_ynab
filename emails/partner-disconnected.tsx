@@ -42,7 +42,7 @@ export const PartnerDisconnectedEmail = ({
         account to continue syncing.
       </Text>
 
-      <ContentBox variant="info">
+      <ContentBox variant="highlight">
         <Heading style={emailStyles.h3}>What you need to do</Heading>
         <Text style={actionItem}>
           <strong>1.</strong> Sign in to your account
