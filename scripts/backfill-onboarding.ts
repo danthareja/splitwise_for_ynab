@@ -194,12 +194,14 @@ async function main() {
       } else {
         summary.dualPrimaryUsers++;
       }
-    } else if (isFullyConfigured) {
-      // Fully configured solo user
+    } else if (hasSplitwiseConfig) {
+      // User has Splitwise group configured but is not in a duo = solo
+      // This covers both fully configured users and partially configured users
+      // who have already selected a group (legacy users)
       newPersona = "solo";
       summary.soloUsers++;
     }
-    // Users not fully configured and not in a duo get null persona (need to choose)
+    // Users without Splitwise config and not in a duo get null persona (need to choose)
 
     // Determine onboarding step
     // For fully configured users, preserve their current step if already complete

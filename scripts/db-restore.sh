@@ -72,6 +72,9 @@ echo "Restoring..."
 if [ "$IS_LOCAL" = true ]; then
   # Local restore: use docker-compose exec (faster, no network issues)
   docker cp "$DUMP_FILE" splitwise_for_ynab-postgres-1:/tmp/restore.dump
+
+  docker-compose exec -T postgres psql -U postgres -c "DROP DATABASE $DB_NAME"
+  docker-compose exec -T postgres psql -U postgres -c "CREATE DATABASE $DB_NAME"
   
   docker-compose exec -T postgres pg_restore \
     -U postgres \
