@@ -9,6 +9,10 @@ import {
   detectExistingGroupUser,
 } from "@/app/actions/splitwise";
 import type { SplitwiseGroup } from "@/types/splitwise";
+import { SUGGESTED_EMOJIS } from "@/lib/utils";
+
+// Re-export for backwards compatibility
+export { SUGGESTED_EMOJIS };
 
 // Currency options
 export const CURRENCY_OPTIONS = [
@@ -19,19 +23,6 @@ export const CURRENCY_OPTIONS = [
   { value: "AUD", label: "AUD - Australian Dollar" },
   { value: "JPY", label: "JPY - Japanese Yen" },
   { value: "CHF", label: "CHF - Swiss Franc" },
-];
-
-// Suggested emojis that are visually distinct (✅ is default and shown first)
-export const SUGGESTED_EMOJIS = [
-  "✅",
-  "🤴",
-  "👸",
-  "🤑",
-  "😸",
-  "💰",
-  "💸",
-  "🌚",
-  "🌞",
 ];
 
 // Common split ratios for easy selection

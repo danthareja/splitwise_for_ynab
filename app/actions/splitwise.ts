@@ -13,11 +13,12 @@ import {
   sendPartnerInviteEmail,
   sendPartnerDisconnectedEmail,
 } from "@/services/email";
-import { getUserFirstName, reverseSplitRatio } from "@/lib/utils";
+import {
+  getUserFirstName,
+  reverseSplitRatio,
+  SUGGESTED_EMOJIS,
+} from "@/lib/utils";
 import type { SplitwiseUser, SplitwiseMember } from "@/types/splitwise";
-
-// Suggested emojis for sync markers (same as in use-splitwise-form.ts)
-const SUGGESTED_EMOJIS = ["✅", "🤴", "👸", "🤑", "😸", "💰", "💸", "🌚", "🌞"];
 
 export async function validateApiKey(formData: FormData) {
   const apiKey = formData.get("apiKey") as string;

@@ -173,3 +173,56 @@ export function reverseSplitRatio(ratio: string | null | undefined): string {
   const [first, second] = parts;
   return `${second}:${first}`;
 }
+
+// =============================================================================
+// EMOJI UTILITIES
+// =============================================================================
+
+/** Suggested emojis for sync markers (visually distinct, ✅ is default) */
+export const SUGGESTED_EMOJIS = ["✅", "🤴", "👸", "🤑", "😸", "💰", "💸"];
+
+/**
+ * Check if a string contains only emoji characters
+ * @param str - The string to check
+ * @returns True if the string contains only valid emoji characters
+ */
+export function isValidEmoji(str: string): boolean {
+  if (!str || str.length === 0) return false;
+  // This regex matches most common emojis including skin tone modifiers, ZWJ sequences, and flags
+  const emojiRegex =
+    /^(?:\p{Emoji_Presentation}|\p{Emoji}\uFE0F|\p{Emoji_Modifier_Base}\p{Emoji_Modifier}?|\p{Regional_Indicator}{2}|[\u{1F3F4}][\u{E0060}-\u{E007F}]+)+$/u;
+  return emojiRegex.test(str);
+}
+
+/**
+ * Get emoji keyboard shortcut hint based on OS
+ * @returns A string hint for how to open the emoji keyboard on the current platform
+ */
+export function getEmojiKeyboardHint(): string {
+  if (typeof navigator === "undefined") return "Type an emoji";
+
+  const userAgent = navigator.userAgent.toLowerCase();
+  const platform = navigator.platform?.toLowerCase() || "";
+
+  // Check for mobile devices first
+  if (
+    /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+      userAgent,
+    )
+  ) {
+    return "Tap 😀 on keyboard";
+  }
+
+  // macOS
+  if (platform.includes("mac") || userAgent.includes("mac")) {
+    return "⌃⌘Space for emoji";
+  }
+
+  // Windows
+  if (platform.includes("win") || userAgent.includes("win")) {
+    return "Win + . for emoji";
+  }
+
+  // Linux/other
+  return "Type an emoji";
+}

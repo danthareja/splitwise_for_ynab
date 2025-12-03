@@ -20,7 +20,6 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   CURRENCY_OPTIONS,
-  SUGGESTED_EMOJIS,
   SPLIT_RATIO_PRESETS,
 } from "@/hooks/use-splitwise-form";
 import type { SplitwiseGroup } from "@/types/splitwise";
@@ -33,7 +32,12 @@ import {
   AlertTriangle,
   Loader2,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import {
+  cn,
+  SUGGESTED_EMOJIS,
+  isValidEmoji,
+  getEmojiKeyboardHint,
+} from "@/lib/utils";
 import Image from "next/image";
 
 // =============================================================================
@@ -240,6 +244,9 @@ function EmojiPicker({
   required?: boolean;
   size?: "small" | "medium" | "large";
 }) {
+  const [customInput, setCustomInput] = useState("");
+  const [showCustomInput, setShowCustomInput] = useState(false);
+
   const sizeClasses = {
     small: "h-9 w-9 text-lg",
     medium: "h-10 w-10 text-xl",
@@ -249,6 +256,27 @@ function EmojiPicker({
   const availableEmojis = excludeEmoji
     ? SUGGESTED_EMOJIS.filter((e) => e !== excludeEmoji)
     : SUGGESTED_EMOJIS;
+
+  const isCustomSelected =
+    selectedEmoji && !SUGGESTED_EMOJIS.includes(selectedEmoji);
+
+  // Initialize custom input if selectedEmoji is custom
+  useState(() => {
+    if (isCustomSelected) {
+      setCustomInput(selectedEmoji);
+      setShowCustomInput(true);
+    }
+  });
+
+  const handleCustomInputChange = (value: string) => {
+    setCustomInput(value);
+    // Only update the emoji if it's a valid emoji
+    if (value.trim() && isValidEmoji(value.trim())) {
+      onEmojiChange(value.trim());
+    }
+  };
+
+  const isInputValid = !customInput || isValidEmoji(customInput.trim());
 
   return (
     <div className="space-y-3">
@@ -272,7 +300,11 @@ function EmojiPicker({
           <button
             key={emoji}
             type="button"
-            onClick={() => onEmojiChange(emoji)}
+            onClick={() => {
+              onEmojiChange(emoji);
+              setShowCustomInput(false);
+              setCustomInput("");
+            }}
             className={cn(
               "rounded-lg flex items-center justify-center transition-all",
               sizeClasses[size],
@@ -284,7 +316,46 @@ function EmojiPicker({
             {emoji}
           </button>
         ))}
+        {/* Custom emoji button */}
+        <button
+          type="button"
+          onClick={() => setShowCustomInput(!showCustomInput)}
+          className={cn(
+            "rounded-lg flex items-center justify-center transition-all text-sm font-medium",
+            sizeClasses[size],
+            showCustomInput || isCustomSelected
+              ? "bg-amber-100 dark:bg-amber-900/40 ring-2 ring-amber-500"
+              : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400",
+          )}
+          title="Use a different emoji"
+        >
+          {isCustomSelected ? selectedEmoji : "..."}
+        </button>
       </div>
+
+      {/* Custom input field */}
+      {showCustomInput && (
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Input
+              value={customInput}
+              onChange={(e) => handleCustomInputChange(e.target.value)}
+              placeholder={getEmojiKeyboardHint()}
+              className={cn(
+                "max-w-[200px] bg-gray-50 dark:bg-gray-900",
+                !isInputValid
+                  ? "border-red-300 dark:border-red-700"
+                  : "border-gray-200 dark:border-gray-700",
+              )}
+              maxLength={10}
+            />
+            <span className="text-xs text-gray-500">e.g. 🏠 🎯 💰</span>
+          </div>
+          {!isInputValid && (
+            <p className="text-xs text-red-500">Please enter a valid emoji</p>
+          )}
+        </div>
+      )}
 
       {required && !selectedEmoji && (
         <p className="text-sm text-amber-600 dark:text-amber-400">
@@ -300,6 +371,107 @@ function EmojiPicker({
             {partnerEmoji}&quot;.
           </AlertDescription>
         </Alert>
+      )}
+    </div>
+  );
+}
+
+/** Solo emoji picker with custom input support */
+function SoloEmojiPicker({
+  selectedEmoji,
+  onEmojiChange,
+}: {
+  selectedEmoji: string;
+  onEmojiChange: (emoji: string) => void;
+}) {
+  const [customInput, setCustomInput] = useState("");
+  const [showCustomInput, setShowCustomInput] = useState(false);
+
+  const isCustomSelected =
+    selectedEmoji && !SUGGESTED_EMOJIS.includes(selectedEmoji);
+
+  // Initialize custom input if selectedEmoji is custom
+  useState(() => {
+    if (isCustomSelected) {
+      setCustomInput(selectedEmoji);
+      setShowCustomInput(true);
+    }
+  });
+
+  const handleCustomInputChange = (value: string) => {
+    setCustomInput(value);
+    // Only update the emoji if it's a valid emoji
+    if (value.trim() && isValidEmoji(value.trim())) {
+      onEmojiChange(value.trim());
+    }
+  };
+
+  const isInputValid = !customInput || isValidEmoji(customInput.trim());
+
+  return (
+    <div className="space-y-2">
+      <Label>Sync Marker Emoji</Label>
+      <p className="text-sm text-gray-500 -mt-1">
+        We add this emoji to Splitwise expenses to track synced items
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {SUGGESTED_EMOJIS.map((emoji) => (
+          <button
+            key={emoji}
+            type="button"
+            onClick={() => {
+              onEmojiChange(emoji);
+              setShowCustomInput(false);
+              setCustomInput("");
+            }}
+            className={cn(
+              "h-9 w-9 rounded-lg text-lg flex items-center justify-center transition-all",
+              selectedEmoji === emoji
+                ? "bg-amber-100 dark:bg-amber-900/40 ring-2 ring-amber-500"
+                : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700",
+            )}
+          >
+            {emoji}
+          </button>
+        ))}
+        {/* Custom emoji button */}
+        <button
+          type="button"
+          onClick={() => setShowCustomInput(!showCustomInput)}
+          className={cn(
+            "h-9 w-9 rounded-lg text-lg flex items-center justify-center transition-all font-medium",
+            showCustomInput || isCustomSelected
+              ? "bg-amber-100 dark:bg-amber-900/40 ring-2 ring-amber-500"
+              : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400",
+          )}
+          title="Use a different emoji"
+        >
+          {isCustomSelected ? selectedEmoji : "..."}
+        </button>
+      </div>
+
+      {/* Custom input field */}
+      {showCustomInput && (
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Input
+              value={customInput}
+              onChange={(e) => handleCustomInputChange(e.target.value)}
+              placeholder={getEmojiKeyboardHint()}
+              className={cn(
+                "max-w-[200px] bg-gray-50 dark:bg-gray-900",
+                !isInputValid
+                  ? "border-red-300 dark:border-red-700"
+                  : "border-gray-200 dark:border-gray-700",
+              )}
+              maxLength={10}
+            />
+            <span className="text-xs text-gray-500">e.g. 🏠 🎯 💰</span>
+          </div>
+          {!isInputValid && (
+            <p className="text-xs text-red-500">Please enter a valid emoji</p>
+          )}
+        </div>
       )}
     </div>
   );
@@ -522,29 +694,10 @@ export function SplitwiseSoloFormFields({
             idPrefix="solo"
           />
 
-          <div className="space-y-2">
-            <Label>Sync Marker Emoji</Label>
-            <p className="text-sm text-gray-500 -mt-1">
-              We add this emoji to Splitwise expenses to track synced items
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {SUGGESTED_EMOJIS.map((emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  onClick={() => onEmojiChange(emoji)}
-                  className={cn(
-                    "h-9 w-9 rounded-lg text-lg flex items-center justify-center transition-all",
-                    selectedEmoji === emoji
-                      ? "bg-amber-100 dark:bg-amber-900/40 ring-2 ring-amber-500"
-                      : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700",
-                  )}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          </div>
+          <SoloEmojiPicker
+            selectedEmoji={selectedEmoji}
+            onEmojiChange={onEmojiChange}
+          />
         </CollapsibleContent>
       </Collapsible>
     </div>

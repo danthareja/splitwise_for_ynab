@@ -23,13 +23,127 @@ import {
 import { PartnerInviteSetup } from "@/components/partner-invite-setup";
 import { createPartnerInvite } from "@/app/actions/splitwise";
 import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { useSplitwiseForm, SUGGESTED_EMOJIS } from "@/hooks/use-splitwise-form";
-import { reverseSplitRatio } from "@/lib/utils";
+import {
+  cn,
+  reverseSplitRatio,
+  SUGGESTED_EMOJIS,
+  isValidEmoji,
+  getEmojiKeyboardHint,
+} from "@/lib/utils";
+import { useSplitwiseForm } from "@/hooks/use-splitwise-form";
 import {
   SplitwiseFormFields,
   SplitwiseSecondaryFormFields,
 } from "@/components/splitwise-form-fields";
+import { Input } from "@/components/ui/input";
+
+/** Emoji picker for the join household flow with custom input support */
+function JoinHouseholdEmojiPicker({
+  joinEmoji,
+  setJoinEmoji,
+  partnerEmoji,
+  partnerName,
+}: {
+  joinEmoji: string;
+  setJoinEmoji: (emoji: string) => void;
+  partnerEmoji?: string | null;
+  partnerName: string;
+}) {
+  const [customInput, setCustomInput] = useState("");
+  const [showCustomInput, setShowCustomInput] = useState(false);
+
+  const availableEmojis = SUGGESTED_EMOJIS.filter((e) => e !== partnerEmoji);
+  const isCustomSelected = joinEmoji && !SUGGESTED_EMOJIS.includes(joinEmoji);
+
+  const handleCustomInputChange = (value: string) => {
+    setCustomInput(value);
+    // Only update the emoji if it's a valid emoji
+    if (value.trim() && isValidEmoji(value.trim())) {
+      setJoinEmoji(value.trim());
+    }
+  };
+
+  const isInputValid = !customInput || isValidEmoji(customInput.trim());
+
+  return (
+    <div className="mb-4">
+      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Pick your sync marker
+        {partnerEmoji && (
+          <span className="font-normal text-gray-500">
+            {" "}
+            ({partnerName} uses {partnerEmoji})
+          </span>
+        )}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {availableEmojis.map((emoji) => (
+          <button
+            key={emoji}
+            type="button"
+            onClick={() => {
+              setJoinEmoji(emoji);
+              setShowCustomInput(false);
+              setCustomInput("");
+            }}
+            className={cn(
+              "h-10 w-10 rounded-lg text-xl flex items-center justify-center transition-all",
+              joinEmoji === emoji
+                ? "bg-emerald-100 dark:bg-emerald-900/40 ring-2 ring-emerald-500"
+                : "bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700",
+            )}
+          >
+            {emoji}
+          </button>
+        ))}
+        {/* Custom emoji button */}
+        <button
+          type="button"
+          onClick={() => setShowCustomInput(!showCustomInput)}
+          className={cn(
+            "h-10 w-10 rounded-lg text-xl flex items-center justify-center transition-all font-medium",
+            showCustomInput || isCustomSelected
+              ? "bg-emerald-100 dark:bg-emerald-900/40 ring-2 ring-emerald-500"
+              : "bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400",
+          )}
+          title="Use a different emoji"
+        >
+          {isCustomSelected ? joinEmoji : "..."}
+        </button>
+      </div>
+
+      {/* Custom input field */}
+      {showCustomInput && (
+        <div className="space-y-1 mt-2">
+          <div className="flex items-center gap-2">
+            <Input
+              value={customInput}
+              onChange={(e) => handleCustomInputChange(e.target.value)}
+              placeholder={getEmojiKeyboardHint()}
+              className={cn(
+                "max-w-[200px] bg-white dark:bg-gray-900",
+                !isInputValid
+                  ? "border-red-300 dark:border-red-700"
+                  : "border-gray-200 dark:border-gray-700",
+              )}
+              maxLength={10}
+            />
+            <span className="text-xs text-gray-500">e.g. 🏠 🎯 💰</span>
+          </div>
+          {!isInputValid && (
+            <p className="text-xs text-red-500">Please enter a valid emoji</p>
+          )}
+        </div>
+      )}
+
+      {!joinEmoji && (
+        <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+          👆 Select your sync marker to continue
+        </p>
+      )}
+    </div>
+  );
+}
 
 interface StepSplitwiseConfigProps {
   initialSettings?: {
@@ -500,42 +614,12 @@ export function StepSplitwiseConfig({
                 )}
 
                 {/* Emoji picker for joining */}
-                <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Pick your sync marker
-                    {existingGroupUser.settings?.emoji && (
-                      <span className="font-normal text-gray-500">
-                        {" "}
-                        ({existingGroupUser.name} uses{" "}
-                        {existingGroupUser.settings.emoji})
-                      </span>
-                    )}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {SUGGESTED_EMOJIS.filter(
-                      (e) => e !== existingGroupUser.settings?.emoji,
-                    ).map((emoji) => (
-                      <button
-                        key={emoji}
-                        type="button"
-                        onClick={() => setJoinEmoji(emoji)}
-                        className={cn(
-                          "h-10 w-10 rounded-lg text-xl flex items-center justify-center transition-all",
-                          joinEmoji === emoji
-                            ? "bg-emerald-100 dark:bg-emerald-900/40 ring-2 ring-emerald-500"
-                            : "bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700",
-                        )}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                  {!joinEmoji && (
-                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
-                      👆 Select your sync marker to continue
-                    </p>
-                  )}
-                </div>
+                <JoinHouseholdEmojiPicker
+                  joinEmoji={joinEmoji}
+                  setJoinEmoji={setJoinEmoji}
+                  partnerEmoji={existingGroupUser.settings?.emoji}
+                  partnerName={existingGroupUser.name}
+                />
 
                 <div className="flex gap-3">
                   <Button
