@@ -342,6 +342,7 @@ test.describe("Onboarding Flow - Completed User", () => {
         persona: "solo",
         onboardingComplete: true,
         onboardingStep: 4,
+        subscriptionStatus: "active",
       },
     });
 

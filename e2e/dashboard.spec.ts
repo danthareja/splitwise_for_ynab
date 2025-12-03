@@ -28,6 +28,7 @@ test.describe("Dashboard - Empty State", () => {
         persona: "solo",
         onboardingComplete: true,
         onboardingStep: 4,
+        subscriptionStatus: "active",
       },
     });
 
@@ -128,6 +129,7 @@ test.describe("Dashboard - With Sync History", () => {
         persona: "solo",
         onboardingComplete: true,
         onboardingStep: 4,
+        subscriptionStatus: "active",
       },
     });
 
@@ -237,6 +239,7 @@ test.describe("Dashboard - Disabled State", () => {
         persona: "solo",
         onboardingComplete: true,
         onboardingStep: 4,
+        subscriptionStatus: "active",
         disabled: true,
         disabledAt: new Date(),
         disabledReason: "YNAB authorization expired",
@@ -351,6 +354,7 @@ test.describe("Dashboard - Partner Invite Card", () => {
         persona: "dual",
         onboardingComplete: true,
         onboardingStep: 4,
+        subscriptionStatus: "active",
       },
     });
 
@@ -459,6 +463,7 @@ test.describe("Dashboard - Orphaned State", () => {
         // We can't set this directly due to FK constraint, so we'll skip this test
         onboardingComplete: true,
         onboardingStep: 4,
+        subscriptionStatus: "active",
       },
     });
 
@@ -563,6 +568,7 @@ test.describe("Dashboard - Navigation", () => {
         persona: "solo",
         onboardingComplete: true,
         onboardingStep: 4,
+        subscriptionStatus: "active",
       },
     });
 

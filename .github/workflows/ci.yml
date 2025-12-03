@@ -13,6 +13,11 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:6969/test
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+      STRIPE_PRODUCT_ID: ${{ secrets.STRIPE_PRODUCT_ID }}
+      STRIPE_PRICE_MONTHLY: ${{ secrets.STRIPE_PRICE_MONTHLY }}
+      STRIPE_PRICE_ANNUAL: ${{ secrets.STRIPE_PRICE_ANNUAL }}
 
     services:
       postgres:
@@ -62,9 +67,14 @@ jobs:
       NEXTAUTH_SECRET: test-secret-for-ci-only
       AUTH_YNAB_ID: test-ynab-id
       AUTH_YNAB_SECRET: test-ynab-secret
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       SPLITWISE_CLIENT_ID: test-splitwise-id
       SPLITWISE_CLIENT_SECRET: test-splitwise-secret
-      RESEND_API_KEY: re_test_key
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+      STRIPE_PRODUCT_ID: ${{ secrets.STRIPE_PRODUCT_ID }}
+      STRIPE_PRICE_MONTHLY: ${{ secrets.STRIPE_PRICE_MONTHLY }}
+      STRIPE_PRICE_ANNUAL: ${{ secrets.STRIPE_PRICE_ANNUAL }}
 
     services:
       postgres:

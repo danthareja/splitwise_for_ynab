@@ -17,12 +17,18 @@ export async function createTestUser(
   const email = overrides.email || `test-${nanoid(10)}@example.com`;
   const apiKey = overrides.apiKey || `test-api-key-${nanoid(10)}`;
 
+  // Default to active subscription for onboarded users (since operations require it)
+  const subscriptionStatus =
+    overrides.subscriptionStatus ??
+    (overrides.onboardingComplete ? "active" : null);
+
   return await prisma.user.create({
     data: {
       id,
       name: "Test User",
       email,
       apiKey,
+      subscriptionStatus,
       ...overrides,
     },
   });
@@ -121,7 +127,11 @@ export async function createFullyConfiguredUser(
     ynabSettings?: Partial<YnabSettings>;
   } = {},
 ) {
-  const user = await createTestUser(overrides.user);
+  // Default to active subscription for fully configured users
+  const user = await createTestUser({
+    subscriptionStatus: "active",
+    ...overrides.user,
+  });
 
   const [ynabAccount, splitwiseAccount] = await Promise.all([
     createTestAccount("ynab", { userId: user.id }),

@@ -28,6 +28,7 @@ test.describe("Settings - Solo User", () => {
         persona: "solo",
         onboardingComplete: true,
         onboardingStep: 4,
+        subscriptionStatus: "active",
       },
     });
 
@@ -175,6 +176,7 @@ test.describe("Settings - Duo Primary User", () => {
         persona: "dual",
         onboardingComplete: true,
         onboardingStep: 4,
+        subscriptionStatus: "active",
       },
     });
 
@@ -283,7 +285,7 @@ test.describe("Settings - Duo Secondary User", () => {
     secondaryUserId = `e2e-secondary-${nanoid(10)}`;
     sessionToken = `e2e-session-${nanoid(32)}`;
 
-    // Create primary user
+    // Create primary user (with subscription - secondary inherits it)
     await prisma.user.create({
       data: {
         id: primaryUserId,
@@ -291,6 +293,7 @@ test.describe("Settings - Duo Secondary User", () => {
         name: "Primary Partner",
         persona: "dual",
         onboardingComplete: true,
+        subscriptionStatus: "active",
       },
     });
 
@@ -421,6 +424,7 @@ test.describe("Settings - Navigation", () => {
         persona: "solo",
         onboardingComplete: true,
         onboardingStep: 4,
+        subscriptionStatus: "active",
       },
     });
 

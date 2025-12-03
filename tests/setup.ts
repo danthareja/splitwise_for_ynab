@@ -38,6 +38,32 @@ vi.mock("@/db", () => ({
   prisma,
 }));
 
+// Mock Stripe to prevent real API calls during tests
+vi.mock("@/lib/stripe", () => ({
+  stripe: {
+    customers: {
+      create: vi.fn(),
+      retrieve: vi.fn(),
+    },
+    subscriptions: {
+      retrieve: vi.fn(),
+    },
+    checkout: {
+      sessions: {
+        create: vi.fn(),
+      },
+    },
+    billingPortal: {
+      sessions: {
+        create: vi.fn(),
+      },
+    },
+    invoices: {
+      createPreview: vi.fn(),
+    },
+  },
+}));
+
 export const server = setupServer();
 
 beforeAll(async () => {

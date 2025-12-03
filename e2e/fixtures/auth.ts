@@ -34,6 +34,7 @@ export async function createTestUserWithSession(
     persona?: "solo" | "dual";
     onboardingComplete?: boolean;
     onboardingStep?: number;
+    subscriptionStatus?: "active" | "trialing" | "canceled" | "past_due";
   } = {},
 ): Promise<TestUser> {
   const prisma = await getPrisma();
@@ -50,6 +51,7 @@ export async function createTestUserWithSession(
       persona: overrides.persona || null,
       onboardingComplete: overrides.onboardingComplete ?? false,
       onboardingStep: overrides.onboardingStep ?? 0,
+      subscriptionStatus: overrides.subscriptionStatus || null,
     },
   });
 
@@ -116,6 +118,7 @@ export async function createFullyOnboardedUser(
     persona: settings.persona || "solo",
     onboardingComplete: true,
     onboardingStep: 4,
+    subscriptionStatus: "active",
   });
 
   // Create YNAB account
