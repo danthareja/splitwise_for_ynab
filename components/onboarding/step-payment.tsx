@@ -123,7 +123,7 @@ export function StepPayment({
         {checkoutCanceled && (
           <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
             <AlertDescription className="text-amber-800 dark:text-amber-200">
-              Checkout was canceled. No worries! Choose a plan when you're
+              Checkout was canceled. No worries! Choose a plan when you&apos;re
               ready.
             </AlertDescription>
           </Alert>
@@ -482,8 +482,8 @@ function SuccessContent({ isDuo = false }: { isDuo?: boolean }) {
           Your {TRIAL_DAYS}-day trial has started!
         </h3>
         <p className="text-gray-600 dark:text-gray-400">
-          You have full access to all features. We'll remind you before your
-          trial ends.
+          You have full access to all features. We&apos;ll remind you before
+          your trial ends.
         </p>
       </div>
 
@@ -511,7 +511,7 @@ function SuccessContent({ isDuo = false }: { isDuo?: boolean }) {
               Trial reminder
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              We'll email you 3 days before your trial ends
+              We&apos;ll email you 3 days before your trial ends
             </p>
           </div>
         </div>

@@ -1,6 +1,4 @@
 import { headers } from "next/headers";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
 import { SignInButton } from "@/components/sign-in-button";
 import {
   PersonaWalkthrough,
@@ -23,9 +21,7 @@ export default async function LandingPage() {
   const pricing = getPricingDisplay(currency);
   const savings = calculateAnnualSavings(currency);
   return (
-    <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0f0f0f]">
-      <Header />
-
+    <>
       {/* Hero Section */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-16 pb-12 sm:pb-20">
         <div className="text-center mb-4 sm:mb-6">
@@ -532,8 +528,6 @@ export default async function LandingPage() {
           <SignInButton variant="dark" />
         </div>
       </section>
-
-      <Footer />
-    </div>
+    </>
   );
 }

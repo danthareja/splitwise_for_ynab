@@ -3,7 +3,6 @@
 import { auth } from "@/auth";
 import { prisma } from "@/db";
 import { getSubscriptionStatus } from "@/services/stripe";
-import { revalidatePath } from "next/cache";
 
 export type SubscriptionInfo = {
   hasSubscription: boolean;

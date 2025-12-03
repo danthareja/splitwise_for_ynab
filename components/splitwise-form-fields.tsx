@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SPLIT_RATIO_PRESETS } from "@/hooks/use-splitwise-form";
-import { CURRENCY_OPTIONS, COMMON_CURRENCIES } from "@/lib/currencies";
+import { CURRENCY_OPTIONS } from "@/lib/currencies";
 import type { SplitwiseGroup } from "@/types/splitwise";
 import {
   ChevronDown,
