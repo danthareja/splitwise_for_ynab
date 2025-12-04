@@ -13,6 +13,9 @@ const nextConfig: NextConfig = {
       {
         hostname: "placecats.com",
       },
+      {
+        hostname: "images.unsplash.com",
+      },
     ],
   },
 };

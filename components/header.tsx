@@ -10,10 +10,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const navLinks: { href: string; label: string }[] = [
+  { href: "/blog", label: "Blog" },
   // Future pages - uncomment when ready:
   // { href: "/about", label: "About" },
   // { href: "/reviews", label: "Reviews" },
-  // { href: "/blog", label: "Blog" },
   // { href: "/pricing", label: "Pricing" },
 ];
 
