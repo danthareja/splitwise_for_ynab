@@ -339,21 +339,21 @@ export async function sendGrandfatherAnnouncementEmail({
   to,
   userName,
 }: SendGrandfatherAnnouncementEmailParams) {
-  // const { data, error } = await resend.emails.send({
-  //   from: "Splitwise for YNAB <support@splitwiseforynab.com>",
-  //   to: [to],
-  //   subject: "You've been grandfathered — lifetime free access",
-  //   react: GrandfatherAnnouncementEmail({ userName }),
-  //   text: await render(GrandfatherAnnouncementEmail({ userName }), {
-  //     plainText: true,
-  //   }),
-  // });
+  const { data, error } = await resend.emails.send({
+    from: "Splitwise for YNAB <support@splitwiseforynab.com>",
+    to: [to],
+    subject: "You've been grandfathered — lifetime free access",
+    react: GrandfatherAnnouncementEmail({ userName }),
+    text: await render(GrandfatherAnnouncementEmail({ userName }), {
+      plainText: true,
+    }),
+  });
 
-  // if (error) {
-  //   Sentry.captureException(error);
-  //   console.error(error);
-  //   return { success: false, error };
-  // }
+  if (error) {
+    Sentry.captureException(error);
+    console.error(error);
+    return { success: false, error };
+  }
 
   return { success: true, data: {} };
 }

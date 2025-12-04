@@ -94,6 +94,8 @@ async function main() {
 
   for (let i = 0; i < usersWithEmail.length; i++) {
     const user = usersWithEmail[i];
+    if (!user) continue;
+
     const displayName = user.firstName || user.name || "there";
     const progress = `[${i + 1}/${usersWithEmail.length}]`;
 
