@@ -2,6 +2,7 @@
 
 import { prisma } from "@/db"; // Assuming your prisma client is exported from lib/db.ts
 import { auth } from "@/auth"; // Assuming you have auth configured
+import * as Sentry from "@sentry/nextjs";
 
 export async function getUserWithAccounts() {
   const session = await auth();
@@ -22,7 +23,7 @@ export async function getUserWithAccounts() {
     return user;
   } catch (error) {
     console.error("Failed to fetch user with accounts:", error);
-    // Optionally, rethrow the error or return a specific error object
+    Sentry.captureException(error);
     return null;
   }
 }
@@ -62,6 +63,7 @@ export async function isUserFullyConfigured(userId: string) {
     return isFullyConfigured;
   } catch (error) {
     console.error("Failed to check if user is fully configured:", error);
+    Sentry.captureException(error);
     return false;
   }
 }
@@ -167,6 +169,7 @@ export async function getUserOnboardingData() {
     };
   } catch (error) {
     console.error("Failed to fetch user onboarding data:", error);
+    Sentry.captureException(error);
     return null;
   }
 }
@@ -235,6 +238,7 @@ export async function unlinkFromPrimary() {
     return { success: true };
   } catch (error) {
     console.error("Failed to unlink from primary:", error);
+    Sentry.captureException(error);
     return { success: false, error: "Failed to unlink" };
   }
 }
@@ -312,6 +316,7 @@ export async function getPartnershipStatus(): Promise<PartnershipStatus | null> 
     return { type: "solo" };
   } catch (error) {
     console.error("Failed to fetch partnership status:", error);
+    Sentry.captureException(error);
     return null;
   }
 }

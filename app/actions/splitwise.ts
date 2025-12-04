@@ -477,6 +477,7 @@ async function syncSplitRatioWithPartner(
     };
   } catch (error) {
     console.error("Error syncing split ratio with partner:", error);
+    Sentry.captureException(error);
     return {
       success: false,
       error: "Failed to sync split ratio with partner",
@@ -545,6 +546,7 @@ async function syncCurrencyWithPartner(
     };
   } catch (error) {
     console.error("Error syncing currency with partner:", error);
+    Sentry.captureException(error);
     return { success: false, error: "Failed to sync currency with partner" };
   }
 }
@@ -714,6 +716,7 @@ async function syncGroupWithSecondary(
     }
   } catch (error) {
     console.error("Error syncing group with secondary:", error);
+    Sentry.captureException(error);
     return { success: false, error: "Failed to sync group with partner" };
   }
 }
@@ -787,6 +790,7 @@ async function expireInviteIfNotInGroup(
     return { success: true, expired: false, updated: true };
   } catch (error) {
     console.error("Error checking/expiring invite:", error);
+    Sentry.captureException(error);
     return { success: false, error: "Failed to check invite" };
   }
 }
@@ -1604,6 +1608,7 @@ export async function getExistingInvite() {
     };
   } catch (error) {
     console.error("Error getting existing invite:", error);
+    Sentry.captureException(error);
     return null;
   }
 }
@@ -2322,6 +2327,7 @@ async function syncFromPrimaryIfSecondary(userId: string, groupId: string) {
     return null;
   } catch (error) {
     console.error("Error syncing from primary:", error);
+    Sentry.captureException(error);
     return null;
   }
 }

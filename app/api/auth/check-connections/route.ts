@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/db";
+import * as Sentry from "@sentry/nextjs";
 
 export async function GET() {
   const session = await auth();
@@ -24,6 +25,7 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error checking connections:", error);
+    Sentry.captureException(error);
     return NextResponse.json(
       { error: "Failed to check connections" },
       { status: 500 },
