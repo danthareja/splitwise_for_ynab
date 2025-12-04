@@ -108,8 +108,8 @@ export default async function HelpPage() {
                       Splitwise
                     </a>
                     . Instead of manually creating split transactions or losing
-                    category insight, you simply flag a shared expense in
-                    YNAB—we create the Splitwise entry and an adjustment
+                    category insight, you simply flag a shared expense in YNAB,
+                    and we create the Splitwise entry and the corresponding
                     transaction that keeps your category spending accurate.
                   </AccordionContent>
                 </AccordionItem>
@@ -274,11 +274,8 @@ export default async function HelpPage() {
                   </AccordionTrigger>
                   <AccordionContent>
                     Your partner can add the expense directly to your shared
-                    Splitwise group. It won&apos;t sync to YNAB automatically,
-                    but you&apos;ll see the balance update in Splitwise. When
-                    you settle up (transfer money to your partner), record that
-                    as a transfer from your bank account to your Splitwise
-                    account in YNAB to keep things reconciled.
+                    Splitwise group. It will be added to your YNAB Splitwise
+                    account as an outflow.
                   </AccordionContent>
                 </AccordionItem>
 
