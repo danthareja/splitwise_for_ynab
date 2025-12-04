@@ -176,14 +176,12 @@ export async function disconnectYNABAccount() {
 
   try {
     // Delete the YNAB account tokens but keep user preferences/settings
-    const result = await prisma.account.deleteMany({
+    await prisma.account.deleteMany({
       where: {
         userId: session.user.id,
         provider: "ynab",
       },
     });
-
-    console.log("result", result);
 
     // Preserve YNAB settings (budget/account/flags) so reconnect keeps configuration
     // No settings update needed here

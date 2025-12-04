@@ -30,7 +30,16 @@ import type { Persona } from "@/app/actions/user";
 import type { PartnershipStatus } from "@/app/actions/db";
 import { PartnerInviteCard } from "@/components/partner-invite-card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Check, AlertTriangle, Lock, Users } from "lucide-react";
+import {
+  Check,
+  AlertTriangle,
+  Lock,
+  Users,
+  LogIn,
+  Loader2,
+} from "lucide-react";
+import { signIn } from "next-auth/react";
+import { disconnectYNABAccount } from "@/app/actions/ynab";
 import { cn } from "@/lib/utils";
 
 interface SettingsContentProps {
@@ -55,6 +64,8 @@ interface SettingsContentProps {
   partnershipStatus: PartnershipStatus | null;
   /** If true, auto-expand Splitwise settings for reconfiguration (e.g., after orphan recovery) */
   reconfigure?: boolean;
+  /** If true, show "Reconnect YNAB" button due to auth issues */
+  isYnabAuthIssue?: boolean;
 }
 
 interface ConfirmationState {
@@ -71,6 +82,7 @@ export function SettingsContent({
   splitwiseSettings,
   partnershipStatus,
   reconfigure = false,
+  isYnabAuthIssue = false,
 }: SettingsContentProps) {
   const router = useRouter();
   // Auto-expand splitwise section if reconfigure mode (e.g., orphan recovery)
@@ -82,6 +94,7 @@ export function SettingsContent({
   );
   const [pendingPersona, setPendingPersona] = useState<Persona | null>(null);
   const [isSavingPersona, setIsSavingPersona] = useState(false);
+  const [isReconnectingYnab, setIsReconnectingYnab] = useState(false);
   const [confirmation, setConfirmation] = useState<ConfirmationState>({
     isOpen: false,
     type: null,
@@ -90,6 +103,18 @@ export function SettingsContent({
     targetPersona: null,
   });
   const [budgetCurrency, setBudgetCurrency] = useState<string | null>(null);
+
+  // Handle YNAB reconnection
+  async function handleReconnectYNAB() {
+    setIsReconnectingYnab(true);
+    try {
+      await disconnectYNABAccount();
+      await signIn("ynab", { callbackUrl: "/dashboard/settings" });
+    } catch (error) {
+      console.error("Failed to reconnect YNAB:", error);
+      setIsReconnectingYnab(false);
+    }
+  }
 
   // Load budget currency on mount
   useEffect(() => {
@@ -464,7 +489,11 @@ export function SettingsContent({
         {partnershipStatus?.type === "primary_waiting" && <PartnerInviteCard />}
 
         {/* YNAB Settings */}
-        <Card>
+        <Card
+          className={
+            isYnabAuthIssue ? "border-amber-200 dark:border-amber-800" : ""
+          }
+        >
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -473,14 +502,48 @@ export function SettingsContent({
                   Your YNAB plan and account settings
                 </CardDescription>
               </div>
-              <Badge variant="success" className="flex items-center gap-1">
-                <Check className="h-3 w-3" />
-                Connected
-              </Badge>
+              {isYnabAuthIssue ? (
+                <Badge variant="warning" className="flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  Needs Reconnection
+                </Badge>
+              ) : (
+                <Badge variant="success" className="flex items-center gap-1">
+                  <Check className="h-3 w-3" />
+                  Connected
+                </Badge>
+              )}
             </div>
           </CardHeader>
           <CardContent>
-            {editingSection === "ynab" ? (
+            {isYnabAuthIssue ? (
+              <div className="space-y-4">
+                <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <AlertDescription className="text-amber-800 dark:text-amber-200">
+                    Your YNAB authorization has expired. Please reconnect to
+                    continue syncing.
+                  </AlertDescription>
+                </Alert>
+                <Button
+                  onClick={handleReconnectYNAB}
+                  disabled={isReconnectingYnab}
+                  className="rounded-full bg-amber-600 hover:bg-amber-700 text-white"
+                >
+                  {isReconnectingYnab ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Reconnecting...
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="mr-2 h-4 w-4" />
+                      Reconnect YNAB
+                    </>
+                  )}
+                </Button>
+              </div>
+            ) : editingSection === "ynab" ? (
               <YNABSettingsForm
                 initialBudgetId={ynabSettings?.budgetId}
                 initialBudgetName={ynabSettings?.budgetName}

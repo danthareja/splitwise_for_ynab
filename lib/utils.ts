@@ -156,6 +156,55 @@ export function pluralize(
   return plural || `${singular}s`;
 }
 
+// =============================================================================
+// YNAB AUTH UTILITIES
+// =============================================================================
+
+interface UserWithDisabledState {
+  disabled?: boolean;
+  disabledAt?: Date | null;
+  disabledReason?: string | null;
+  suggestedFix?: string | null;
+  accounts?: { provider: string; updatedAt: Date }[];
+}
+
+/**
+ * Check if a user's disabled state is due to YNAB authorization issues
+ * and whether they've reconnected since being disabled.
+ *
+ * @param user - User object with disabled state and accounts
+ * @returns Object with isYnabAuthIssue and shouldAutoReenable flags
+ */
+export function getYnabAuthStatus(
+  user: UserWithDisabledState | null | undefined,
+) {
+  if (!user) {
+    return { isYnabAuthIssue: false, shouldAutoReenable: false };
+  }
+
+  // Check if disabled due to YNAB auth issues
+  const disabledDueToYnabAuth =
+    user.disabled &&
+    (user.suggestedFix?.toLowerCase().includes("reconnect your ynab") ||
+      user.suggestedFix?.toLowerCase().includes("ynab authorization") ||
+      user.disabledReason?.toLowerCase().includes("unauthorized") ||
+      user.disabledReason?.toLowerCase().includes("refresh access token"));
+
+  // Check if YNAB account was refreshed AFTER the user was disabled
+  const ynabAccount = user.accounts?.find(
+    (account) => account.provider === "ynab",
+  );
+  const hasReconnectedYnab =
+    ynabAccount && user.disabledAt && ynabAccount.updatedAt > user.disabledAt;
+
+  return {
+    // Show "Reconnect YNAB" if disabled due to auth AND haven't reconnected yet
+    isYnabAuthIssue: Boolean(disabledDueToYnabAuth && !hasReconnectedYnab),
+    // Auto-reenable if just reconnected after being disabled for auth issues
+    shouldAutoReenable: Boolean(disabledDueToYnabAuth && hasReconnectedYnab),
+  };
+}
+
 /**
  * Reverse a split ratio string (e.g., "2:1" becomes "1:2")
  * This is used when a secondary user joins a primary's household -

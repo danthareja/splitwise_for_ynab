@@ -1,6 +1,10 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { getUserOnboardingData, getPartnershipStatus } from "@/app/actions/db";
+import {
+  getUserOnboardingData,
+  getPartnershipStatus,
+  getUserWithAccounts,
+} from "@/app/actions/db";
 import { getSplitwiseSettings } from "@/app/actions/splitwise";
 import { getYNABSettings } from "@/app/actions/ynab";
 import { getSubscriptionInfo } from "@/app/actions/subscription";
@@ -16,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { getYnabAuthStatus } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Settings - Splitwise for YNAB",
@@ -50,12 +55,16 @@ export default async function SettingsPage({
     redirect("/dashboard/setup");
   }
 
+  const user = await getUserWithAccounts();
   const ynabSettings = await getYNABSettings();
   const splitwiseSettings = await getSplitwiseSettings();
   const partnershipStatus = await getPartnershipStatus();
   const subscriptionInfo = await getSubscriptionInfo();
   const params = await searchParams;
   const reconfigure = params.reconfigure === "true";
+
+  // Check YNAB auth status (needs reconnection or just reconnected)
+  const { isYnabAuthIssue } = getYnabAuthStatus(user);
 
   return (
     <div className="flex min-h-screen flex-col bg-[#FDFBF7] dark:bg-[#0f0f0f]">
@@ -88,6 +97,7 @@ export default async function SettingsPage({
             splitwiseSettings={splitwiseSettings}
             partnershipStatus={partnershipStatus}
             reconfigure={reconfigure}
+            isYnabAuthIssue={isYnabAuthIssue ?? false}
           />
 
           {/* Billing section */}

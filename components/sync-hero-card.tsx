@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -17,8 +18,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { syncUserDataAction, getSyncRateLimitStatus } from "@/app/actions/sync";
 import { reenableAccount } from "@/app/actions/user";
+import { disconnectYNABAccount } from "@/app/actions/ynab";
 import { YNABFlag } from "@/components/ynab-flag";
-import { RefreshCw, AlertCircle, Clock, Loader2 } from "lucide-react";
+import { RefreshCw, AlertCircle, Clock, Loader2, LogIn } from "lucide-react";
 
 export type SyncHeroState =
   | "empty"
@@ -36,6 +38,10 @@ interface SyncHeroCardProps {
   suggestedFix?: string | null;
   /** True if the disabled reason is due to subscription issues (can't be re-enabled manually) */
   isSubscriptionIssue?: boolean;
+  /** True if the disabled reason is due to YNAB authorization issues (needs re-OAuth) */
+  isYnabAuthIssue?: boolean;
+  /** True if user just reconnected YNAB and should be auto-reenabled */
+  autoReenable?: boolean;
   // Rate limit info
   initialRateLimitRemaining?: number;
   initialRateLimitResetSeconds?: number;
@@ -52,6 +58,8 @@ export function SyncHeroCard({
   disabledReason,
   suggestedFix,
   isSubscriptionIssue = false,
+  isYnabAuthIssue = false,
+  autoReenable = false,
   initialRateLimitRemaining = 2,
   initialRateLimitResetSeconds = 3600,
   maxRequests = 2,
@@ -60,8 +68,10 @@ export function SyncHeroCard({
 }: SyncHeroCardProps) {
   const router = useRouter();
   const [state, setState] = useState<SyncHeroState>(initialState);
+  const [hasAutoReenabled, setHasAutoReenabled] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isReenabling, setIsReenabling] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
   const [rateLimitRemaining, setRateLimitRemaining] = useState(
     initialRateLimitRemaining,
   );
@@ -167,6 +177,23 @@ export function SyncHeroCard({
     }
   }, [state, rateLimitResetSeconds, refreshRateLimitStatus]);
 
+  // Auto-reenable after successful YNAB reconnection
+  useEffect(() => {
+    if (autoReenable && !hasAutoReenabled) {
+      setHasAutoReenabled(true);
+      reenableAccount()
+        .then((result) => {
+          if (result.success) {
+            setState("ready");
+            router.refresh();
+          }
+        })
+        .catch((error) => {
+          console.error("Failed to auto-reenable account:", error);
+        });
+    }
+  }, [autoReenable, hasAutoReenabled, router]);
+
   async function handleSync() {
     if (isSyncing || state === "disabled" || state === "rate_limited") return;
 
@@ -232,6 +259,20 @@ export function SyncHeroCard({
     }
   }
 
+  async function handleReconnectYNAB() {
+    setIsReconnecting(true);
+    try {
+      // Disconnect the old YNAB account to remove stale tokens
+      await disconnectYNABAccount();
+      // Trigger YNAB OAuth flow to get fresh tokens
+      await signIn("ynab", { callbackUrl: "/dashboard" });
+    } catch (error) {
+      console.error("Failed to reconnect YNAB:", error);
+      setIsReconnecting(false);
+    }
+    // Note: Don't setIsReconnecting(false) on success since we're redirecting
+  }
+
   function formatCountdown(seconds: number): string {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -279,6 +320,25 @@ export function SyncHeroCard({
                 className="rounded-full border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex-shrink-0"
               >
                 <a href="/dashboard/settings">Manage Billing</a>
+              </Button>
+            ) : isYnabAuthIssue ? (
+              <Button
+                onClick={handleReconnectYNAB}
+                disabled={isReconnecting}
+                variant="outline"
+                className="rounded-full border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex-shrink-0"
+              >
+                {isReconnecting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Reconnecting...
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Reconnect YNAB
+                  </>
+                )}
               </Button>
             ) : (
               <AlertDialog>

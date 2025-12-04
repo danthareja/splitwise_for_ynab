@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import type { Metadata } from "next";
 import { MAX_REQUESTS, WINDOW_SECONDS } from "@/lib/rate-limit";
 import { redirect } from "next/navigation";
-import { getUserFirstName } from "@/lib/utils";
+import { getUserFirstName, getYnabAuthStatus } from "@/lib/utils";
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
@@ -79,6 +79,9 @@ export default async function DashboardPage() {
   let disabledReason = user.disabledReason;
   let suggestedFix = user.suggestedFix;
   let isSubscriptionIssue = false;
+
+  // Check YNAB auth status (needs reconnection or just reconnected)
+  const { isYnabAuthIssue, shouldAutoReenable } = getYnabAuthStatus(user);
 
   // Check for orphan state - secondary with missing primary
   const isOrphaned = partnershipStatus?.type === "orphaned";
@@ -147,13 +150,8 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {/* Partner invite CTA - for dual users waiting for their partner */}
-          {partnershipStatus?.type === "primary_waiting" && (
-            <PartnerInviteCard />
-          )}
-
           {/* Sync Hero Card - Main CTA */}
-          <div className="mt-6">
+          <div className="mb-6">
             <SyncHeroCard
               initialState={syncHeroState}
               manualFlagColor={ynabSettings?.manualFlagColor || "blue"}
@@ -161,6 +159,8 @@ export default async function DashboardPage() {
               disabledReason={disabledReason}
               suggestedFix={suggestedFix}
               isSubscriptionIssue={isSubscriptionIssue}
+              isYnabAuthIssue={isYnabAuthIssue ?? false}
+              autoReenable={shouldAutoReenable ?? false}
               initialRateLimitRemaining={
                 rateLimitStatus?.remaining ?? MAX_REQUESTS
               }
@@ -178,6 +178,11 @@ export default async function DashboardPage() {
               }
             />
           </div>
+
+          {/* Partner invite CTA - for dual users waiting for their partner */}
+          {partnershipStatus?.type === "primary_waiting" && (
+            <PartnerInviteCard />
+          )}
 
           {/* Orphaned state alert - Secondary with missing primary */}
           {partnershipStatus?.type === "orphaned" && (
