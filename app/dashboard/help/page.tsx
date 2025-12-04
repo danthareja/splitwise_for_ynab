@@ -175,17 +175,6 @@ export default async function HelpPage() {
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="general-cost">
-                  <AccordionTrigger>
-                    Is Splitwise for YNAB free?
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    Yes, Splitwise for YNAB is completely free to use. Both
-                    Splitwise and YNAB have their own pricing—we just connect
-                    them together at no additional cost.
-                  </AccordionContent>
-                </AccordionItem>
-
                 <AccordionItem value="general-security">
                   <AccordionTrigger>Is my data secure?</AccordionTrigger>
                   <AccordionContent>

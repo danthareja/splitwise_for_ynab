@@ -17,48 +17,39 @@ export const GrandfatherAnnouncementEmail = ({
   return (
     <EmailLayout previewText={previewText}>
       <Heading style={emailStyles.h1}>
-        A quick update on Splitwise for YNAB
+        Splitwise for YNAB is getting an upgrade
       </Heading>
 
       <Text style={emailStyles.text}>Hey {userName},</Text>
 
       <Text style={emailStyles.text}>
-        I wanted to reach out personally because you were one of our early
-        users, and I have some news to share.
+        Things might look and feel a bit different around here. We&apos;ve been
+        rebuilding Splitwise for YNAB from the ground up — faster syncing,
+        easier account setup, and a smoother experience overall. We&apos;re
+        excited about what&apos;s coming next.
       </Text>
 
       <Text style={emailStyles.text}>
-        <strong>We&apos;re transitioning to a paid model.</strong> Running this
-        service takes time and money — server costs, API fees, and ongoing
-        development to keep things running smoothly. To make Splitwise for YNAB
-        sustainable for the long term, we need to start charging for it.
+        As part of this upgrade, we&apos;re also transitioning to a paid model
+        to keep things sustainable.
       </Text>
 
       <Section style={highlightBox}>
-        <Text style={highlightTitle}>But here&apos;s the thing</Text>
+        <Text style={highlightTitle}>You&apos;re in for free — forever</Text>
         <Text style={highlightText}>
           You signed up early and helped shape this product.{" "}
           <strong>
             As a thank you, you&apos;ve been grandfathered in with lifetime free
             access.
-          </strong>
+          </strong>{" "}
+          No payment required, no action needed.
         </Text>
       </Section>
 
       <Text style={emailStyles.text}>
-        Nothing changes for you. Your expenses will keep syncing automatically,
-        just like they always have. No payment required, no action needed on
-        your part.
-      </Text>
-
-      <Heading style={emailStyles.h3}>Your options going forward</Heading>
-
-      <Text style={emailStyles.text}>
-        • <strong>Keep using it free</strong> — You&apos;re all set. Nothing to
-        do.
-        <br />• <strong>Want to support the project?</strong> — You can
-        optionally subscribe to a paid plan if you&apos;d like to help cover
-        costs. But again, totally optional.
+        Your expenses will keep syncing automatically, just like they always
+        have. If you ever want to support the project, you can optionally
+        subscribe — but it&apos;s completely up to you.
       </Text>
 
       <Section
@@ -70,8 +61,8 @@ export const GrandfatherAnnouncementEmail = ({
       </Section>
 
       <Text style={emailStyles.text}>
-        Thanks for being part of this journey. If you have any questions or just
-        want to say hi, reply to this email — I read every message.
+        Thanks for being part of this journey. If you have any questions, just
+        reply to this email. I read every message I get.
       </Text>
 
       <Text style={emailStyles.text}>
