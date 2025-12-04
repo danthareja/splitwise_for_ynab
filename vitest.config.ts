@@ -11,12 +11,7 @@ export default defineConfig({
     include: ["tests/**/*.test.ts"],
     exclude: ["node_modules", "dist", ".next"],
     // Run tests serially to avoid database conflicts
-    pool: "forks",
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
+    maxWorkers: 1,
     env: {
       DATABASE_URL: "postgresql://postgres:postgres@localhost:6969/test",
       RESEND_API_KEY: "test-resend-api-key",

@@ -338,12 +338,23 @@ describe("actions/sync", () => {
         },
       } as any);
 
-      // Force a database error by querying a non-existent field
-      vi.spyOn(prisma.syncHistory, "findMany").mockRejectedValue(
-        new Error("Database error"),
-      );
+      // Force a database error by mocking the syncHistory delegate
+      const originalSyncHistory = prisma.syncHistory;
+      Object.defineProperty(prisma, "syncHistory", {
+        value: {
+          ...originalSyncHistory,
+          findMany: vi.fn().mockRejectedValue(new Error("Database error")),
+        },
+        configurable: true,
+      });
 
       const result = await getSyncHistory();
+
+      // Restore original
+      Object.defineProperty(prisma, "syncHistory", {
+        value: originalSyncHistory,
+        configurable: true,
+      });
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Database error");
