@@ -57,6 +57,10 @@ model User {
   trialEndsAt          DateTime?
   cancelAtPeriodEnd    Boolean         @default(false)
   
+  // Grandfathering (early adopters get free access)
+  isGrandfathered      Boolean         @default(false)
+  grandfatheredAt      DateTime?
+  
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 }

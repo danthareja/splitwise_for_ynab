@@ -121,25 +121,31 @@ export async function syncAllUsers(): Promise<{
         },
       },
       OR: [
-        // Primary/Solo users with their own SplitwiseSettings AND active subscription
+        // Primary/Solo users with their own SplitwiseSettings AND (active subscription OR grandfathered)
         {
           primaryUserId: null,
-          subscriptionStatus: { in: ["active", "trialing"] },
           splitwiseSettings: {
             groupId: { not: null },
             currencyCode: { not: null },
           },
+          OR: [
+            { subscriptionStatus: { in: ["active", "trialing"] } },
+            { isGrandfathered: true },
+          ],
         },
-        // Secondary users - check primary's subscription status
+        // Secondary users - check primary's subscription status OR grandfathered
         {
           primaryUserId: { not: null },
           primaryUser: {
             disabled: false,
-            subscriptionStatus: { in: ["active", "trialing"] },
             splitwiseSettings: {
               groupId: { not: null },
               currencyCode: { not: null },
             },
+            OR: [
+              { subscriptionStatus: { in: ["active", "trialing"] } },
+              { isGrandfathered: true },
+            ],
           },
         },
       ],

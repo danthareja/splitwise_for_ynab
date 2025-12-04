@@ -9,6 +9,8 @@ export type SubscriptionInfo = {
   status: string | null;
   isTrialing: boolean;
   isActive: boolean;
+  /** True if user is grandfathered (early adopter with lifetime free access) */
+  isGrandfathered: boolean;
   trialEndsAt: Date | null;
   currentPeriodEnd: Date | null;
   cancelAtPeriodEnd: boolean;
@@ -37,17 +39,21 @@ export async function getSubscriptionInfo(): Promise<SubscriptionInfo | null> {
     return null;
   }
 
-  // Check if user is a secondary (has primaryUserId)
+  // Check if user is a secondary (has primaryUserId) and get their own grandfathered status
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { primaryUserId: true },
+    select: { primaryUserId: true, isGrandfathered: true },
   });
 
-  // If secondary, get subscription from primary user
+  // If secondary, get subscription from primary user (for billing purposes)
+  // But grandfathered status is per-user, not inherited from primary
   const subscriptionUserId = user?.primaryUserId || session.user.id;
   const isSharedFromPrimary = !!user?.primaryUserId;
 
   const status = await getSubscriptionStatus(subscriptionUserId);
+
+  // Use the current user's own grandfathered status (not primary's)
+  const isGrandfathered = user?.isGrandfathered ?? false;
 
   // Calculate days until trial end
   let daysUntilTrialEnd: number | null = null;
@@ -67,6 +73,10 @@ export async function getSubscriptionInfo(): Promise<SubscriptionInfo | null> {
 
   return {
     ...status,
+    // Override with current user's own grandfathered status
+    isGrandfathered,
+    // Also update isActive to reflect current user's grandfathered status
+    isActive: status.isActive || isGrandfathered,
     daysUntilTrialEnd,
     daysUntilRenewal,
     isSharedFromPrimary,
@@ -74,7 +84,7 @@ export async function getSubscriptionInfo(): Promise<SubscriptionInfo | null> {
 }
 
 /**
- * Check if user can access the app (has active subscription or is in trial)
+ * Check if user can access the app (has active subscription, is in trial, or is grandfathered)
  */
 export async function canAccessApp(): Promise<boolean> {
   const session = await auth();
@@ -88,6 +98,7 @@ export async function canAccessApp(): Promise<boolean> {
     select: {
       subscriptionStatus: true,
       onboardingComplete: true,
+      isGrandfathered: true,
     },
   });
 
@@ -97,6 +108,11 @@ export async function canAccessApp(): Promise<boolean> {
 
   // If onboarding is not complete, they can access (to complete it)
   if (!user.onboardingComplete) {
+    return true;
+  }
+
+  // Grandfathered users always have access
+  if (user.isGrandfathered) {
     return true;
   }
 

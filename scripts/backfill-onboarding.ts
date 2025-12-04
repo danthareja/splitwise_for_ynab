@@ -31,6 +31,7 @@ interface UserWithRelations {
   primaryUserId: string | null;
   stripeSubscriptionId: string | null;
   subscriptionStatus: string | null;
+  isGrandfathered: boolean;
   accounts: { provider: string }[];
   ynabSettings: { budgetId: string; splitwiseAccountId: string | null } | null;
   splitwiseSettings: {
@@ -47,6 +48,7 @@ interface MigrationResult {
     onboardingStep?: { from: number; to: number };
     onboardingComplete?: { from: boolean; to: boolean };
     primaryUserId?: { from: string | null; to: string | null };
+    isGrandfathered?: { from: boolean; to: boolean };
   };
 }
 
@@ -58,6 +60,7 @@ interface MigrationSummary {
   dualPrimaryUsers: number;
   dualSecondaryUsers: number;
   incompleteOnboarding: number;
+  grandfatheredUsers: number;
   results: MigrationResult[];
 }
 
@@ -87,6 +90,7 @@ async function main() {
       primaryUserId: true,
       stripeSubscriptionId: true,
       subscriptionStatus: true,
+      isGrandfathered: true,
       accounts: { select: { provider: true } },
       ynabSettings: { select: { budgetId: true, splitwiseAccountId: true } },
       splitwiseSettings: { select: { groupId: true, currencyCode: true } },
@@ -130,6 +134,7 @@ async function main() {
     dualPrimaryUsers: 0,
     dualSecondaryUsers: 0,
     incompleteOnboarding: 0,
+    grandfatheredUsers: 0,
     results: [],
   };
 
@@ -229,6 +234,10 @@ async function main() {
     // Is this user a secondary? (based on what we calculated above)
     const isSecondary = duoRole?.role === "secondary";
 
+    // Grandfathering: Fully configured users are being grandfathered, so they
+    // don't need a subscription and should skip the payment step (step 4)
+    const willBeGrandfathered = isFullyConfigured;
+
     if (!hasSplitwiseAccount) {
       // Step 0: Need to connect Splitwise
       newOnboardingStep = 0;
@@ -242,8 +251,8 @@ async function main() {
     } else if (!hasSplitwiseConfig) {
       // Step 3: Needs Splitwise group/currency configuration
       newOnboardingStep = 3;
-    } else if (!isSecondary && !hasSubscription) {
-      // Step 4: Solo/primary users need subscription (secondary users skip)
+    } else if (!isSecondary && !hasSubscription && !willBeGrandfathered) {
+      // Step 4: Solo/primary users need subscription (secondary users and grandfathered users skip)
       newOnboardingStep = 4;
     } else {
       // Fully configured - mark complete and preserve existing step if it was already complete
@@ -285,6 +294,17 @@ async function main() {
       };
     }
 
+    // Grandfathering: Mark fully onboarded users as grandfathered (early adopters)
+    // This gives them lifetime free access as a thank-you for signing up early
+    const shouldBeGrandfathered = newOnboardingComplete;
+    const needsGrandfatherUpdate =
+      !user.isGrandfathered && shouldBeGrandfathered;
+
+    if (needsGrandfatherUpdate) {
+      result.changes.isGrandfathered = { from: false, to: true };
+      summary.grandfatheredUsers++;
+    }
+
     const hasChanges = Object.keys(result.changes).length > 0;
 
     if (hasChanges) {
@@ -300,6 +320,10 @@ async function main() {
             onboardingStep: newOnboardingStep,
             onboardingComplete: newOnboardingComplete,
             primaryUserId: newPrimaryUserId,
+            ...(needsGrandfatherUpdate && {
+              isGrandfathered: true,
+              grandfatheredAt: new Date(),
+            }),
           },
         });
       }
@@ -343,6 +367,16 @@ function printResults(
   console.log(`   Dual (secondary):         ${summary.dualSecondaryUsers}`);
   console.log(`   Incomplete onboarding:    ${summary.incompleteOnboarding}`);
   console.log();
+
+  // Grandfathering stats
+  if (summary.grandfatheredUsers > 0) {
+    console.log("🎁 Grandfathering:");
+    console.log(
+      `   Users ${dryRun ? "to be grandfathered" : "grandfathered"}: ${summary.grandfatheredUsers}`,
+    );
+    console.log("   (Fully onboarded users get lifetime free access)");
+    console.log();
+  }
 
   // Duo group details (always show if there are duo groups)
   if (duoGroupDetails.length > 0) {

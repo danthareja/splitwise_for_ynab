@@ -10,6 +10,7 @@ import { SettingsContent } from "@/components/settings-content";
 import {
   BillingSettings,
   NoSubscriptionCard,
+  GrandfatheredCard,
 } from "@/components/billing-settings";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -95,7 +96,13 @@ export default async function SettingsPage({
               Subscription
             </h2>
             {subscriptionInfo?.hasSubscription ? (
+              // Active subscription takes priority - show billing management
               <BillingSettings subscription={subscriptionInfo} />
+            ) : subscriptionInfo?.isGrandfathered ? (
+              // Grandfathered users without active subscription
+              <GrandfatheredCard
+                currencyCode={splitwiseSettings?.currencyCode ?? undefined}
+              />
             ) : (
               <NoSubscriptionCard
                 hadPreviousSubscription={

@@ -170,6 +170,7 @@ export async function getSubscriptionStatus(userId: string): Promise<{
   currentPeriodEnd: Date | null;
   cancelAtPeriodEnd: boolean;
   isActive: boolean;
+  isGrandfathered: boolean;
   renewalAmount: number | null;
   renewalCurrency: string | null;
   interval: "month" | "year" | null;
@@ -185,13 +186,16 @@ export async function getSubscriptionStatus(userId: string): Promise<{
       stripeCurrentPeriodEnd: true,
       cancelAtPeriodEnd: true,
       stripePriceId: true,
+      isGrandfathered: true,
     },
   });
 
   const hasSubscription = !!user?.stripeSubscriptionId;
   const status = user?.subscriptionStatus || null;
   const isTrialing = status === "trialing";
-  const isActive = status === "active" || status === "trialing";
+  const isGrandfathered = user?.isGrandfathered || false;
+  const isActive =
+    status === "active" || status === "trialing" || isGrandfathered;
 
   // User has had a previous subscription if they have a Stripe customer ID or trial end date
   const hadPreviousSubscription = !!(
@@ -240,6 +244,7 @@ export async function getSubscriptionStatus(userId: string): Promise<{
     currentPeriodEnd: user?.stripeCurrentPeriodEnd || null,
     cancelAtPeriodEnd: user?.cancelAtPeriodEnd || false,
     isActive,
+    isGrandfathered,
     renewalAmount,
     renewalCurrency,
     interval,

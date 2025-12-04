@@ -18,8 +18,7 @@
     "db:migrate": "prisma migrate dev",
     "db:dump": "bash scripts/db-dump.sh",
     "db:restore": "bash scripts/db-restore.sh",
-    "db:studio": "prisma studio",
-    "script:impersonate": "npx tsx scripts/impersonate-user.ts"
+    "db:studio": "prisma studio"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown",

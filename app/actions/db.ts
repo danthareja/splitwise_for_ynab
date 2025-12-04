@@ -90,6 +90,7 @@ export async function getUserOnboardingData() {
         stripeSubscriptionId: true,
         subscriptionStatus: true,
         trialEndsAt: true,
+        isGrandfathered: true,
         // Include primary user's settings for secondary users
         primaryUser: {
           select: {
@@ -125,11 +126,12 @@ export async function getUserOnboardingData() {
       user.splitwiseSettings?.groupId && user.splitwiseSettings?.currencyCode
     );
 
-    // Check if user has an active subscription or trial
+    // Check if user has an active subscription, trial, or is grandfathered
     const hasSubscription = !!(
-      user.stripeSubscriptionId &&
-      (user.subscriptionStatus === "active" ||
-        user.subscriptionStatus === "trialing")
+      user.isGrandfathered ||
+      (user.stripeSubscriptionId &&
+        (user.subscriptionStatus === "active" ||
+          user.subscriptionStatus === "trialing"))
     );
 
     // Secondary users have a primaryUserId set

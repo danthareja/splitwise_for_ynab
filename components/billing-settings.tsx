@@ -13,6 +13,8 @@ import {
   ExternalLink,
   Clock,
   Users,
+  Sparkles,
+  Heart,
 } from "lucide-react";
 import { type SubscriptionInfo } from "@/app/actions/subscription";
 import { cn } from "@/lib/utils";
@@ -466,6 +468,150 @@ export function NoSubscriptionCard({
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
               {TRIAL_DAYS}-day free trial, cancel anytime
             </p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface GrandfatheredCardProps {
+  /** Currency code for pricing display if they want to upgrade */
+  currencyCode?: string;
+}
+
+/**
+ * Special billing card for grandfathered early adopters
+ */
+export function GrandfatheredCard({
+  currencyCode = "USD",
+}: GrandfatheredCardProps) {
+  const [isLoading, setIsLoading] = useState<"month" | "year" | null>(null);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+
+  const pricing = getPricingDisplay(currencyCode);
+
+  const handleCheckout = async (interval: "month" | "year") => {
+    setIsLoading(interval);
+
+    try {
+      const response = await fetch("/api/stripe/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          interval,
+          currencyCode: pricing.currency,
+          successUrl: `${window.location.origin}/dashboard?success=true`,
+          cancelUrl: window.location.href,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create checkout session");
+      }
+
+      const { url } = await response.json();
+      window.location.href = url;
+    } catch {
+      setIsLoading(null);
+    }
+  };
+
+  return (
+    <Card className="border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardTitle className="text-lg font-medium flex items-center gap-2">
+          Billing
+        </CardTitle>
+        <Badge
+          variant="outline"
+          className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/50 dark:text-amber-300 dark:border-amber-700"
+        >
+          <Sparkles className="h-3 w-3 mr-1" />
+          Early Supporter
+        </Badge>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Thank you message */}
+        <div className="rounded-lg p-4 bg-white/60 dark:bg-gray-900/40 border border-amber-200/50 dark:border-amber-800/50">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-full bg-amber-100 dark:bg-amber-900/50">
+              <Heart className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="font-medium text-gray-900 dark:text-white">
+                Thank you for being an early supporter!
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                You signed up before we introduced paid plans, so you have{" "}
+                <span className="font-medium text-amber-700 dark:text-amber-400">
+                  lifetime free access
+                </span>{" "}
+                to Splitwise for YNAB.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Status details */}
+        <div className="space-y-3 bg-white/40 dark:bg-gray-900/30 rounded-lg p-4">
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-500 dark:text-gray-400">Status</span>
+            <span className="font-medium text-amber-700 dark:text-amber-400">
+              Grandfathered
+            </span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-500 dark:text-gray-400">Cost</span>
+            <span className="font-medium text-gray-900 dark:text-white">
+              Free forever
+            </span>
+          </div>
+        </div>
+
+        {/* Optional upgrade section */}
+        <div className="pt-2">
+          {!showUpgrade ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowUpgrade(true)}
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              <Heart className="h-4 w-4 mr-2" />
+              Want to support the project?
+            </Button>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Your support helps cover server costs and fund new features.
+                Totally optional!
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  onClick={() => handleCheckout("year")}
+                  disabled={isLoading !== null}
+                  size="sm"
+                  className="bg-amber-500 hover:bg-amber-600 text-white"
+                >
+                  {isLoading === "year" ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
+                  Annual — {pricing.annualDisplay}/year
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => handleCheckout("month")}
+                  disabled={isLoading !== null}
+                  size="sm"
+                >
+                  {isLoading === "month" ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
+                  Monthly — {pricing.monthlyDisplay}/mo
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       </CardContent>

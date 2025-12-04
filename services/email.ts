@@ -25,6 +25,10 @@ import {
   SubscriptionExpiredEmail,
   SubscriptionExpiredEmailProps,
 } from "@/emails/subscription-expired";
+import {
+  GrandfatherAnnouncementEmail,
+  GrandfatherAnnouncementEmailProps,
+} from "@/emails/grandfather-announcement";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -324,4 +328,32 @@ export async function sendSubscriptionExpiredEmail({
   }
 
   return { success: true, data };
+}
+
+interface SendGrandfatherAnnouncementEmailParams
+  extends GrandfatherAnnouncementEmailProps {
+  to: string;
+}
+
+export async function sendGrandfatherAnnouncementEmail({
+  to,
+  userName,
+}: SendGrandfatherAnnouncementEmailParams) {
+  // const { data, error } = await resend.emails.send({
+  //   from: "Splitwise for YNAB <support@splitwiseforynab.com>",
+  //   to: [to],
+  //   subject: "You've been grandfathered — lifetime free access",
+  //   react: GrandfatherAnnouncementEmail({ userName }),
+  //   text: await render(GrandfatherAnnouncementEmail({ userName }), {
+  //     plainText: true,
+  //   }),
+  // });
+
+  // if (error) {
+  //   Sentry.captureException(error);
+  //   console.error(error);
+  //   return { success: false, error };
+  // }
+
+  return { success: true, data: {} };
 }
