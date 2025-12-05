@@ -12,7 +12,7 @@ export const GrandfatherAnnouncementEmail = ({
   userName = "there",
 }: GrandfatherAnnouncementEmailProps) => {
   const previewText =
-    "You've been grandfathered — lifetime free access to Splitwise for YNAB";
+    "You're an early supporter — lifetime free access to Splitwise for YNAB";
 
   return (
     <EmailLayout previewText={previewText}>
@@ -39,8 +39,8 @@ export const GrandfatherAnnouncementEmail = ({
         <Text style={highlightText}>
           You signed up early and helped shape this product.{" "}
           <strong>
-            As a thank you, you&apos;ve been grandfathered in with lifetime free
-            access.
+            As a thank you, you&apos;re getting lifetime free access as an early
+            supporter.
           </strong>{" "}
           No payment required, no action needed.
         </Text>

@@ -11,6 +11,7 @@ import { getSubscriptionInfo } from "@/app/actions/subscription";
 import { AppHeader } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { SettingsContent } from "@/components/settings-content";
+import { AccountSettingsCard } from "@/components/account-settings-card";
 import {
   BillingSettings,
   NoSubscriptionCard,
@@ -91,17 +92,39 @@ export default async function SettingsPage({
             Settings
           </h1>
 
-          <SettingsContent
-            persona={onboardingData.persona}
-            ynabSettings={ynabSettings}
-            splitwiseSettings={splitwiseSettings}
-            partnershipStatus={partnershipStatus}
-            reconfigure={reconfigure}
-            isYnabAuthIssue={isYnabAuthIssue ?? false}
-          />
+          {/* Account section */}
+          <section className="mb-10">
+            <h2 className="text-xl font-serif text-gray-900 dark:text-white mb-4">
+              Account
+            </h2>
+            <AccountSettingsCard
+              userProfile={{
+                name: onboardingData.userProfile.name,
+                firstName: onboardingData.userProfile.firstName,
+                lastName: onboardingData.userProfile.lastName,
+                email: onboardingData.userProfile.email,
+                image: onboardingData.userProfile.image,
+              }}
+            />
+          </section>
 
-          {/* Billing section */}
-          <div className="mt-8">
+          {/* Configuration section */}
+          <section className="mb-10">
+            <h2 className="text-xl font-serif text-gray-900 dark:text-white mb-4">
+              Configuration
+            </h2>
+            <SettingsContent
+              persona={onboardingData.persona}
+              ynabSettings={ynabSettings}
+              splitwiseSettings={splitwiseSettings}
+              partnershipStatus={partnershipStatus}
+              reconfigure={reconfigure}
+              isYnabAuthIssue={isYnabAuthIssue ?? false}
+            />
+          </section>
+
+          {/* Subscription section */}
+          <section>
             <h2 className="text-xl font-serif text-gray-900 dark:text-white mb-4">
               Subscription
             </h2>
@@ -123,7 +146,7 @@ export default async function SettingsPage({
                 isSecondary={partnershipStatus?.type === "secondary"}
               />
             )}
-          </div>
+          </section>
         </div>
       </main>
 

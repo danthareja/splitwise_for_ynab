@@ -85,8 +85,7 @@ export async function sendSyncErrorEmail({
   return data;
 }
 
-interface SendSyncErrorRequiresActionEmailParams
-  extends SyncErrorRequiresActionEmailProps {
+interface SendSyncErrorRequiresActionEmailParams extends SyncErrorRequiresActionEmailProps {
   to: string;
 }
 
@@ -231,8 +230,7 @@ export async function sendPartnerJoinedEmail({
   return { success: true, data };
 }
 
-interface SendPartnerDisconnectedEmailParams
-  extends PartnerDisconnectedEmailProps {
+interface SendPartnerDisconnectedEmailParams extends PartnerDisconnectedEmailProps {
   to: string;
 }
 
@@ -299,8 +297,7 @@ export async function sendTrialEndingEmail({
   return { success: true, data };
 }
 
-interface SendSubscriptionExpiredEmailParams
-  extends SubscriptionExpiredEmailProps {
+interface SendSubscriptionExpiredEmailParams extends SubscriptionExpiredEmailProps {
   to: string;
 }
 
@@ -330,8 +327,7 @@ export async function sendSubscriptionExpiredEmail({
   return { success: true, data };
 }
 
-interface SendGrandfatherAnnouncementEmailParams
-  extends GrandfatherAnnouncementEmailProps {
+interface SendGrandfatherAnnouncementEmailParams extends GrandfatherAnnouncementEmailProps {
   to: string;
 }
 
@@ -342,7 +338,7 @@ export async function sendGrandfatherAnnouncementEmail({
   const { data, error } = await resend.emails.send({
     from: "Splitwise for YNAB <support@splitwiseforynab.com>",
     to: [to],
-    subject: "You've been grandfathered — lifetime free access",
+    subject: "You're an early supporter — lifetime free access",
     react: GrandfatherAnnouncementEmail({ userName }),
     text: await render(GrandfatherAnnouncementEmail({ userName }), {
       plainText: true,

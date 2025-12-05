@@ -558,7 +558,7 @@ export function GrandfatheredCard({
           <div className="flex justify-between items-center text-sm">
             <span className="text-gray-500 dark:text-gray-400">Status</span>
             <span className="font-medium text-amber-700 dark:text-amber-400">
-              Grandfathered
+              Early Supporter
             </span>
           </div>
           <div className="flex justify-between items-center text-sm">

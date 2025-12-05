@@ -83,6 +83,8 @@ export async function getUserOnboardingData() {
         onboardingComplete: true,
         primaryUserId: true,
         name: true,
+        firstName: true,
+        lastName: true,
         email: true,
         image: true,
         accounts: true,
@@ -160,6 +162,8 @@ export async function getUserOnboardingData() {
       splitwiseSettings: user.splitwiseSettings,
       userProfile: {
         name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
         image: user.image,
       },

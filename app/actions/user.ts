@@ -376,6 +376,69 @@ export async function getOnboardingState() {
   return user;
 }
 
+export async function updateUserProfile(data: {
+  firstName: string;
+  lastName: string;
+  email: string;
+}) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  // Validate inputs
+  const firstName = data.firstName.trim();
+  const lastName = data.lastName.trim();
+  const email = data.email.trim().toLowerCase();
+
+  if (!firstName) {
+    return { success: false, error: "First name is required" };
+  }
+  if (!lastName) {
+    return { success: false, error: "Last name is required" };
+  }
+  if (!email) {
+    return { success: false, error: "Email is required" };
+  }
+
+  // Basic email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return { success: false, error: "Please enter a valid email address" };
+  }
+
+  try {
+    // Check if email is already used by another user
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+
+    if (existingUser && existingUser.id !== session.user.id) {
+      return { success: false, error: "This email is already in use" };
+    }
+
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        firstName,
+        lastName,
+        name: `${firstName} ${lastName}`,
+        email,
+      },
+    });
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/setup");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating user profile:", error);
+    return { success: false, error: "Failed to update profile" };
+  }
+}
+
 export async function reenableAccount() {
   const session = await auth();
 

@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Menu } from "lucide-react";
-import { signOut } from "@/auth";
+import { ArrowRight, Menu, Settings, LogOut, HelpCircle } from "lucide-react";
+import { signOut, auth } from "@/auth";
+import { prisma } from "@/db";
+import Image from "next/image";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 
 const navLinks: { href: string; label: string }[] = [
@@ -87,7 +91,39 @@ export async function Header() {
   );
 }
 
-export function AppHeader() {
+export async function AppHeader() {
+  // Fetch user data for the avatar
+  const session = await auth();
+  let userProfile: {
+    name: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    email: string | null;
+    image: string | null;
+  } | null = null;
+
+  if (session?.user?.id) {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        name: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        image: true,
+      },
+    });
+    userProfile = user;
+  }
+
+  const displayName =
+    userProfile?.firstName && userProfile?.lastName
+      ? `${userProfile.firstName} ${userProfile.lastName}`
+      : userProfile?.name || "User";
+  const initials = userProfile?.firstName
+    ? userProfile.firstName.charAt(0).toUpperCase()
+    : displayName.charAt(0).toUpperCase();
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-200 dark:border-gray-800 bg-[#FDFBF7]/95 dark:bg-[#0f0f0f]/95 backdrop-blur supports-[backdrop-filter]:bg-[#FDFBF7]/80 dark:supports-[backdrop-filter]:bg-[#0f0f0f]/80">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -101,20 +137,78 @@ export function AppHeader() {
             </span>
           </Link>
           <div className="flex items-center space-x-3">
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/" });
-              }}
-            >
-              <Button
-                variant="outline"
-                type="submit"
-                className="rounded-full px-5"
-              >
-                Sign out
-              </Button>
-            </form>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2">
+                  {userProfile?.image ? (
+                    <Image
+                      src={userProfile.image}
+                      alt=""
+                      width={36}
+                      height={36}
+                      className="h-9 w-9 rounded-full object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="h-9 w-9 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                      <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                        {initials}
+                      </span>
+                    </div>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {displayName}
+                    </p>
+                    {userProfile?.email && (
+                      <p className="text-xs leading-none text-muted-foreground truncate">
+                        {userProfile.email}
+                      </p>
+                    )}
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/dashboard/settings"
+                    className="flex items-center cursor-pointer"
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/dashboard/help"
+                    className="flex items-center cursor-pointer"
+                  >
+                    <HelpCircle className="mr-2 h-4 w-4" />
+                    Help
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <form
+                  action={async () => {
+                    "use server";
+                    await signOut({ redirectTo: "/" });
+                  }}
+                >
+                  <DropdownMenuItem asChild>
+                    <button
+                      type="submit"
+                      className="w-full flex items-center cursor-pointer"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign out
+                    </button>
+                  </DropdownMenuItem>
+                </form>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

@@ -3,6 +3,8 @@
 import { StepContainer, useOnboardingStep } from "./wizard";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   ExternalLink,
   Shield,
@@ -11,20 +13,24 @@ import {
   AlertCircle,
   LogOut,
   Loader2,
+  Pencil,
 } from "lucide-react";
 import { signIn } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   disconnectSplitwiseAccount,
   checkSplitwiseGroupAccess,
 } from "@/app/actions/splitwise";
+import { updateUserProfile } from "@/app/actions/user";
 import Image from "next/image";
 
 interface StepSplitwiseProps {
   authError?: string;
   userProfile?: {
     name: string | null;
+    firstName: string | null;
+    lastName: string | null;
     email: string | null;
     image: string | null;
   };
@@ -37,6 +43,23 @@ interface StepSplitwiseProps {
     emoji?: string | null;
   } | null;
   primaryName?: string | null;
+}
+
+// Helper to parse a full name into first and last names
+function parseFullName(fullName: string | null): {
+  firstName: string;
+  lastName: string;
+} {
+  if (!fullName) return { firstName: "", lastName: "" };
+  const parts = fullName.trim().split(/\s+/);
+  const first = parts[0] ?? "";
+  if (parts.length === 1) {
+    return { firstName: first, lastName: "" };
+  }
+  return {
+    firstName: first,
+    lastName: parts.slice(1).join(" "),
+  };
 }
 
 export function StepSplitwise({
@@ -52,6 +75,66 @@ export function StepSplitwise({
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [isCheckingAccess, setIsCheckingAccess] = useState(false);
   const [hasGroupAccess, setHasGroupAccess] = useState<boolean | null>(null);
+
+  // Editable profile fields
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Initialize form values from userProfile
+  // If firstName/lastName aren't set, parse from name
+  const parsedName = parseFullName(userProfile?.name ?? null);
+  const initialFirstName: string =
+    userProfile?.firstName || parsedName.firstName || "";
+  const initialLastName: string =
+    userProfile?.lastName || parsedName.lastName || "";
+  const initialEmail: string = userProfile?.email || "";
+
+  const [firstName, setFirstName] = useState(initialFirstName);
+  const [lastName, setLastName] = useState(initialLastName);
+  const [email, setEmail] = useState(initialEmail);
+
+  // Check if there are unsaved changes
+  const hasChanges =
+    firstName !== initialFirstName ||
+    lastName !== initialLastName ||
+    email !== initialEmail;
+
+  // Handle saving the profile
+  const handleSaveProfile = useCallback(async () => {
+    if (!hasChanges) {
+      setIsEditing(false);
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError(null);
+    setSaveSuccess(false);
+
+    try {
+      const result = await updateUserProfile({
+        firstName,
+        lastName,
+        email,
+      });
+
+      if (result.success) {
+        setSaveSuccess(true);
+        setIsEditing(false);
+        router.refresh();
+        // Clear success message after a delay
+        setTimeout(() => setSaveSuccess(false), 3000);
+      } else {
+        setSaveError(result.error || "Failed to save");
+      }
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      setSaveError("Failed to save profile");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [firstName, lastName, email, hasChanges, router]);
 
   // For secondary users, check if they have access to the primary's group
   useEffect(() => {
@@ -179,9 +262,10 @@ export function StepSplitwise({
               </Alert>
             )}
 
-          {/* Profile card */}
+          {/* Profile card with editable fields */}
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6">
-            <div className="flex items-center gap-4">
+            {/* Header with avatar and status */}
+            <div className="flex items-center gap-4 mb-4">
               {userProfile?.image ? (
                 <Image
                   src={userProfile.image}
@@ -198,13 +282,13 @@ export function StepSplitwise({
               )}
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-gray-900 dark:text-white truncate">
-                  {userProfile?.name || "Splitwise User"}
+                  {firstName && lastName
+                    ? `${firstName} ${lastName}`
+                    : userProfile?.name || "Splitwise User"}
                 </p>
-                {userProfile?.email && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                    {userProfile.email}
-                  </p>
-                )}
+                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                  {email || userProfile?.email}
+                </p>
               </div>
               <div className="flex-shrink-0">
                 <span className="inline-flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400">
@@ -213,6 +297,120 @@ export function StepSplitwise({
                 </span>
               </div>
             </div>
+
+            {/* Divider */}
+            <div className="border-t border-gray-100 dark:border-gray-800 my-4" />
+
+            {/* Edit toggle / form */}
+            {!isEditing ? (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="w-full flex items-center justify-center gap-2 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit your name or email
+              </button>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Please confirm your contact details. We&apos;ll use this to
+                  reach you about your account.
+                </p>
+
+                {/* Name fields */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="firstName">First name</Label>
+                    <Input
+                      id="firstName"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="First name"
+                      className="h-10"
+                      disabled={isSaving}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="lastName">Last name</Label>
+                    <Input
+                      id="lastName"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Last name"
+                      className="h-10"
+                      disabled={isSaving}
+                    />
+                  </div>
+                </div>
+
+                {/* Email field */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="h-10"
+                    disabled={isSaving}
+                  />
+                </div>
+
+                {/* Error message */}
+                {saveError && (
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {saveError}
+                  </p>
+                )}
+
+                {/* Action buttons */}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setFirstName(initialFirstName);
+                      setLastName(initialLastName);
+                      setEmail(initialEmail);
+                      setIsEditing(false);
+                      setSaveError(null);
+                    }}
+                    disabled={isSaving}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSaveProfile}
+                    disabled={
+                      isSaving ||
+                      !firstName.trim() ||
+                      !lastName.trim() ||
+                      !email.trim()
+                    }
+                    className="flex-1 bg-gray-900 hover:bg-gray-800 text-white"
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Success message */}
+            {saveSuccess && !isEditing && (
+              <p className="mt-3 text-sm text-green-600 dark:text-green-400 text-center">
+                Profile updated successfully!
+              </p>
+            )}
           </div>
 
           {/* Desktop actions */}
