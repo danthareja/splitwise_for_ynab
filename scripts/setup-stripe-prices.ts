@@ -14,6 +14,7 @@
 
 import "dotenv/config";
 import Stripe from "stripe";
+import { PRICING_DISPLAY, TRIAL_DAYS } from "../lib/stripe-pricing";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   console.error("❌ STRIPE_SECRET_KEY is not set in environment variables");
@@ -22,20 +23,17 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-const TRIAL_DAYS = 34;
-
-// Multi-currency pricing (amounts in smallest currency unit)
-// These are the "locked in" prices for key currencies
-// Adaptive Pricing will handle conversion for all other currencies
-const CURRENCY_OPTIONS = {
-  // Base price in USD
-  usd: { monthly: 499, annual: 3900 }, // $4.99/mo, $39/yr
-  // Localized prices
-  gbp: { monthly: 399, annual: 2900 }, // £3.99/mo, £29/yr
-  eur: { monthly: 449, annual: 3500 }, // €4.49/mo, €35/yr
-  cad: { monthly: 599, annual: 4900 }, // CA$5.99/mo, CA$49/yr
-  aud: { monthly: 599, annual: 4900 }, // A$5.99/mo, A$49/yr
-} as const;
+// Build currency options from the shared pricing config
+const CURRENCY_OPTIONS: Record<string, { monthly: number; annual: number }> & {
+  usd: { monthly: number; annual: number };
+} = Object.fromEntries(
+  Object.entries(PRICING_DISPLAY).map(([currency, pricing]) => [
+    currency.toLowerCase(),
+    { monthly: pricing.monthly, annual: pricing.annual },
+  ]),
+) as Record<string, { monthly: number; annual: number }> & {
+  usd: { monthly: number; annual: number };
+};
 
 async function main() {
   console.log("🚀 Setting up Stripe product with multi-currency prices...\n");
@@ -85,8 +83,11 @@ async function main() {
       unit_amount: amounts.annual,
       tax_behavior: "exclusive",
     };
+    const symbol =
+      PRICING_DISPLAY[currency.toUpperCase() as keyof typeof PRICING_DISPLAY]
+        ?.symbol || "$";
     console.log(
-      `  💰 ${currency.toUpperCase()}: $${amounts.monthly / 100}/mo, $${amounts.annual / 100}/yr`,
+      `  💰 ${currency.toUpperCase()}: ${symbol}${amounts.monthly / 100}/mo, ${symbol}${amounts.annual / 100}/yr`,
     );
   }
 
