@@ -145,7 +145,10 @@ export async function updateUserSubscription(
     trialEndsAt: subscription.trial_end
       ? new Date(subscription.trial_end * 1000)
       : null,
-    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    // Consider subscription cancelled if explicitly marked to cancel at period end,
+    // OR if a specific cancel_at timestamp is set (scheduled cancellation)
+    cancelAtPeriodEnd:
+      subscription.cancel_at_period_end || !!subscription.cancel_at,
   };
 
   // Only set period end if it's a valid timestamp
@@ -277,6 +280,25 @@ export async function createBillingPortalSession({
   });
 
   return session;
+}
+
+/**
+ * Reactivate a cancelled subscription
+ */
+export async function reactivateSubscription(userId: string): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { stripeSubscriptionId: true },
+  });
+
+  if (!user?.stripeSubscriptionId) {
+    throw new Error("User does not have an active subscription to reactivate");
+  }
+
+  // Setting cancel_at_period_end to false will also clear any cancel_at timestamp
+  await stripe.subscriptions.update(user.stripeSubscriptionId, {
+    cancel_at_period_end: false,
+  });
 }
 
 /**

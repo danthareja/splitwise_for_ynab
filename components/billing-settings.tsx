@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ interface BillingSettingsProps {
 }
 
 export function BillingSettings({ subscription }: BillingSettingsProps) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,6 +51,33 @@ export function BillingSettings({ subscription }: BillingSettingsProps) {
       window.location.href = url;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to open billing");
+      setIsLoading(false);
+    }
+  };
+
+  const handleReactivate = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/stripe/reactivate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to reactivate subscription");
+      }
+
+      // Refresh server data to reflect the change
+      router.refresh();
+      setIsLoading(false);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to reactivate subscription",
+      );
       setIsLoading(false);
     }
   };
@@ -156,60 +185,69 @@ export function BillingSettings({ subscription }: BillingSettingsProps) {
         )}
 
         {/* Trial status banner */}
-        {subscription.isTrialing &&
-          subscription.daysUntilTrialEnd !== null &&
-          !subscription.cancelAtPeriodEnd && (
-            <div
-              className={cn(
-                "rounded-lg p-4",
-                subscription.daysUntilTrialEnd <= 7
-                  ? "bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800"
-                  : "bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800",
-              )}
-            >
-              <div className="flex items-start gap-3">
-                <Clock
+        {subscription.isTrialing && subscription.daysUntilTrialEnd !== null && (
+          <div
+            className={cn(
+              "rounded-lg p-4",
+              subscription.daysUntilTrialEnd <= 7 ||
+                subscription.cancelAtPeriodEnd
+                ? "bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800"
+                : "bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800",
+            )}
+          >
+            <div className="flex items-start gap-3">
+              <Clock
+                className={cn(
+                  "h-5 w-5 mt-0.5",
+                  subscription.daysUntilTrialEnd <= 7 ||
+                    subscription.cancelAtPeriodEnd
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-blue-600 dark:text-blue-400",
+                )}
+              />
+              <div>
+                <p
                   className={cn(
-                    "h-5 w-5 mt-0.5",
-                    subscription.daysUntilTrialEnd <= 7
-                      ? "text-amber-600 dark:text-amber-400"
-                      : "text-blue-600 dark:text-blue-400",
+                    "font-medium",
+                    subscription.daysUntilTrialEnd <= 7 ||
+                      subscription.cancelAtPeriodEnd
+                      ? "text-amber-900 dark:text-amber-100"
+                      : "text-blue-900 dark:text-blue-100",
                   )}
-                />
-                <div>
-                  <p
-                    className={cn(
-                      "font-medium",
-                      subscription.daysUntilTrialEnd <= 7
-                        ? "text-amber-900 dark:text-amber-100"
-                        : "text-blue-900 dark:text-blue-100",
-                    )}
-                  >
-                    {subscription.daysUntilTrialEnd} day
-                    {subscription.daysUntilTrialEnd !== 1 ? "s" : ""} left in
-                    your free trial
-                  </p>
-                  <p
-                    className={cn(
-                      "text-sm mt-0.5",
-                      subscription.daysUntilTrialEnd <= 7
-                        ? "text-amber-700 dark:text-amber-300"
-                        : "text-blue-700 dark:text-blue-300",
-                    )}
-                  >
-                    {subscription.isSharedFromPrimary
-                      ? `Your partner's trial ends on ${formatDate(subscription.trialEndsAt)}`
-                      : renewalPrice
-                        ? `You'll be charged ${renewalPrice}${intervalLabel} on ${formatDate(subscription.trialEndsAt)}`
-                        : `Your card will be charged on ${formatDate(subscription.trialEndsAt)}`}
-                  </p>
-                </div>
+                >
+                  {subscription.cancelAtPeriodEnd
+                    ? "Your trial is scheduled to end"
+                    : `${subscription.daysUntilTrialEnd} day${subscription.daysUntilTrialEnd !== 1 ? "s" : ""} left in your free trial`}
+                </p>
+                <p
+                  className={cn(
+                    "text-sm mt-0.5",
+                    subscription.daysUntilTrialEnd <= 7 ||
+                      subscription.cancelAtPeriodEnd
+                      ? "text-amber-700 dark:text-amber-300"
+                      : "text-blue-700 dark:text-blue-300",
+                  )}
+                >
+                  {subscription.cancelAtPeriodEnd ? (
+                    <>
+                      Keep syncing with Splitwise for YNAB! Reactivate below to
+                      continue after {formatDate(subscription.trialEndsAt)}.
+                    </>
+                  ) : subscription.isSharedFromPrimary ? (
+                    `Your partner's trial ends on ${formatDate(subscription.trialEndsAt)}`
+                  ) : renewalPrice ? (
+                    `You'll be charged ${renewalPrice}${intervalLabel} on ${formatDate(subscription.trialEndsAt)}`
+                  ) : (
+                    `Your card will be charged on ${formatDate(subscription.trialEndsAt)}`
+                  )}
+                </p>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-        {/* Cancellation notice */}
-        {subscription.cancelAtPeriodEnd && (
+        {/* Cancellation notice - only for non-trial subscriptions */}
+        {subscription.cancelAtPeriodEnd && !subscription.isTrialing && (
           <div className="rounded-lg p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
             <div className="flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 mt-0.5 text-amber-600 dark:text-amber-400" />
@@ -286,15 +324,29 @@ export function BillingSettings({ subscription }: BillingSettingsProps) {
             <span>Billing is managed by your partner.</span>
           </div>
         ) : (
-          <div className="pt-2">
+          <div className="pt-2 flex flex-col sm:flex-row gap-3">
+            {subscription.cancelAtPeriodEnd && (
+              <Button
+                onClick={handleReactivate}
+                disabled={isLoading}
+                className="bg-amber-500 hover:bg-amber-600 text-white gap-2"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                Don&apos;t cancel subscription
+              </Button>
+            )}
             <Button
               variant="outline"
-              size="sm"
+              size={subscription.cancelAtPeriodEnd ? "default" : "sm"}
               onClick={handleManageBilling}
               disabled={isLoading}
               className="gap-2"
             >
-              {isLoading ? (
+              {isLoading && !subscription.cancelAtPeriodEnd ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <ExternalLink className="h-4 w-4" />
