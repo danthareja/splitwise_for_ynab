@@ -108,7 +108,7 @@ test.describe("Settings - Solo User", () => {
     await page.goto("/dashboard/settings");
 
     // Should show solo mode
-    await expect(page.getByText(/solo/i)).toBeVisible();
+    await expect(page.getByText(/solo/i).first()).toBeVisible();
   });
 
   test("displays YNAB settings", async ({ page }) => {
@@ -267,7 +267,7 @@ test.describe("Settings - Duo Primary User", () => {
     await page.goto("/dashboard/settings");
 
     // Should show duo mode
-    await expect(page.getByText(/duo/i)).toBeVisible();
+    await expect(page.getByText(/duo/i).first()).toBeVisible();
 
     // Should show partner name (use exact match to avoid multiple)
     await expect(page.getByText("Partner Name", { exact: true })).toBeVisible();
@@ -398,7 +398,7 @@ test.describe("Settings - Duo Secondary User", () => {
     await page.goto("/dashboard/settings");
 
     // Should show duo mode
-    await expect(page.getByText(/duo/i)).toBeVisible();
+    await expect(page.getByText(/duo/i).first()).toBeVisible();
 
     // Should show primary partner name (use exact match to avoid multiple)
     await expect(
