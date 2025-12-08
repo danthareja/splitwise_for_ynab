@@ -135,6 +135,36 @@ export default async function HelpPage() {
                   </AccordionContent>
                 </AccordionItem>
 
+                <AccordionItem value="general-starting-balance">
+                  <AccordionTrigger>
+                    What if I start with an existing Splitwise balance?
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    If you start using the tool when your Splitwise balance is
+                    not $0, you should align your YNAB Splitwise account to
+                    match. Create a manual transaction in your YNAB Splitwise
+                    account:
+                    <ul className="list-disc list-inside mt-2 space-y-1">
+                      <li>
+                        <strong>Payee:</strong> &ldquo;Starting Balance&rdquo;
+                      </li>
+                      <li>
+                        <strong>Category:</strong> Inflow: Ready to Assign
+                      </li>
+                      <li>
+                        <strong>Amount:</strong> The amount you are owed
+                        (Inflow) or owe (Outflow)
+                      </li>
+                    </ul>
+                    <div className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                      <strong>Note:</strong> If you are owed money, this adds
+                      funds to your budget. Since this is an IOU and not cash in
+                      hand, be careful not to overspend your actual cash
+                      accounts.
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
                 <AccordionItem value="general-how-it-works">
                   <AccordionTrigger>How does syncing work?</AccordionTrigger>
                   <AccordionContent>
@@ -172,6 +202,43 @@ export default async function HelpPage() {
                     Yes! We automatically sync your expenses once a day. You can
                     also trigger a manual sync anytime from your dashboard.
                     Manual syncs are rate-limited to respect API abuse policies.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="general-not-even-split">
+                  <AccordionTrigger>
+                    How do I handle uneven splits (like rent)?
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    If you often split at a specific ratio (e.g., 60/40), set
+                    your default <strong>Split Ratio</strong> in Splitwise
+                    settings. We&apos;ll apply it automatically to all flagged
+                    expenses.
+                    <div className="mt-4">
+                      <strong>For one-off custom splits (e.g. Rent):</strong>
+                      <ol className="list-decimal list-inside space-y-2 mt-2">
+                        <li>
+                          <strong>Pay the full amount</strong> in YNAB (Checking
+                          Account) and categorize it to your expense category
+                          (e.g., &quot;Rent&quot;).
+                        </li>
+                        <li>
+                          <strong>Create the expense in Splitwise</strong>{" "}
+                          manually with the custom split (e.g., You paid full
+                          amount, Partner owes X).
+                        </li>
+                        <li>
+                          <strong>Sync</strong> will create an inflow in your
+                          YNAB Splitwise account for the amount your partner
+                          owes.
+                        </li>
+                        <li>
+                          <strong>Categorize that inflow</strong> to the same
+                          category (&quot;Rent&quot;). This offsets your total
+                          spending to reflect only your share.
+                        </li>
+                      </ol>
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
 
@@ -550,22 +617,21 @@ export default async function HelpPage() {
             </CardHeader>
             <CardContent>
               <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="adv-not-even-split">
+                <AccordionItem value="adv-settle-up">
                   <AccordionTrigger>
-                    What if an expense isn&apos;t split evenly?
+                    How does Splitwise &quot;Settle Up&quot; show up in YNAB?
                   </AccordionTrigger>
                   <AccordionContent>
-                    If you often split at a specific ratio (e.g., 60/40), set
-                    your default <strong>Split Ratio</strong> in Splitwise
-                    settings (for example, 3:2). We&apos;ll apply it
-                    automatically to all flagged expenses.
+                    When you settle up in Splitwise (transfer money to your
+                    partner), it will be added to your &quot;phantom&quot; cash
+                    account in YNAB. Categorize it as a transfer to/from your
+                    bank, depending whether you paid or received money.
                     <div className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-                      For one‑off special ratios, enter the expense directly in
-                      Splitwise with custom splits instead of flagging in YNAB.
+                      <strong>Note:</strong> This does not add or remove any
+                      money from your plan.
                     </div>
                   </AccordionContent>
                 </AccordionItem>
-
                 <AccordionItem value="adv-inflows">
                   <AccordionTrigger>
                     What happens if I flag an inflow in YNAB?
@@ -606,22 +672,6 @@ export default async function HelpPage() {
                     sync back to YNAB. For one‑off expenses with a different
                     split ratio, create the expense manually in Splitwise rather
                     than flagging in YNAB.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="adv-settle-up">
-                  <AccordionTrigger>
-                    How does Splitwise &quot;Settle Up&quot; show up in YNAB?
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    When you settle up in Splitwise (transfer money to your
-                    partner), record it as a transfer in YNAB from your bank
-                    account to your Splitwise account. This keeps your Splitwise
-                    account balance accurate.
-                    <div className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-                      If you&apos;re using e-transfer, you can match the YNAB
-                      transfer to the imported bank transaction.
-                    </div>
                   </AccordionContent>
                 </AccordionItem>
 
