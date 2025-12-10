@@ -302,6 +302,16 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
     },
   });
 
+  // Guard: Do not sync disabled users
+  if (user?.disabled) {
+    console.log(`⏭️ Skipping sync for disabled user ${user.email || userId}`);
+    return {
+      success: false,
+      error:
+        user.disabledReason || "Account is disabled. Please re-enable to sync.",
+    };
+  }
+
   // Get effective groupId (from primary if secondary)
   const effectiveGroupId = user?.primaryUserId
     ? user?.primaryUser?.splitwiseSettings?.groupId
@@ -312,6 +322,7 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
     // Include both primary users with this groupId and secondary users linked to primaries with this groupId
     const groupUsers = await prisma.user.findMany({
       where: {
+        disabled: false, // Only include enabled users
         OR: [
           // Primary users with this group
           {
@@ -384,6 +395,13 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
 
     if (!user) {
       throw new Error("User not found");
+    }
+
+    // Guard: Do not sync disabled users
+    if (user.disabled) {
+      throw new Error(
+        user.disabledReason || "Account is disabled. Please re-enable to sync.",
+      );
     }
 
     if (!user.ynabSettings) {
@@ -587,6 +605,13 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
         `🚨 ${error instanceof YNABError ? "YNAB" : "Splitwise"} error requires action: ${error.message}`,
       );
 
+      // Check if user is already disabled to avoid spamming emails
+      const existingUser = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      const wasAlreadyDisabled = existingUser?.disabled || false;
+
       const user = await prisma.user.update({
         where: { id: userId },
         data: {
@@ -597,12 +622,19 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
         },
       });
 
-      await sendSyncErrorRequiresActionEmail({
-        to: user.email || "support@splitwiseforynab.com",
-        userName: getUserFirstName(user),
-        errorMessage: error.message,
-        suggestedFix: error.suggestedFix || "Please contact support",
-      });
+      // Only send email if this is the first time we're disabling the account
+      if (!wasAlreadyDisabled) {
+        await sendSyncErrorRequiresActionEmail({
+          to: user.email || "support@splitwiseforynab.com",
+          userName: getUserFirstName(user),
+          errorMessage: error.message,
+          suggestedFix: error.suggestedFix || "Please contact support",
+        });
+      } else {
+        console.log(
+          `⏭️ User ${user.email || userId} already disabled - skipping duplicate email notification`,
+        );
+      }
     } else {
       console.error("Sync error:", error);
       Sentry.captureException(error);
@@ -838,6 +870,13 @@ async function syncUserPhase(
 
     if (!user) {
       throw new Error("User not found");
+    }
+
+    // Guard: Do not sync disabled users
+    if (user.disabled) {
+      throw new Error(
+        user.disabledReason || "Account is disabled. Please re-enable to sync.",
+      );
     }
 
     if (!user.ynabSettings) {
@@ -1087,6 +1126,9 @@ async function syncUserPhase(
         `🚨 ${error instanceof YNABError ? "YNAB" : "Splitwise"} error requires action: ${error.message}`,
       );
 
+      // Check if user is already disabled to avoid spamming emails
+      const wasAlreadyDisabled = errorUser?.disabled || false;
+
       await prisma.user.update({
         where: { id: userId },
         data: {
@@ -1097,12 +1139,19 @@ async function syncUserPhase(
         },
       });
 
-      await sendSyncErrorRequiresActionEmail({
-        to: errorUser?.email || "support@splitwiseforynab.com",
-        userName: getUserFirstName(errorUser),
-        errorMessage: error.message,
-        suggestedFix: error.suggestedFix || "Please contact support",
-      });
+      // Only send email if this is the first time we're disabling the account
+      if (!wasAlreadyDisabled) {
+        await sendSyncErrorRequiresActionEmail({
+          to: errorUser?.email || "support@splitwiseforynab.com",
+          userName: getUserFirstName(errorUser),
+          errorMessage: error.message,
+          suggestedFix: error.suggestedFix || "Please contact support",
+        });
+      } else {
+        console.log(
+          `⏭️ User ${errorUser?.email || userId} already disabled - skipping duplicate email notification`,
+        );
+      }
     } else {
       console.error(`Sync error for user ${userId}, phase ${phase}:`, error);
       Sentry.captureException(error);
