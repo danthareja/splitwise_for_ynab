@@ -176,7 +176,7 @@ export class SplitwiseService {
     });
 
     return (res.data.expenses as SplitwiseExpense[]).filter((expense) =>
-      this.isExpenseUnprocessed(expense),
+      this.isExpenseUnprocessed(expense, updated_after),
     );
   }
 
@@ -192,14 +192,41 @@ export class SplitwiseService {
     );
   }
 
-  isExpenseUnprocessed(expense: SplitwiseExpense) {
+  /**
+   * Determines if an expense should be processed.
+   *
+   * An expense is considered unprocessed if:
+   * 1. It's not deleted
+   * 2. AND either:
+   *    - It doesn't have the known emoji in its description, OR
+   *    - It was CREATED after the last sync date (handles recurring expenses
+   *      that inherit the emoji from their parent but are actually new instances)
+   */
+  isExpenseUnprocessed(expense: SplitwiseExpense, lastSyncDate?: string) {
     const isDeleted = !!expense.deleted_at;
     if (isDeleted) {
       return false;
     }
 
     const hasKnownEmoji = expense.description.includes(this.knownEmoji);
-    return !hasKnownEmoji;
+
+    // If it doesn't have the emoji, it's definitely unprocessed
+    if (!hasKnownEmoji) {
+      return true;
+    }
+
+    // If it has the emoji but was CREATED after the last sync date,
+    // it's a new recurring expense instance that inherited the emoji
+    // from its parent expense and should still be processed
+    if (lastSyncDate && expense.created_at) {
+      const expenseCreatedAt = new Date(expense.created_at);
+      const syncDate = new Date(lastSyncDate);
+      if (expenseCreatedAt > syncDate) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   async getLastProcessedDate() {

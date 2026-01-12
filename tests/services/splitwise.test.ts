@@ -286,6 +286,58 @@ describe("SplitwiseService", () => {
 
       expect(splitwiseService.isExpenseUnprocessed(expense)).toBe(false);
     });
+
+    it("should return true for recurring expense instance that inherited emoji but was created after last sync", () => {
+      // This handles the case where a recurring expense template was processed,
+      // and Splitwise created a new instance that inherited the emoji'd description
+      const expense: SplitwiseExpense = {
+        id: 2,
+        description: "✅ Monthly Rent", // Has emoji from parent
+        deleted_at: null,
+        created_at: "2024-02-01T10:00:00Z", // Created in February
+      } as SplitwiseExpense;
+
+      const lastSyncDate = "2024-01-15T10:00:00Z"; // Last synced in January
+
+      // Should be processed because it was created AFTER the last sync date
+      expect(splitwiseService.isExpenseUnprocessed(expense, lastSyncDate)).toBe(
+        true,
+      );
+    });
+
+    it("should return false for expense with emoji that was created before last sync", () => {
+      // This is a genuinely already-processed expense
+      const expense: SplitwiseExpense = {
+        id: 1,
+        description: "✅ Old Processed Expense",
+        deleted_at: null,
+        created_at: "2024-01-10T10:00:00Z", // Created before last sync
+      } as SplitwiseExpense;
+
+      const lastSyncDate = "2024-01-15T10:00:00Z"; // Last synced after creation
+
+      // Should NOT be processed because it was created BEFORE the last sync
+      expect(splitwiseService.isExpenseUnprocessed(expense, lastSyncDate)).toBe(
+        false,
+      );
+    });
+
+    it("should handle recurring expense at exact sync boundary", () => {
+      // Edge case: expense created at exactly the same time as last sync
+      const expense: SplitwiseExpense = {
+        id: 3,
+        description: "✅ Boundary Expense",
+        deleted_at: null,
+        created_at: "2024-01-15T10:00:00Z",
+      } as SplitwiseExpense;
+
+      const lastSyncDate = "2024-01-15T10:00:00Z";
+
+      // Should NOT be processed because created_at is not greater than lastSyncDate
+      expect(splitwiseService.isExpenseUnprocessed(expense, lastSyncDate)).toBe(
+        false,
+      );
+    });
   });
 
   describe("createExpense", () => {
