@@ -267,13 +267,13 @@ export function YNABTransaction({
             )}
           </div>
           {/* Account */}
-          <div className="text-white/70 truncate">{account}</div>
+          <div className="text-white/80 truncate">{account}</div>
           {/* Date */}
-          <div className="text-white/70">{formatDate(date)}</div>
+          <div className="text-white/80">{formatDate(date)}</div>
           {/* Payee */}
-          <div className="text-white/70 font-medium truncate">{payee}</div>
+          <div className="text-white/80 font-medium truncate">{payee}</div>
           {/* Category */}
-          <div className="text-white truncate">{category}</div>
+          <div className="text-white/80 truncate">{category}</div>
           {/* Outflow */}
           <div className="text-right text-red-400 font-mono">
             {outflow || ""}
@@ -449,14 +449,14 @@ function YNABCategoryRow({
             <span className="text-white font-medium">{name}</span>
           </div>
         </td>
-        <td className="text-right text-white/70 font-mono px-3 py-2 sm:px-4 sm:py-3">
+        <td className="text-right text-white/80 font-mono px-3 py-2 sm:px-4 sm:py-3">
           {assigned}
         </td>
         <td className="text-right px-3 py-2 sm:px-4 sm:py-3">
           {transactions && !inlineActivity ? (
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
-                <button className="text-white/70 font-mono hover:text-white hover:underline underline-offset-2 transition-colors cursor-pointer">
+                <button className="text-white font-mono hover:text-white/7- hover:underline underline-offset-2 transition-colors cursor-pointer">
                   {activity}
                 </button>
               </PopoverTrigger>
@@ -485,7 +485,7 @@ function YNABCategoryRow({
               </PopoverContent>
             </Popover>
           ) : (
-            <span className="text-white/70 font-mono">{activity}</span>
+            <span className="text-white/80 font-mono">{activity}</span>
           )}
         </td>
         <td className="text-right px-3 py-2 sm:px-4 sm:py-3">

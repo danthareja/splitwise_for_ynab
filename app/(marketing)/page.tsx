@@ -28,10 +28,11 @@ export default async function LandingPage() {
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-20 pb-16 sm:pb-24">
         <div className="text-center">
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-serif text-gray-900 dark:text-white leading-[1.1] tracking-tight mb-6">
-            Shared expenses break your budget.
+            Shared expenses break your plan
           </h1>
           <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed mb-4">
-            You split $150 in groceries. YNAB categorizes the entire amount.
+            When you split groceries with your partner, YNAB categorizes the
+            whole amount.
           </p>
 
           <div className="max-w-xl mx-auto mb-6 sm:mb-8">
@@ -59,7 +60,7 @@ export default async function LandingPage() {
           </div>
 
           <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed mb-4">
-            What if YNAB could just categorize your half?
+            What if you could categorize just your half?
           </p>
 
           <div className="max-w-xl mx-auto mb-6 sm:mb-8">
@@ -95,8 +96,11 @@ export default async function LandingPage() {
           </div>
 
           <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed mb-6 sm:mb-8">
-            We sync YNAB with Splitwise to track what you spent, not what you
-            fronted.
+            We sync YNAB with Splitwise to{" "}
+            <span className="font-semibold text-gray-900 dark:text-white">
+              track what you spent
+            </span>
+            , not what you fronted.
           </p>
 
           <SignInButton />
@@ -111,14 +115,14 @@ export default async function LandingPage() {
               The secret
             </p>
             <h2 className="text-3xl sm:text-4xl font-serif text-gray-900 dark:text-white mb-6">
-              Add a Splitwise account to YNAB.
+              Add a Splitwise account to YNAB
             </h2>
           </div>
 
           {/* The magic: two transactions */}
           <div className="text-center mb-6">
             <p className="text-base text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
-              When you split that $150 grocery run, your category gets{" "}
+              Every expense split with your partner gets{" "}
               <span className="font-semibold text-gray-900 dark:text-white">
                 two transactions
               </span>
@@ -156,16 +160,16 @@ export default async function LandingPage() {
               ]}
             />
             <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
-              The $150 outflow + a $75 inflow ={" "}
+              The $150 original outflow + a $75 adjustment inflow ={" "}
               <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                $75 net
+                $75 you actually spent
               </span>
               .
             </p>
           </div>
 
           <p className="text-center text-base text-gray-600 dark:text-gray-400 mb-6">
-            And your Splitwise account tracks what you&apos;re owed:
+            And a Splitwise account tracks what you&apos;re owed:
           </p>
 
           <div className="max-w-sm mx-auto mb-6">
@@ -184,7 +188,7 @@ export default async function LandingPage() {
           </div>
 
           <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
-            It&apos;s just an IOU ledger, not a real bank account.
+            As an IOU ledger, not a real bank account.
           </p>
 
           {/* Splitwise info */}
@@ -213,7 +217,7 @@ export default async function LandingPage() {
               The integration
             </p>
             <h2 className="text-3xl sm:text-4xl font-serif text-gray-900 dark:text-white mb-4">
-              We automate the entire workflow.
+              We automate the entire workflow
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
               Flag a shared expense in YNAB. We automatically create the
@@ -235,7 +239,7 @@ export default async function LandingPage() {
       <section className="py-16 sm:py-20 bg-gray-50 dark:bg-[#0a0a0a] border-y border-gray-100 dark:border-gray-800">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-3xl font-serif text-center text-gray-900 dark:text-white mb-4">
-            The workarounds don&apos;t work.
+            The workarounds don&apos;t work
           </h2>
           <p className="text-center text-gray-500 dark:text-gray-400 mb-10 max-w-lg mx-auto">
             Every YNAB user with shared expenses has tried these.
@@ -420,7 +424,7 @@ export default async function LandingPage() {
       <section className="py-16 sm:py-24 bg-gray-900 dark:bg-black">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-serif text-white mb-6">
-            See what you actually spend.
+            See what you actually spend
           </h2>
           <p className="text-lg text-gray-400 mb-10 max-w-xl mx-auto">
             Not what you fronted for your partner. Connect YNAB and Splitwise in
