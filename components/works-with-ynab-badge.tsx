@@ -7,7 +7,10 @@ export function WorksWithYnabBadge() {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <div
+    <a
+      href="https://api.ynab.com/#works-with-ynab-third-party"
+      target="_blank"
+      rel="noopener noreferrer"
       className="relative inline-block"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -28,6 +31,6 @@ export function WorksWithYnabBadge() {
           🎉
         </span>
       )}
-    </div>
+    </a>
   );
 }
