@@ -5,9 +5,15 @@ import { createPortal } from "react-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChevronRight } from "lucide-react";
 import { YNABFlag } from "@/components/ynab-flag";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 
 // Flag color types for the dropdown
-type FlagColor =
+export type FlagColor =
   | "red"
   | "orange"
   | "yellow"
@@ -150,7 +156,7 @@ function YNABFlagDropdown({
           <div
             ref={dropdownRef}
             style={{ top: dropdownPosition.top, left: dropdownPosition.left }}
-            className="fixed z-[9999] bg-[#1e2b3a] rounded-lg shadow-xl border border-white/10 py-2 min-w-[160px]"
+            className="fixed z-9999 bg-[#1e2b3a] rounded-lg shadow-xl border border-white/10 py-2 min-w-[160px]"
           >
             {flagOptions.map((flag) => (
               <button
@@ -194,8 +200,9 @@ export function YNABTransaction({
   inflow,
   highlightFlag,
   interactive = true,
+  onFlagSelect,
 }: {
-  flag?: FlagColor;
+  flag?: FlagColor | null;
   account: string;
   date: Date | string;
   payee: string;
@@ -204,8 +211,23 @@ export function YNABTransaction({
   inflow?: string;
   highlightFlag?: boolean;
   interactive?: boolean;
+  onFlagSelect?: (flag: FlagColor) => void;
 }) {
-  const [flag, setFlag] = useState<FlagColor | undefined>(initialFlag);
+  const [flag, setFlag] = useState<FlagColor | undefined>(
+    initialFlag === null ? undefined : initialFlag,
+  );
+
+  // Sync flag state with prop changes (for controlled usage)
+  useEffect(() => {
+    if (initialFlag !== undefined) {
+      setFlag(initialFlag === null ? undefined : initialFlag);
+    }
+  }, [initialFlag]);
+
+  const handleFlagSelect = (selectedFlag: FlagColor) => {
+    setFlag(selectedFlag);
+    onFlagSelect?.(selectedFlag);
+  };
 
   return (
     <div className="overflow-x-auto max-w-full">
@@ -229,7 +251,7 @@ export function YNABTransaction({
             {interactive ? (
               <YNABFlagDropdown
                 selectedFlag={flag}
-                onSelect={setFlag}
+                onSelect={handleFlagSelect}
                 highlight={highlightFlag}
               />
             ) : (
@@ -323,6 +345,71 @@ export function YNABAccounts({
   );
 }
 
+// Transaction type for activity popover
+export type YNABActivityTransaction = {
+  account: string;
+  date: string;
+  payee: string;
+  memo?: string;
+  amount: string;
+};
+
+// Inline activity table component (reusable)
+function InlineActivityTable({
+  transactions,
+}: {
+  transactions: YNABActivityTransaction[];
+}) {
+  return (
+    <table className="w-full text-[11px] sm:text-sm border-collapse">
+      <thead>
+        <tr className="text-[9px] sm:text-xs text-white/40 uppercase tracking-wider">
+          <th className="text-left pb-2 pr-3 font-medium border-b border-r border-white/10">
+            Account
+          </th>
+          <th className="text-left pb-2 px-3 font-medium border-b border-r border-white/10">
+            Date
+          </th>
+          <th className="text-left pb-2 px-3 font-medium border-b border-r border-white/10">
+            Payee
+          </th>
+          <th className="text-right pb-2 pl-3 font-medium border-b border-white/10">
+            Amount
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {transactions.map((tx, i) => {
+          const isPositive = tx.amount.startsWith("+");
+          const isNegative = tx.amount.startsWith("-");
+          const amountColor = isPositive
+            ? "text-emerald-400"
+            : isNegative
+              ? "text-red-400"
+              : "text-white";
+
+          return (
+            <tr key={i} className="text-white/80 border-b border-white/10">
+              <td className="py-2 pr-3 whitespace-nowrap border-white/10">
+                {tx.account}
+              </td>
+              <td className="py-2 px-3 whitespace-nowrap border-white/10">
+                {tx.date}
+              </td>
+              <td className="py-2 px-3 border-white/10">{tx.payee}</td>
+              <td
+                className={`py-2 pl-3 text-right font-mono whitespace-nowrap ${amountColor}`}
+              >
+                {tx.amount}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
 // YNAB-style Category Row
 function YNABCategoryRow({
   emoji,
@@ -331,6 +418,9 @@ function YNABCategoryRow({
   activity,
   available,
   availableColor,
+  transactions,
+  defaultActivityOpen,
+  inlineActivity,
 }: {
   emoji: string;
   name: string;
@@ -338,7 +428,11 @@ function YNABCategoryRow({
   activity: string;
   available: string;
   availableColor: "green" | "yellow" | "red" | "gray";
+  transactions?: YNABActivityTransaction[];
+  defaultActivityOpen?: boolean;
+  inlineActivity?: boolean;
 }) {
+  const [open, setOpen] = useState(defaultActivityOpen ?? false);
   const colorClasses = {
     green: "bg-[#6ac47d] text-[#1e2b3a]",
     yellow: "bg-[#e5a938] text-[#1e2b3a]",
@@ -347,27 +441,72 @@ function YNABCategoryRow({
   };
 
   return (
-    <tr>
-      <td className="px-3 py-2 sm:px-4 sm:py-3">
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <span className="text-sm sm:text-base">{emoji}</span>
-          <span className="text-white font-medium">{name}</span>
-        </div>
-      </td>
-      <td className="text-right text-white/70 font-mono px-3 py-2 sm:px-4 sm:py-3">
-        {assigned}
-      </td>
-      <td className="text-right text-white/70 font-mono px-3 py-2 sm:px-4 sm:py-3">
-        {activity}
-      </td>
-      <td className="text-right px-3 py-2 sm:px-4 sm:py-3">
-        <span
-          className={`inline-flex items-center justify-center px-2 py-0.5 sm:px-3 sm:py-1 rounded-full font-bold text-[10px] sm:text-sm ${colorClasses[availableColor]}`}
-        >
-          {available}
-        </span>
-      </td>
-    </tr>
+    <>
+      <tr>
+        <td className="px-3 py-2 sm:px-4 sm:py-3">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="text-sm sm:text-base">{emoji}</span>
+            <span className="text-white font-medium">{name}</span>
+          </div>
+        </td>
+        <td className="text-right text-white/70 font-mono px-3 py-2 sm:px-4 sm:py-3">
+          {assigned}
+        </td>
+        <td className="text-right px-3 py-2 sm:px-4 sm:py-3">
+          {transactions && !inlineActivity ? (
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <button className="text-white/70 font-mono hover:text-white hover:underline underline-offset-2 transition-colors cursor-pointer">
+                  {activity}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                side="bottom"
+                align="center"
+                sideOffset={12}
+                showArrow
+                arrowClassName="fill-[#232f3e]"
+                className="w-auto max-w-[90vw] sm:max-w-md p-0 bg-[#232f3e] border border-white/10 shadow-2xl rounded-lg"
+              >
+                <div className="px-4 py-3 sm:px-5 sm:py-4">
+                  <InlineActivityTable transactions={transactions} />
+
+                  {/* Close button */}
+                  <div className="mt-4 flex justify-end">
+                    <Button
+                      size="sm"
+                      className="bg-[#5b7eb5] hover:bg-[#4a6da4] text-white"
+                      onClick={() => setOpen(false)}
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          ) : (
+            <span className="text-white/70 font-mono">{activity}</span>
+          )}
+        </td>
+        <td className="text-right px-3 py-2 sm:px-4 sm:py-3">
+          <span
+            className={`inline-flex items-center justify-center px-2 py-0.5 sm:px-3 sm:py-1 rounded-full font-bold text-[10px] sm:text-sm ${colorClasses[availableColor]}`}
+          >
+            {available}
+          </span>
+        </td>
+      </tr>
+      {/* Inline activity row */}
+      {transactions && inlineActivity && (
+        <tr>
+          <td colSpan={4} className="px-3 pb-3 sm:px-4 sm:pb-4">
+            <div className="bg-[#232f3e] rounded-lg p-3 sm:p-4 mt-1">
+              <InlineActivityTable transactions={transactions} />
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 
@@ -383,6 +522,9 @@ export function YNABCategories({
     activity: string;
     available: string;
     availableColor: "green" | "yellow" | "red" | "gray";
+    transactions?: YNABActivityTransaction[];
+    defaultActivityOpen?: boolean;
+    inlineActivity?: boolean;
   }>;
   title?: string;
 }) {
@@ -445,7 +587,7 @@ function WalkthroughStep({
     <div className="mb-12 last:mb-0">
       <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
         <div
-          className={`flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-base ${colorClasses[color]}`}
+          className={`shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-base ${colorClasses[color]}`}
         >
           <span className="font-serif">{number}</span>
         </div>
@@ -469,216 +611,126 @@ function SoloWalkthrough() {
     <div className="space-y-8">
       <div className="bg-amber-50 dark:bg-amber-950/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800 mb-8">
         <p className="text-sm text-amber-800 dark:text-amber-300">
-          <strong>The setup:</strong> You use YNAB, your partner doesn&apos;t.
-          You share a Splitwise group to track who owes what.
+          <strong>Your setup:</strong> You use YNAB. Your partner uses Splitwise
+          to log their expenses. No YNAB required for them.
         </p>
       </div>
 
       <WalkthroughStep
         number="1"
-        title="You pay $150 for groceries"
-        subtitle="A shared expense you fronted"
+        title="You pay for something shared"
+        subtitle="Flag it in YNAB"
         color="amber"
       >
-        <div className="space-y-6">
-          <div className="bg-amber-50 dark:bg-amber-950/20 rounded-lg p-4 border border-amber-100 dark:border-amber-900/50">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              <strong className="text-amber-800 dark:text-amber-300">
-                Your action:
-              </strong>{" "}
-              Flag the shared transaction with a color in YNAB. That&apos;s it.
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
-              Flag the <i>outflow</i> in your spending account:
-            </p>
-            <YNABTransaction
-              flag="blue"
-              account="💰 Checking"
-              date="11/25/2025"
-              payee="Whole Foods"
-              category="Groceries"
-              outflow="$150.00"
-              highlightFlag={true}
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              👆 Just flag it—we handle the rest
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
-              We&apos;ll add a matching <i>inflow</i> to your Splitwise account:
-            </p>
-            <YNABTransaction
-              flag="none"
-              account="🤝 Splitwise"
-              date="11/25/2025"
-              payee="Whole Foods"
-              category="Groceries"
-              inflow="$75.00"
-              interactive={false}
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              ✓ Auto-created—your partner owes you $75
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
-              Your Groceries category shows your half:
-            </p>
-            <YNABCategories
-              categories={[
-                {
-                  emoji: "🛒",
-                  name: "Groceries",
-                  assigned: "$300.00",
-                  activity: "-$75.00",
-                  available: "$225.00",
-                  availableColor: "green",
-                },
-              ]}
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              ✓ Only $75 spent (your half), not $150
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
-              Your Splitwise shows a positive balance:
-            </p>
-            <YNABAccounts
-              accounts={[
-                { name: "💰 Checking", balance: "$750.00" },
-                {
-                  name: "🤝 Splitwise",
-                  balance: "+$75.00",
-                  isPositive: true,
-                  highlight: true,
-                },
-              ]}
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              ✓ Your partner owes you $75
-            </p>
-          </div>
+        <div className="space-y-4">
+          <YNABTransaction
+            flag="blue"
+            account="💰 Checking"
+            date="11/25/2025"
+            payee="Whole Foods"
+            category="Groceries"
+            outflow="$150.00"
+            highlightFlag={true}
+          />
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            We create the Splitwise expense and add an adjustment transaction.
+            Your category shows $75 spent, your half.
+          </p>
+          <YNABCategories
+            categories={[
+              {
+                emoji: "🛒",
+                name: "Groceries",
+                assigned: "$300.00",
+                activity: "-$75.00",
+                available: "$225.00",
+                availableColor: "green",
+                transactions: [
+                  {
+                    account: "💰 Checking",
+                    date: new Date().toLocaleDateString(),
+                    payee: "Whole Foods",
+                    amount: "-$150.00",
+                  },
+                  {
+                    account: "🤝 Splitwise",
+                    date: new Date().toLocaleDateString(),
+                    payee: "Whole Foods",
+                    amount: "+$75.00",
+                  },
+                ],
+              },
+            ]}
+          />
         </div>
       </WalkthroughStep>
 
       <WalkthroughStep
         number="2"
-        title="Your partner pays $50 for electricity"
-        subtitle="They just add it to your shared Splitwise group — no YNAB account needed"
+        title="Your partner pays for something shared"
+        subtitle="They log it in Splitwise"
         color="amber"
       >
-        <div className="space-y-6">
-          <div className="bg-amber-50 dark:bg-amber-950/20 rounded-lg p-4 border border-amber-100 dark:border-amber-900/50">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              <strong className="text-amber-800 dark:text-amber-300">
-                Their action:
-              </strong>{" "}
-              Add the expense to your shared Splitwise group.
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
-              We&apos;ll add a matching <i>outflow</i> to your Splitwise
-              account:
-            </p>
-            <YNABTransaction
-              flag="none"
-              account="🤝 Splitwise"
-              date="11/25/2025"
-              payee="Electric Co."
-              category="Utilities"
-              outflow="$25.00"
-              interactive={false}
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              ✓ Auto-created for your half of the $50 bill
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
-              Utilities shows your half of the bill:
-            </p>
-            <YNABCategories
-              categories={[
-                {
-                  emoji: "💡",
-                  name: "Utilities",
-                  assigned: "$100.00",
-                  activity: "-$25.00",
-                  available: "$75.00",
-                  availableColor: "green",
-                },
-              ]}
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              ✓ $25 expense added (your half of $50)
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
-              Your Splitwise account shows the net balance:
-            </p>
-            <YNABAccounts
-              accounts={[
-                { name: "💰 Checking", balance: "$750.00" },
-                {
-                  name: "🤝 Splitwise",
-                  balance: "+$50.00",
-                  isPositive: true,
-                  highlight: true,
-                },
-              ]}
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              ✓ Your partner still owes you $50 net (+$75 - $25)
-            </p>
-          </div>
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            We automatically pull their Splitwise expenses into your YNAB. Your
+            Utilities category shows $25, your half of the $50 bill.
+          </p>
+          <YNABCategories
+            categories={[
+              {
+                emoji: "💡",
+                name: "Utilities",
+                assigned: "$100.00",
+                activity: "-$25.00",
+                available: "$75.00",
+                availableColor: "green",
+                transactions: [
+                  {
+                    account: "🤝 Splitwise",
+                    date: new Date().toLocaleDateString(),
+                    payee: "Electric Co.",
+                    amount: "-$25.00",
+                  },
+                ],
+              },
+            ]}
+          />
+          <YNABAccounts
+            accounts={[
+              { name: "💰 Checking", balance: "$750.00" },
+              {
+                name: "🤝 Splitwise",
+                balance: "+$50.00",
+                isPositive: true,
+                highlight: true,
+              },
+            ]}
+          />
+          <p className="text-xs text-emerald-600 dark:text-emerald-400">
+            ✓ Your partner still owes you $50 net (+$75 − $25)
+          </p>
         </div>
       </WalkthroughStep>
 
       <WalkthroughStep
         number="3"
         title="Settle up"
-        subtitle="Your partner pays you (Venmo, cash, house chores)"
-        color="purple"
+        subtitle="Your partner pays you (Venmo, cash, etc.)"
+        color="amber"
       >
-        <div className="space-y-6">
-          <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-4 border border-purple-100 dark:border-purple-900/50">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              <strong className="text-purple-800 dark:text-purple-300">
-                In YNAB:
-              </strong>{" "}
-              Record the payment as a <strong>transfer</strong> from Splitwise →
-              Checking account
-            </p>
-          </div>
-
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            When your partner pays you back, record it as a transfer from
+            Splitwise to Checking. Your category totals stay accurate.
+          </p>
           <YNABAccounts
-            title="Accounts (after settling)"
+            title="Accounts"
             accounts={[
               { name: "💰 Checking", balance: "$800.00" },
               { name: "🤝 Splitwise", balance: "$0.00", highlight: true },
             ]}
           />
-
-          <div className="bg-gray-100 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              <strong>Key:</strong> Because it&apos;s a transfer, your category
-              totals don&apos;t change. Groceries still shows $75, Utilities
-              still shows $25—your actual share.
-            </p>
-          </div>
         </div>
       </WalkthroughStep>
     </div>
@@ -691,68 +743,35 @@ function DualWalkthrough() {
     <div className="space-y-8">
       <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800 mb-8">
         <p className="text-sm text-blue-800 dark:text-blue-300">
-          <strong>The setup:</strong> You both use YNAB separately. You share a
-          Splitwise group, and both connect to this app.
+          <strong>Your setup:</strong> You both use YNAB separately. Both
+          connect to this app. One flag updates both budgets.
         </p>
       </div>
 
       <WalkthroughStep
         number="1"
-        title="You pay $150 for groceries"
-        subtitle="Flag it—both budgets update automatically"
+        title="You pay for something shared"
+        subtitle="Flag it in YNAB, both budgets update"
         color="blue"
       >
         <div className="space-y-6">
-          <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4 border border-blue-100 dark:border-blue-900/50">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              <strong className="text-blue-800 dark:text-blue-300">
-                Your action:
-              </strong>{" "}
-              Flag the shared transaction with a color in YNAB. That&apos;s it.
-            </p>
-          </div>
+          <YNABTransaction
+            flag="blue"
+            account="💰 Checking"
+            date="11/25/2025"
+            payee="Whole Foods"
+            category="Groceries"
+            outflow="$150.00"
+            highlightFlag={true}
+          />
 
-          <div>
-            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
-              Flag the <i>outflow</i> in your spending account:
-            </p>
-            <YNABTransaction
-              flag="blue"
-              account="💰 Checking"
-              date="11/25/2025"
-              payee="Whole Foods"
-              category="Groceries"
-              outflow="$150.00"
-              highlightFlag={true}
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              👆 Just flag it—we handle the rest
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-4 min-w-0">
+          <div className="grid md:grid-cols-2 gap-6 mt-6">
+            <div className="space-y-3 min-w-0">
               <div className="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                <span className="text-lg">👤</span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  Your YNAB
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  👤 Your YNAB
                 </span>
               </div>
-              <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                We add a matching <i>inflow</i>:
-              </p>
-              <YNABTransaction
-                flag="none"
-                account="🤝 Splitwise"
-                date="11/25/2025"
-                payee="Whole Foods"
-                category="Groceries"
-                inflow="$75.00"
-                interactive={false}
-              />
-              <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                Your category shows your half:
-              </p>
               <YNABCategories
                 categories={[
                   {
@@ -762,49 +781,31 @@ function DualWalkthrough() {
                     activity: "-$75.00",
                     available: "$225.00",
                     availableColor: "green",
+                    defaultActivityOpen: true,
+                    transactions: [
+                      {
+                        account: "💰 Checking",
+                        date: new Date().toLocaleDateString(),
+                        payee: "Whole Foods",
+                        amount: "-$150.00",
+                      },
+                      {
+                        account: "🤝 Splitwise",
+                        date: new Date().toLocaleDateString(),
+                        payee: "Whole Foods",
+                        amount: "+$75.00",
+                      },
+                    ],
                   },
                 ]}
               />
-              <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                Your Splitwise shows a positive balance:
-              </p>
-              <YNABAccounts
-                accounts={[
-                  { name: "💰 Checking", balance: "$750.00" },
-                  {
-                    name: "🤝 Splitwise",
-                    balance: "+$75.00",
-                    isPositive: true,
-                    highlight: true,
-                  },
-                ]}
-              />
-              <p className="text-xs text-emerald-600 dark:text-emerald-400">
-                ✓ Your partner owes you $75
-              </p>
             </div>
-            <div className="space-y-4 min-w-0">
+            <div className="space-y-3 min-w-0">
               <div className="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                <span className="text-lg">👤</span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  Partner&apos;s YNAB
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  👤 Partner&apos;s YNAB
                 </span>
               </div>
-              <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                We add an <i>outflow</i> for their share:
-              </p>
-              <YNABTransaction
-                flag="none"
-                account="🤝 Splitwise"
-                date="11/25/2025"
-                payee="Whole Foods"
-                category="Food"
-                outflow="$75.00"
-                interactive={false}
-              />
-              <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                Partner&apos;s category shows their half:
-              </p>
               <YNABCategories
                 categories={[
                   {
@@ -814,59 +815,45 @@ function DualWalkthrough() {
                     activity: "-$75.00",
                     available: "$225.00",
                     availableColor: "green",
+                    defaultActivityOpen: true,
+                    transactions: [
+                      {
+                        account: "🤝 Splitwise",
+                        date: new Date().toLocaleDateString(),
+                        payee: "Whole Foods",
+                        amount: "-$75.00",
+                      },
+                    ],
                   },
                 ]}
               />
-              <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                Their Splitwise shows a negative balance:
-              </p>
-              <YNABAccounts
-                accounts={[
-                  { name: "💰 Checking", balance: "$600.00" },
-                  {
-                    name: "🤝 Splitwise",
-                    balance: "-$75.00",
-                    isPositive: false,
-                    highlight: true,
-                  },
-                ]}
-              />
-              <p className="text-xs text-red-600 dark:text-red-400">
-                ✓ They owe you $75
-              </p>
             </div>
           </div>
 
-          <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-            <p className="text-sm text-blue-800 dark:text-blue-300">
-              <strong>The magic:</strong> Both budgets show $75 spent—each
-              person&apos;s actual share. Different category names? Different
-              budgets? No problem.
-            </p>
-          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+            Both see $75 spent, even though you call it &ldquo;Groceries&rdquo;
+            and they call it &ldquo;Food.&rdquo;
+          </p>
         </div>
       </WalkthroughStep>
 
       <WalkthroughStep
         number="2"
-        title="Your partner pays $50 for electricity"
-        subtitle="Same process—either partner can flag expenses"
+        title="Your partner pays for something shared"
+        subtitle="Either partner can flag"
         color="blue"
       >
-        <div className="space-y-6">
-          <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4 border border-blue-100 dark:border-blue-900/50">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              Your partner flags the electricity bill in their YNAB. It&apos;s
-              the same process as above, but in reverse.
-            </p>
-          </div>
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            When your partner flags their $50 electricity bill, the same thing
+            happens in reverse. Your Utilities category gets a $25 expense.
+          </p>
 
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-4 min-w-0">
               <div className="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                <span className="text-lg">👤</span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  Your YNAB
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  👤 Your YNAB
                 </span>
               </div>
               <YNABCategories
@@ -878,6 +865,14 @@ function DualWalkthrough() {
                     activity: "-$25.00",
                     available: "$75.00",
                     availableColor: "green",
+                    transactions: [
+                      {
+                        account: "🤝 Splitwise",
+                        date: new Date().toLocaleDateString(),
+                        payee: "Electric Co.",
+                        amount: "-$25.00",
+                      },
+                    ],
                   },
                 ]}
               />
@@ -893,14 +888,13 @@ function DualWalkthrough() {
                 ]}
               />
               <p className="text-xs text-emerald-600 dark:text-emerald-400">
-                ✓ Your partner still owes you $50 net (+$75 - $25)
+                ✓ Your partner still owes you $50 net (+$75 − $25)
               </p>
             </div>
             <div className="space-y-4 min-w-0">
               <div className="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                <span className="text-lg">👤</span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  Partner&apos;s YNAB
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  👤 Partner&apos;s YNAB
                 </span>
               </div>
               <YNABCategories
@@ -912,6 +906,20 @@ function DualWalkthrough() {
                     activity: "-$25.00",
                     available: "$75.00",
                     availableColor: "green",
+                    transactions: [
+                      {
+                        account: "💰 Checking",
+                        date: new Date().toLocaleDateString(),
+                        payee: "Electric Co.",
+                        amount: "-$50.00",
+                      },
+                      {
+                        account: "🤝 Splitwise",
+                        date: new Date().toLocaleDateString(),
+                        payee: "Electric Co.",
+                        amount: "+$25.00",
+                      },
+                    ],
                   },
                 ]}
               />
@@ -927,7 +935,7 @@ function DualWalkthrough() {
                 ]}
               />
               <p className="text-xs text-red-600 dark:text-red-400">
-                ✓ They still owe you $50 net (-$75 + $25)
+                ✓ They still owe you $50 net (−$75 + $25)
               </p>
             </div>
           </div>
@@ -937,23 +945,20 @@ function DualWalkthrough() {
       <WalkthroughStep
         number="3"
         title="Settle up"
-        subtitle="Your partner pays you (Venmo, cash, house chores)"
-        color="purple"
+        subtitle="Transfer in both YNABs"
+        color="blue"
       >
-        <div className="space-y-6">
-          <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-4 border border-purple-100 dark:border-purple-900/50">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              Partner owes you $50 net. Record the payment as a{" "}
-              <strong>transfer</strong> from Splitwise → Checking.
-            </p>
-          </div>
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            When your partner pays you back, you both record a transfer:
+            Splitwise → Checking. Category totals stay accurate in both budgets.
+          </p>
 
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-4 min-w-0">
+            <div className="space-y-3 min-w-0">
               <div className="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                <span className="text-lg">👤</span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  Your YNAB
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  👤 Your YNAB
                 </span>
               </div>
               <YNABAccounts
@@ -963,11 +968,10 @@ function DualWalkthrough() {
                 ]}
               />
             </div>
-            <div className="space-y-4 min-w-0">
+            <div className="space-y-3 min-w-0">
               <div className="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                <span className="text-lg">👤</span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  Partner&apos;s YNAB
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  👤 Partner&apos;s YNAB
                 </span>
               </div>
               <YNABAccounts
@@ -977,14 +981,6 @@ function DualWalkthrough() {
                 ]}
               />
             </div>
-          </div>
-
-          <div className="bg-gray-100 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              <strong>Key:</strong> Because it&apos;s a transfer, category
-              totals don&apos;t change. Both budgets still show their actual
-              share of every expense.
-            </p>
           </div>
         </div>
       </WalkthroughStep>
@@ -1028,16 +1024,22 @@ export function PersonaWalkthrough() {
   }, []);
 
   return (
-    <section id="walkthrough" className="py-16 sm:py-24">
+    <section
+      id="walkthrough"
+      className="py-16 sm:py-24 bg-white dark:bg-[#141414]"
+    >
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <p className="text-sm uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-500 font-medium mb-4 text-center">
+          See it in action
+        </p>
         <h2 className="text-3xl md:text-4xl font-serif text-center text-gray-900 dark:text-white mb-4">
-          Which sounds like you?
+          How it works for your setup
         </h2>
-        <p className="text-center text-gray-600 dark:text-gray-400 mb-12 max-w-xl mx-auto">
-          Click to see how it works for your situation.
+        <p className="text-center text-gray-600 dark:text-gray-400 mb-10 max-w-xl mx-auto">
+          Pick your scenario.
         </p>
 
-        <div className="grid md:grid-cols-2 gap-6 mb-12">
+        <div className="grid md:grid-cols-2 gap-4 mb-10">
           {/* Persona 1: Solo */}
           <button
             onClick={() =>
@@ -1052,23 +1054,23 @@ export function PersonaWalkthrough() {
                   : "border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1a1a1a] hover:border-amber-300 dark:hover:border-amber-700"
               }`}
             >
-              <CardContent className="p-6">
+              <CardContent className="p-5">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                      <span className="text-2xl">👤</span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+                      <span className="text-xl">👤</span>
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        I use YNAB. My partner doesn&apos;t.
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                        Only I use YNAB
                       </h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        You track every dollar. They ...don&apos;t.
+                        Partner logs expenses in Splitwise
                       </p>
                     </div>
                   </div>
                   <ChevronRight
-                    className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
+                    className={`w-5 h-5 text-gray-400 transition-transform duration-200 shrink-0 ${
                       selectedPersona === "solo" ? "rotate-90" : ""
                     }`}
                   />
@@ -1091,23 +1093,23 @@ export function PersonaWalkthrough() {
                   : "border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1a1a1a] hover:border-blue-300 dark:hover:border-blue-700"
               }`}
             >
-              <CardContent className="p-6">
+              <CardContent className="p-5">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                      <span className="text-2xl">👥</span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                      <span className="text-xl">👥</span>
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        We both use YNAB. Separately.
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                        We both use YNAB
                       </h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Two budgets, one household.
+                        Separate budgets, synced via Splitwise
                       </p>
                     </div>
                   </div>
                   <ChevronRight
-                    className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
+                    className={`w-5 h-5 text-gray-400 transition-transform duration-200 shrink-0 ${
                       selectedPersona === "dual" ? "rotate-90" : ""
                     }`}
                   />
