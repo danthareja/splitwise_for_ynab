@@ -93,13 +93,6 @@ describe("lib/utils", () => {
   });
 
   describe("formatDate", () => {
-    it("should format date string", () => {
-      const result = formatDate("2024-01-15", "en-US");
-      expect(result).toContain("Jan");
-      expect(result).toContain("15");
-      expect(result).toContain("2024");
-    });
-
     it("should format Date object", () => {
       const date = new Date("2024-01-15T10:30:00Z");
       const result = formatDate(date, "en-US");

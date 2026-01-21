@@ -4,9 +4,15 @@ import { prisma } from "../setup";
 import {
   createFullyConfiguredUser,
   createPairedGroupUsers,
+  createTestUser,
+  createTestSplitwiseSettings,
+  createTestYnabSettings,
+  createTestAccount,
+  createTestSyncState,
 } from "../factories/test-data";
 import { server } from "../setup";
 import { handlers } from "../mocks/handlers";
+import { nanoid } from "nanoid";
 
 // Mock email service
 vi.mock("@/services/email", () => ({
@@ -290,6 +296,91 @@ describe("services/sync", () => {
       // Verify user exists and is not disabled initially
       expect(user).toBeDefined();
       expect(user!.disabled).toBe(false);
+    });
+  });
+
+  describe("Duo Mode split ratio handling", () => {
+    it("should use secondary's own reversed split ratio (not primary's) when syncing", async () => {
+      const groupId = `duo-group-${nanoid(10)}`;
+
+      // Use providerAccountIds that match the mock Splitwise members (111 and 222)
+      const primarySplitwiseId = "111";
+      const secondarySplitwiseId = "222";
+
+      // Create primary user with 7:3 split ratio (primary owes 70%)
+      const primary = await createTestUser({
+        id: `duo-primary-${nanoid(10)}`,
+        persona: "dual",
+        onboardingComplete: true,
+        subscriptionStatus: "active",
+      });
+
+      await createTestSplitwiseSettings({
+        userId: primary.id,
+        groupId,
+        groupName: "Duo Test Group",
+        currencyCode: "USD",
+        defaultSplitRatio: "7:3", // Primary pays 70%
+      });
+
+      await createTestYnabSettings({
+        userId: primary.id,
+      });
+
+      await createTestAccount("ynab", { userId: primary.id });
+      await createTestAccount("splitwise", {
+        userId: primary.id,
+        providerAccountId: primarySplitwiseId, // Match mock member ID
+      });
+      await createTestSyncState({ userId: primary.id });
+
+      // Create secondary user with REVERSED split ratio (3:7 - secondary pays 30%)
+      const secondary = await createTestUser({
+        id: `duo-secondary-${nanoid(10)}`,
+        persona: "dual",
+        onboardingComplete: true,
+        subscriptionStatus: "active",
+        primaryUserId: primary.id, // Link to primary
+      });
+
+      // Create secondary's splitwise settings directly to allow null groupId/currencyCode
+      // (the factory doesn't handle null properly due to || default logic)
+      await prisma.splitwiseSettings.create({
+        data: {
+          userId: secondary.id,
+          groupId: null, // Secondary inherits groupId from primary
+          groupName: null,
+          currencyCode: null, // Secondary inherits currencyCode from primary
+          emoji: "🔄",
+          defaultSplitRatio: "3:7", // REVERSED: secondary pays 30%
+          useDescriptionAsPayee: true,
+        },
+      });
+
+      await createTestYnabSettings({
+        userId: secondary.id,
+      });
+
+      await createTestAccount("ynab", { userId: secondary.id });
+      await createTestAccount("splitwise", {
+        userId: secondary.id,
+        providerAccountId: secondarySplitwiseId, // Match mock member ID
+      });
+      await createTestSyncState({ userId: secondary.id });
+
+      // Sync the secondary user - should use their own 3:7 ratio
+      const result = await syncUserData(secondary.id);
+
+      // The sync should succeed - include error in assertion for debugging
+      expect(result.success, `Sync failed: ${result.error}`).toBe(true);
+
+      // Verify the secondary's settings haven't been overwritten
+      const secondarySettings = await prisma.splitwiseSettings.findUnique({
+        where: { userId: secondary.id },
+      });
+
+      // The secondary should still have their own reversed ratio
+      expect(secondarySettings?.defaultSplitRatio).toBe("3:7");
     });
   });
 

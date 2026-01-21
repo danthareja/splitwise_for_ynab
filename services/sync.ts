@@ -29,8 +29,10 @@ interface EffectiveSplitwiseSettings {
 }
 
 // Get effective Splitwise settings for a user (checks for primary/secondary relationship)
-// Shared settings (groupId, groupName, currencyCode, defaultSplitRatio) come from primary
-// User-specific settings (emoji, useDescriptionAsPayee, customPayeeName) come from user's own settings
+// Shared settings (groupId, groupName, currencyCode) come from primary
+// User-specific settings (emoji, useDescriptionAsPayee, customPayeeName, defaultSplitRatio) come from user's own settings
+// Note: defaultSplitRatio is user-specific because it's REVERSED for secondary users
+// (e.g., if primary has 7:3, secondary has 3:7 stored in their own settings)
 async function getEffectiveSplitwiseSettings(
   userId: string,
 ): Promise<EffectiveSplitwiseSettings | null> {
@@ -60,8 +62,9 @@ async function getEffectiveSplitwiseSettings(
       groupId: primarySettings.groupId,
       groupName: primarySettings.groupName,
       currencyCode: primarySettings.currencyCode,
-      defaultSplitRatio: primarySettings.defaultSplitRatio || "1:1",
       // User-specific settings from secondary's own settings
+      // defaultSplitRatio uses secondary's own reversed ratio (not primary's)
+      defaultSplitRatio: userSettings?.defaultSplitRatio || "1:1",
       emoji: userSettings?.emoji || "✅",
       useDescriptionAsPayee: userSettings?.useDescriptionAsPayee ?? true,
       customPayeeName: userSettings?.customPayeeName || null,
