@@ -25,11 +25,11 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_BASE_URL || "https://www.splitwiseforynab.com",
   ),
   title: {
-    default: "Splitwise for YNAB - Automate your shared expenses",
+    default: "Splitwise for YNAB — Track Your Share, Not the Full Bill",
     template: "%s | Splitwise for YNAB",
   },
   description:
-    "Stop manual data entry! Flag transactions in YNAB and automatically sync them with Splitwise while maintaining perfect category tracking. Built for YNAB users and coaches.",
+    "Track what you spent, not what you fronted. Splitwise for YNAB adjusts your categories so shared expenses don't break your budget.",
   keywords: [
     "YNAB",
     "Splitwise",
@@ -56,15 +56,15 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "/",
     siteName: "Splitwise for YNAB",
-    title: "Splitwise for YNAB - Automate Shared Expense Tracking",
+    title: "Splitwise for YNAB — Track Your Share, Not the Full Bill",
     description:
-      "Stop manual data entry! Flag transactions in YNAB and automatically sync them with Splitwise while maintaining perfect category tracking.",
+      "Track what you spent, not what you fronted. Splitwise for YNAB adjusts your categories so shared expenses don't break your budget.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Splitwise for YNAB - Automate Shared Expense Tracking",
+    title: "Splitwise for YNAB — Track Your Share, Not the Full Bill",
     description:
-      "Stop manual data entry! Flag transactions in YNAB and automatically sync them with Splitwise while maintaining perfect category tracking.",
+      "Track what you spent, not what you fronted. Splitwise for YNAB adjusts your categories so shared expenses don't break your budget.",
   },
   robots: {
     index: true,
@@ -92,7 +92,7 @@ export default function RootLayout({
     "@type": "SoftwareApplication",
     name: "Splitwise for YNAB",
     description:
-      "Automate shared expense tracking by syncing YNAB transactions with Splitwise while maintaining category insights.",
+      "Sync YNAB with Splitwise so your categories reflect what you actually spent, not what you fronted for shared expenses.",
     url: process.env.NEXT_PUBLIC_BASE_URL || "https://www.splitwiseforynab.com",
     applicationCategory: "FinanceApplication",
     operatingSystem: "Web",
