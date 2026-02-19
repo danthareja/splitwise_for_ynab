@@ -44,9 +44,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Sentry Config File
-.env.sentry-build-plugin
-
 # sync state
 .sync-state
 
@@ -56,3 +53,4 @@ prisma/generated
 # database backups
 backup_*.dump
 *.dump
+.env*.local

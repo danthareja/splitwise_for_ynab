@@ -4,7 +4,7 @@
       "command": "uvx",
       "args": ["postgres-mcp", "--access-mode=restricted"],
       "env": {
-        "DATABASE_URI": "postgresql://neondb_owner:npg_x6AiX3ZzHeEt@ep-frosty-bread-adxkkeq3.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+        "DATABASE_URI": "${MCP_DATABASE_URL}"
       }
     },
     "postgres-dev": {
@@ -13,6 +13,16 @@
       "env": {
         "DATABASE_URI": "postgresql://postgres:postgres@localhost:6969/postgres"
       }
+    },
+    "sentry": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@sentry/mcp-server@latest",
+        "--access-token=${MCP_SENTRY_ACCESS_TOKEN}",
+        "--host=danthareja.sentry.io"
+      ]
     }
   }
 }

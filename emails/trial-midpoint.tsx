@@ -1,6 +1,6 @@
 import { Button, Heading, Section, Text } from "@react-email/components";
 import { EmailLayout, baseUrl } from "./components/email-layout";
-import { emailStyles, colors } from "./components/email-styles";
+import { emailStyles } from "./components/email-styles";
 import { HelpSection } from "./components/help-section";
 import { EmailFooter } from "./components/email-footer";
 
@@ -21,7 +21,7 @@ export const TrialMidpointEmail = ({
 }: TrialMidpointEmailProps) => {
   const hasUsage = transactionCount > 0;
   const previewText = hasUsage
-    ? `You've synced ${transactionCount} transactions so far`
+    ? `${transactionCount} transactions you didn't have to enter by hand`
     : `You're halfway through your free trial`;
 
   return (
@@ -29,28 +29,22 @@ export const TrialMidpointEmail = ({
       {hasUsage ? (
         <>
           <Heading style={emailStyles.h1}>
-            You&apos;ve synced {transactionCount} transactions so far
+            {transactionCount} transactions you didn&apos;t have to enter by
+            hand
           </Heading>
 
           <Text style={emailStyles.text}>
-            Hey {userName}, you&apos;re halfway through your free trial with{" "}
-            {daysLeft} days left.
+            Hey {userName}, that&apos;s {transactionCount}{" "}
+            {transactionCount === 1 ? "transaction" : "transactions"} that
+            showed up in YNAB automatically — no copying amounts, no switching
+            between apps, no forgetting one and wondering why your budget&apos;s
+            off.
           </Text>
 
-          <Section style={statsBox}>
-            <Text style={statsText}>
-              <strong>{syncCount}</strong> {syncCount === 1 ? "sync" : "syncs"}{" "}
-              completed
-            </Text>
-            <Text style={{ ...statsText, margin: 0 }}>
-              <strong>{transactionCount}</strong>{" "}
-              {transactionCount === 1 ? "transaction" : "transactions"} synced
-            </Text>
-          </Section>
-
           <Text style={emailStyles.text}>
-            Your syncs will continue automatically. When your trial ends, your
-            subscription begins.
+            You&apos;re halfway through your free trial with {daysLeft} days
+            left. Your syncs will keep running automatically — when your trial
+            ends, your subscription begins. Nothing to do on your end.
           </Text>
         </>
       ) : (
@@ -68,16 +62,19 @@ export const TrialMidpointEmail = ({
             Flag a transaction in YNAB or add a Splitwise expense, then hit sync
             from your dashboard to try it out.
           </Text>
+
+          <Section
+            style={{
+              ...emailStyles.buttonSection,
+              textAlign: "center" as const,
+            }}
+          >
+            <Button style={emailStyles.button} href={`${baseUrl}/dashboard`}>
+              Go to Dashboard
+            </Button>
+          </Section>
         </>
       )}
-
-      <Section
-        style={{ ...emailStyles.buttonSection, textAlign: "center" as const }}
-      >
-        <Button style={emailStyles.button} href={`${baseUrl}/dashboard`}>
-          Go to Dashboard
-        </Button>
-      </Section>
 
       <HelpSection />
 
@@ -87,20 +84,6 @@ export const TrialMidpointEmail = ({
       />
     </EmailLayout>
   );
-};
-
-const statsBox = {
-  backgroundColor: colors.emeraldLight,
-  border: `1px solid ${colors.emeraldBorder}`,
-  borderRadius: "12px",
-  padding: "20px",
-  margin: "24px 0",
-};
-
-const statsText = {
-  ...emailStyles.text,
-  color: "#065f46",
-  margin: "0 0 8px 0",
 };
 
 TrialMidpointEmail.PreviewProps = {

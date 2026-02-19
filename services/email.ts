@@ -50,6 +50,22 @@ import {
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Resend rate limit: 2 requests/second. Delay 600ms between sends to stay safe.
+const RATE_LIMIT_DELAY_MS = 600;
+let lastSendTime = 0;
+
+async function rateLimitedSend(...args: Parameters<typeof resend.emails.send>) {
+  const now = Date.now();
+  const elapsed = now - lastSendTime;
+  if (elapsed < RATE_LIMIT_DELAY_MS) {
+    await new Promise((resolve) =>
+      setTimeout(resolve, RATE_LIMIT_DELAY_MS - elapsed),
+    );
+  }
+  lastSendTime = Date.now();
+  return resend.emails.send(...args);
+}
+
 interface SendWelcomeEmailParams extends WelcomeEmailProps {
   to: string;
 }
@@ -58,7 +74,7 @@ export async function sendWelcomeEmail({
   to,
   userName,
 }: SendWelcomeEmailParams) {
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await rateLimitedSend({
     from: "Splitwise for YNAB <support@splitwiseforynab.com>",
     to: [to],
     subject: "Welcome to Splitwise for YNAB!",
@@ -85,7 +101,7 @@ export async function sendSyncErrorEmail({
   userName,
   errorMessage,
 }: SendSyncErrorEmailParams) {
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await rateLimitedSend({
     from: "Splitwise for YNAB <support@splitwiseforynab.com>",
     to: [to],
     subject: "Your recent sync failed",
@@ -113,7 +129,7 @@ export async function sendSyncErrorRequiresActionEmail({
   errorMessage,
   suggestedFix,
 }: SendSyncErrorRequiresActionEmailParams) {
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await rateLimitedSend({
     from: "Splitwise for YNAB <support@splitwiseforynab.com>",
     to: [to],
     subject: "[ACTION REQUIRED] Your account has temporarily been disabled",
@@ -153,7 +169,7 @@ export async function sendSyncPartialEmail({
   failedTransactions,
   currencyCode,
 }: SendSyncPartialEmailParams) {
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await rateLimitedSend({
     from: "Splitwise for YNAB <support@splitwiseforynab.com>",
     to: [to],
     subject: "Your recent sync completed with some errors",
@@ -195,7 +211,7 @@ export async function sendPartnerInviteEmail({
   groupName,
   inviteUrl,
 }: SendPartnerInviteEmailParams) {
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await rateLimitedSend({
     from: "Splitwise for YNAB <support@splitwiseforynab.com>",
     to: [to],
     subject: `${inviterName} invited you to sync expenses together`,
@@ -229,7 +245,7 @@ export async function sendPartnerJoinedEmail({
   userName,
   partnerName,
 }: SendPartnerJoinedEmailParams) {
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await rateLimitedSend({
     from: "Splitwise for YNAB <support@splitwiseforynab.com>",
     to: [to],
     subject: `${partnerName} joined your Splitwise for YNAB account`,
@@ -259,7 +275,7 @@ export async function sendPartnerDisconnectedEmail({
   oldGroupName,
   reason = "group_change",
 }: SendPartnerDisconnectedEmailParams) {
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await rateLimitedSend({
     from: "Splitwise for YNAB <support@splitwiseforynab.com>",
     to: [to],
     subject: "You've been removed from your partner's Duo plan",
@@ -295,7 +311,7 @@ export async function sendTrialEndingEmail({
   planName,
   planPrice,
 }: SendTrialEndingEmailParams) {
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await rateLimitedSend({
     from: "Splitwise for YNAB <support@splitwiseforynab.com>",
     to: [to],
     subject: "Your free trial ends in 3 days",
@@ -325,7 +341,7 @@ export async function sendSubscriptionExpiredEmail({
   expiredAt,
   isSecondary,
 }: SendSubscriptionExpiredEmailParams) {
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await rateLimitedSend({
     from: "Splitwise for YNAB <support@splitwiseforynab.com>",
     to: [to],
     subject: "Your Splitwise for YNAB subscription has ended",
@@ -353,7 +369,7 @@ export async function sendGrandfatherAnnouncementEmail({
   to,
   userName,
 }: SendGrandfatherAnnouncementEmailParams) {
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await rateLimitedSend({
     from: "Splitwise for YNAB <support@splitwiseforynab.com>",
     to: [to],
     subject: "You're an early supporter — lifetime free access",
@@ -385,7 +401,7 @@ export async function sendOnboardingReminderEmail({
 }: SendOnboardingReminderEmailParams) {
   const subject = getOnboardingEmailSubject(step, emailNumber);
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await rateLimitedSend({
     from: "Splitwise for YNAB <support@splitwiseforynab.com>",
     to: [to],
     subject,
@@ -424,7 +440,7 @@ export async function sendFirstSyncSuccessEmail({
   userName,
   syncedCount,
 }: SendFirstSyncSuccessEmailParams) {
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await rateLimitedSend({
     from: "Splitwise for YNAB <support@splitwiseforynab.com>",
     to: [to],
     subject: "Your first sync just ran!",
@@ -457,10 +473,10 @@ export async function sendTrialMidpointEmail({
 }: SendTrialMidpointEmailParams) {
   const subject =
     transactionCount && transactionCount > 0
-      ? `You've synced ${transactionCount} transactions so far`
+      ? `${transactionCount} transactions you didn't have to enter by hand`
       : "You're halfway through your free trial";
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await rateLimitedSend({
     from: "Splitwise for YNAB <support@splitwiseforynab.com>",
     to: [to],
     subject,
@@ -504,7 +520,7 @@ export async function sendWinBackEmail({
 }: SendWinBackEmailParams) {
   const subject = getWinBackEmailSubject(emailNumber ?? 1);
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await rateLimitedSend({
     from: "Splitwise for YNAB <support@splitwiseforynab.com>",
     to: [to],
     subject,
