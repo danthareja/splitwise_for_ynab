@@ -223,6 +223,7 @@ export async function unlinkFromPrimary() {
           persona: "solo",
           onboardingStep: 3, // Configure Splitwise step
           onboardingComplete: false,
+          onboardingStepReachedAt: new Date(),
         },
       }),
       // Clear group-specific settings (they'll need to pick a new group)

@@ -31,7 +31,7 @@ export async function updateOnboardingStep(step: number) {
 
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { onboardingStep: step },
+    data: { onboardingStep: step, onboardingStepReachedAt: new Date() },
   });
 
   revalidatePath("/dashboard");
@@ -148,6 +148,7 @@ export async function updatePersonaWithPartnerHandling(
           // Reset onboarding so they can reconfigure Splitwise
           onboardingStep: 3, // Configure Splitwise step
           onboardingComplete: false,
+          onboardingStepReachedAt: new Date(),
         },
       }),
       // Clear the secondary's group settings (they need to pick a new group)
@@ -270,6 +271,7 @@ export async function updatePersonaWithPartnerHandling(
           // Reset onboarding - they need to configure Splitwise and pay
           onboardingStep: 3, // Configure Splitwise step
           onboardingComplete: false,
+          onboardingStepReachedAt: new Date(),
         },
       }),
       // Clear group-specific settings (they'll need to pick a new group)
@@ -333,6 +335,7 @@ export async function completeOnboarding() {
     data: {
       onboardingComplete: true,
       onboardingStep: 5,
+      onboardingStepReachedAt: new Date(),
     },
   });
 

@@ -4,9 +4,10 @@ import { baseUrl } from "./email-layout";
 
 interface EmailFooterProps {
   reason: string;
+  unsubscribeUrl?: string;
 }
 
-export const EmailFooter = ({ reason }: EmailFooterProps) => {
+export const EmailFooter = ({ reason, unsubscribeUrl }: EmailFooterProps) => {
   return (
     <>
       <Hr style={emailStyles.hr} />
@@ -21,6 +22,14 @@ export const EmailFooter = ({ reason }: EmailFooterProps) => {
         <Link href={`${baseUrl}/dashboard`} style={footerLink}>
           Dashboard
         </Link>
+        {unsubscribeUrl && (
+          <>
+            {" · "}
+            <Link href={unsubscribeUrl} style={footerLink}>
+              Unsubscribe from these reminders
+            </Link>
+          </>
+        )}
       </Text>
     </>
   );

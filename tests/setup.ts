@@ -38,6 +38,19 @@ vi.mock("@/db", () => ({
   prisma,
 }));
 
+// Mock Resend to prevent real API calls during tests
+vi.mock("resend", () => {
+  return {
+    Resend: class MockResend {
+      emails = {
+        send: vi
+          .fn()
+          .mockResolvedValue({ data: { id: "test-email-id" }, error: null }),
+      };
+    },
+  };
+});
+
 // Mock Stripe to prevent real API calls during tests
 vi.mock("@/lib/stripe", () => ({
   stripe: {
@@ -85,6 +98,8 @@ afterEach(() => {
 });
 
 async function cleanDatabase() {
+  await prisma.emailSend.deleteMany();
+  await prisma.emailUnsubscribe.deleteMany();
   await prisma.syncedItem.deleteMany();
   await prisma.syncHistory.deleteMany();
   await prisma.syncState.deleteMany();

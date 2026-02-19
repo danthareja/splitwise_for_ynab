@@ -38,6 +38,11 @@ model User {
   persona            String?        // "solo" | "dual" - changeable anytime
   onboardingStep     Int            @default(0) // 0-4, enables resume on bounce
   onboardingComplete Boolean        @default(false)
+  onboardingStepReachedAt DateTime?
+
+  // Email tracking
+  emailSends          EmailSend[]
+  emailUnsubscribes   EmailUnsubscribe[]
   
   // Partner relationship (for dual accounts)
   // If primaryUserId is set, this user is a "secondary" and inherits SplitwiseSettings from primary
@@ -228,4 +233,30 @@ model PartnerInvite {
   expiresAt       DateTime
   createdAt       DateTime  @default(now())
   acceptedAt      DateTime?
+}
+
+// Generic email send log (like Loops.so's send tracking).
+// Tracks every non-transactional email sent. Reusable across campaigns.
+model EmailSend {
+  id        String   @id @default(cuid())
+  userId    String
+  category  String   // Campaign category: "onboarding", "re-engagement", etc.
+  emailKey  String   // Unique email identifier: "onboarding.step0.email1"
+  sentAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, category])
+}
+
+// Category-based unsubscribes. Reusable across campaigns.
+model EmailUnsubscribe {
+  id             String   @id @default(cuid())
+  userId         String
+  category       String   // Matches EmailSend.category: "onboarding", "marketing", etc.
+  unsubscribedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category])
 }

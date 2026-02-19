@@ -3,6 +3,10 @@
     {
       "path": "/api/sync",
       "schedule": "0 17 * * *"
+    },
+    {
+      "path": "/api/cron/onboarding-drip",
+      "schedule": "0 14 * * *"
     }
   ]
 }

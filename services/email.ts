@@ -29,6 +29,11 @@ import {
   GrandfatherAnnouncementEmail,
   GrandfatherAnnouncementEmailProps,
 } from "@/emails/grandfather-announcement";
+import {
+  OnboardingReminderEmail,
+  OnboardingReminderEmailProps,
+  getOnboardingEmailSubject,
+} from "@/emails/onboarding-reminder";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -352,4 +357,50 @@ export async function sendGrandfatherAnnouncementEmail({
   }
 
   return { success: true, data: {} };
+}
+
+interface SendOnboardingReminderEmailParams extends OnboardingReminderEmailProps {
+  to: string;
+}
+
+export async function sendOnboardingReminderEmail({
+  to,
+  userName,
+  step,
+  emailNumber,
+  isSecondary,
+  unsubscribeUrl,
+}: SendOnboardingReminderEmailParams) {
+  const subject = getOnboardingEmailSubject(step, emailNumber);
+
+  const { data, error } = await resend.emails.send({
+    from: "Splitwise for YNAB <support@splitwiseforynab.com>",
+    to: [to],
+    subject,
+    react: OnboardingReminderEmail({
+      userName,
+      step,
+      emailNumber,
+      isSecondary,
+      unsubscribeUrl,
+    }),
+    text: await render(
+      OnboardingReminderEmail({
+        userName,
+        step,
+        emailNumber,
+        isSecondary,
+        unsubscribeUrl,
+      }),
+      { plainText: true },
+    ),
+  });
+
+  if (error) {
+    Sentry.captureException(error);
+    console.error(error);
+    return { success: false, error };
+  }
+
+  return { success: true, data };
 }

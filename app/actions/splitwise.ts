@@ -619,6 +619,7 @@ async function syncGroupWithSecondary(
             persona: "solo",
             onboardingStep: 3, // Configure Splitwise step
             onboardingComplete: false,
+            onboardingStepReachedAt: new Date(),
           },
         }),
       ]);
@@ -1776,6 +1777,7 @@ export async function acceptInvite(token: string, emoji: string) {
           persona: "dual",
           onboardingComplete: false, // Still need YNAB config
           onboardingStep: 2, // Step 2 = Configure YNAB
+          onboardingStepReachedAt: new Date(),
         },
       }),
       // Create SplitwiseSettings for secondary with shared settings + their own emoji
@@ -1999,6 +2001,7 @@ export async function linkAsSecondary(token: string) {
           persona: "dual",
           onboardingComplete: false,
           onboardingStep: 0, // Start at step 0 (Connect Splitwise)
+          onboardingStepReachedAt: new Date(),
         },
       }),
       // Don't create SplitwiseSettings yet - created in step 3 after group access verification
