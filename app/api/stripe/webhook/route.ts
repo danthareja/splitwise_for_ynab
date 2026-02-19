@@ -66,12 +66,24 @@ export async function POST(request: NextRequest) {
         });
 
         if (user?.email) {
-          // Send welcome email
-          await sendWelcomeEmail({
-            to: user.email,
-            userName: user.name?.split(" ")[0] || "there",
+          // Send welcome email (with dedup guard for webhook retries)
+          const welcomeAlreadySent = await prisma.emailSend.findFirst({
+            where: { userId, emailKey: "welcome" },
           });
-          console.log("Sent welcome email to:", user.email);
+          if (!welcomeAlreadySent) {
+            await sendWelcomeEmail({
+              to: user.email,
+              userName: user.name?.split(" ")[0] || "there",
+            });
+            await prisma.emailSend.create({
+              data: {
+                userId,
+                category: "transactional",
+                emailKey: "welcome",
+              },
+            });
+            console.log("Sent welcome email to:", user.email);
+          }
 
           // For dual users, send any pending partner invite
           if (user.persona === "dual") {
@@ -148,36 +160,64 @@ export async function POST(request: NextRequest) {
       // Handle the subscription deletion (updates DB)
       await handleSubscriptionDeleted(deletedSubscription);
 
-      // Send expiration emails to primary and secondary users
+      // Send expiration emails to primary and secondary users (with dedup guards)
       if (primaryUser?.email) {
         const expiredAt =
           primaryUser.stripeCurrentPeriodEnd?.toISOString() ||
           new Date().toISOString();
 
         // Email primary user
-        await sendSubscriptionExpiredEmail({
-          to: primaryUser.email,
-          userName: primaryUser.name?.split(" ")[0] || "there",
-          expiredAt,
-          isSecondary: false,
+        const expiredAlreadySent = await prisma.emailSend.findFirst({
+          where: { userId: primaryUser.id, emailKey: "subscription.expired" },
         });
-        console.log(
-          "Sent subscription expired email to primary:",
-          primaryUser.email,
-        );
+        if (!expiredAlreadySent) {
+          await sendSubscriptionExpiredEmail({
+            to: primaryUser.email,
+            userName: primaryUser.name?.split(" ")[0] || "there",
+            expiredAt,
+            isSecondary: false,
+          });
+          await prisma.emailSend.create({
+            data: {
+              userId: primaryUser.id,
+              category: "transactional",
+              emailKey: "subscription.expired",
+            },
+          });
+          console.log(
+            "Sent subscription expired email to primary:",
+            primaryUser.email,
+          );
+        }
 
         // Email secondary user if exists
         if (primaryUser.secondaryUser?.email) {
-          await sendSubscriptionExpiredEmail({
-            to: primaryUser.secondaryUser.email,
-            userName: primaryUser.secondaryUser.name?.split(" ")[0] || "there",
-            expiredAt,
-            isSecondary: true,
+          const secondaryExpiredAlreadySent = await prisma.emailSend.findFirst({
+            where: {
+              userId: primaryUser.secondaryUser.id,
+              emailKey: "subscription.expired.secondary",
+            },
           });
-          console.log(
-            "Sent subscription expired email to secondary:",
-            primaryUser.secondaryUser.email,
-          );
+          if (!secondaryExpiredAlreadySent) {
+            await sendSubscriptionExpiredEmail({
+              to: primaryUser.secondaryUser.email,
+              userName:
+                primaryUser.secondaryUser.name?.split(" ")[0] || "there",
+              expiredAt,
+              isSecondary: true,
+            });
+            await prisma.emailSend.create({
+              data: {
+                userId: primaryUser.secondaryUser.id,
+                category: "transactional",
+                emailKey: "subscription.expired.secondary",
+              },
+            });
+            console.log(
+              "Sent subscription expired email to secondary:",
+              primaryUser.secondaryUser.email,
+            );
+          }
         }
       }
       break;
@@ -200,21 +240,34 @@ export async function POST(request: NextRequest) {
       const trialInfo = await handleTrialWillEnd(subscription);
 
       if (trialInfo.email) {
-        // Get user name for email
+        // Get user for email (with dedup guard for webhook retries)
         const user = await prisma.user.findFirst({
           where: { email: trialInfo.email },
-          select: { name: true },
+          select: { id: true, name: true },
         });
 
-        await sendTrialEndingEmail({
-          to: trialInfo.email,
-          userName: user?.name?.split(" ")[0] || "there",
-          trialEndsAt: trialInfo.trialEnd?.toISOString(),
-          planName: trialInfo.planName,
-          planPrice: trialInfo.planPrice,
-        });
-
-        console.log("Sent trial ending email to:", trialInfo.email);
+        if (user) {
+          const trialEndingAlreadySent = await prisma.emailSend.findFirst({
+            where: { userId: user.id, emailKey: "trial.ending" },
+          });
+          if (!trialEndingAlreadySent) {
+            await sendTrialEndingEmail({
+              to: trialInfo.email,
+              userName: user.name?.split(" ")[0] || "there",
+              trialEndsAt: trialInfo.trialEnd?.toISOString(),
+              planName: trialInfo.planName,
+              planPrice: trialInfo.planPrice,
+            });
+            await prisma.emailSend.create({
+              data: {
+                userId: user.id,
+                category: "transactional",
+                emailKey: "trial.ending",
+              },
+            });
+            console.log("Sent trial ending email to:", trialInfo.email);
+          }
+        }
       }
       break;
     }

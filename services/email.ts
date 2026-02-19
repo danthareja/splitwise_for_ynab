@@ -34,6 +34,19 @@ import {
   OnboardingReminderEmailProps,
   getOnboardingEmailSubject,
 } from "@/emails/onboarding-reminder";
+import {
+  FirstSyncSuccessEmail,
+  FirstSyncSuccessEmailProps,
+} from "@/emails/first-sync-success";
+import {
+  TrialMidpointEmail,
+  TrialMidpointEmailProps,
+} from "@/emails/trial-midpoint";
+import {
+  WinBackEmail,
+  WinBackEmailProps,
+  getWinBackEmailSubject,
+} from "@/emails/win-back";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -389,6 +402,115 @@ export async function sendOnboardingReminderEmail({
         emailNumber,
         unsubscribeUrl,
       }),
+      { plainText: true },
+    ),
+  });
+
+  if (error) {
+    Sentry.captureException(error);
+    console.error(error);
+    return { success: false, error };
+  }
+
+  return { success: true, data };
+}
+
+interface SendFirstSyncSuccessEmailParams extends FirstSyncSuccessEmailProps {
+  to: string;
+}
+
+export async function sendFirstSyncSuccessEmail({
+  to,
+  userName,
+  syncedCount,
+}: SendFirstSyncSuccessEmailParams) {
+  const { data, error } = await resend.emails.send({
+    from: "Splitwise for YNAB <support@splitwiseforynab.com>",
+    to: [to],
+    subject: "Your first sync just ran!",
+    react: FirstSyncSuccessEmail({ userName, syncedCount }),
+    text: await render(FirstSyncSuccessEmail({ userName, syncedCount }), {
+      plainText: true,
+    }),
+  });
+
+  if (error) {
+    Sentry.captureException(error);
+    console.error(error);
+    return { success: false, error };
+  }
+
+  return { success: true, data };
+}
+
+interface SendTrialMidpointEmailParams extends TrialMidpointEmailProps {
+  to: string;
+}
+
+export async function sendTrialMidpointEmail({
+  to,
+  userName,
+  daysLeft,
+  syncCount,
+  transactionCount,
+  unsubscribeUrl,
+}: SendTrialMidpointEmailParams) {
+  const subject =
+    transactionCount && transactionCount > 0
+      ? `You've synced ${transactionCount} transactions so far`
+      : "You're halfway through your free trial";
+
+  const { data, error } = await resend.emails.send({
+    from: "Splitwise for YNAB <support@splitwiseforynab.com>",
+    to: [to],
+    subject,
+    react: TrialMidpointEmail({
+      userName,
+      daysLeft,
+      syncCount,
+      transactionCount,
+      unsubscribeUrl,
+    }),
+    text: await render(
+      TrialMidpointEmail({
+        userName,
+        daysLeft,
+        syncCount,
+        transactionCount,
+        unsubscribeUrl,
+      }),
+      { plainText: true },
+    ),
+  });
+
+  if (error) {
+    Sentry.captureException(error);
+    console.error(error);
+    return { success: false, error };
+  }
+
+  return { success: true, data };
+}
+
+interface SendWinBackEmailParams extends WinBackEmailProps {
+  to: string;
+}
+
+export async function sendWinBackEmail({
+  to,
+  userName,
+  emailNumber,
+  unsubscribeUrl,
+}: SendWinBackEmailParams) {
+  const subject = getWinBackEmailSubject(emailNumber ?? 1);
+
+  const { data, error } = await resend.emails.send({
+    from: "Splitwise for YNAB <support@splitwiseforynab.com>",
+    to: [to],
+    subject,
+    react: WinBackEmail({ userName, emailNumber, unsubscribeUrl }),
+    text: await render(
+      WinBackEmail({ userName, emailNumber, unsubscribeUrl }),
       { plainText: true },
     ),
   });
