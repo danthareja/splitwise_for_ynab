@@ -19,6 +19,7 @@ vi.mock("@/services/email", () => ({
   sendSyncPartialEmail: vi.fn(),
   sendSyncErrorEmail: vi.fn(),
   sendSyncErrorRequiresActionEmail: vi.fn(),
+  sendFirstSyncSuccessEmail: vi.fn().mockResolvedValue({}),
 }));
 
 import {

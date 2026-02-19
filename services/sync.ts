@@ -14,6 +14,7 @@ import {
   sendSyncPartialEmail,
   sendSyncErrorEmail,
   sendSyncErrorRequiresActionEmail,
+  sendFirstSyncSuccessEmail,
 } from "./email";
 import { getUserFirstName } from "@/lib/utils";
 
@@ -588,6 +589,42 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
       });
     }
 
+    // Check if this is the user's first successful sync
+    const totalSynced =
+      createdTransactionItems.filter((i) => i.status === "success").length +
+      createdExpenseItems.filter((i) => i.status === "success").length;
+
+    if (totalSynced > 0 && user.email) {
+      const alreadySent = await prisma.emailSend.findFirst({
+        where: { userId, emailKey: "sync.first-success" },
+      });
+
+      if (!alreadySent) {
+        // Only send if this is genuinely the user's first successful sync
+        // (not just the first sync after this code deployed)
+        const previousSyncCount = await prisma.syncHistory.count({
+          where: {
+            userId,
+            status: { in: ["success", "partial"] },
+          },
+        });
+
+        if (previousSyncCount <= 1) {
+          sendFirstSyncSuccessEmail({
+            to: user.email,
+            userName: getUserFirstName(user),
+            syncedCount: totalSynced,
+          }).catch((err) =>
+            console.error("Failed to send first sync success email:", err),
+          );
+        }
+
+        await prisma.emailSend.create({
+          data: { userId, category: "sync", emailKey: "sync.first-success" },
+        });
+      }
+    }
+
     console.log(`🏆 Single user sync complete for ${user.email || user.id}:`);
 
     return {
@@ -1106,6 +1143,46 @@ async function syncUserPhase(
           failedTransactions: createdFailedTransactionItems,
           currencyCode: effectiveSplitwiseSettings.currencyCode,
         });
+      }
+
+      // Check if this is the user's first successful sync
+      const totalSynced =
+        createdTransactionItems.filter((i) => i.status === "success").length +
+        createdExpenseItems.filter((i) => i.status === "success").length;
+
+      if (totalSynced > 0 && user.email) {
+        const alreadySent = await prisma.emailSend.findFirst({
+          where: { userId, emailKey: "sync.first-success" },
+        });
+
+        if (!alreadySent) {
+          // Only send if this is genuinely the user's first successful sync
+          // (not just the first sync after this code deployed)
+          const previousSyncCount = await prisma.syncHistory.count({
+            where: {
+              userId,
+              status: { in: ["success", "partial"] },
+            },
+          });
+
+          if (previousSyncCount <= 1) {
+            sendFirstSyncSuccessEmail({
+              to: user.email,
+              userName: getUserFirstName(user),
+              syncedCount: totalSynced,
+            }).catch((err) =>
+              console.error("Failed to send first sync success email:", err),
+            );
+          }
+
+          await prisma.emailSend.create({
+            data: {
+              userId,
+              category: "sync",
+              emailKey: "sync.first-success",
+            },
+          });
+        }
       }
     }
 
