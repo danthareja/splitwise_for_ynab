@@ -9,7 +9,6 @@ export interface OnboardingReminderEmailProps {
   userName?: string;
   step: number; // 0-4
   emailNumber: number; // 1-3
-  isSecondary?: boolean;
   unsubscribeUrl?: string;
 }
 

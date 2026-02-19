@@ -133,8 +133,8 @@ export async function GET(request: NextRequest) {
       image: userData.user.picture?.medium,
       // Store Splitwise user ID for partner detection
       splitwiseUserId: userData.user.id.toString(),
-      // Track when this onboarding step was reached (for drip campaign timing)
-      onboardingStepReachedAt: new Date(),
+      // Only set drip timer on first Splitwise connect, not re-auth
+      ...(!existingAccount && { onboardingStepReachedAt: new Date() }),
     },
     select: {
       onboardingComplete: true,

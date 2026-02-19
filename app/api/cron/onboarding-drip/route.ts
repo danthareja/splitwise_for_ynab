@@ -68,8 +68,7 @@ export async function GET(request: NextRequest) {
     if (daysSinceReference < requiredDays) continue;
 
     // Skip step 4 emails for secondary users (they don't pay)
-    const isSecondary = !!user.primaryUserId;
-    if (step === 4 && isSecondary) continue;
+    if (step === 4 && !!user.primaryUserId) continue;
 
     const unsubscribeToken = generateUnsubscribeToken(user.id, CATEGORY);
     const unsubscribeUrl = `${baseUrl}/api/unsubscribe?token=${unsubscribeToken}`;
@@ -80,7 +79,6 @@ export async function GET(request: NextRequest) {
         userName: getUserFirstName(user) || undefined,
         step,
         emailNumber: nextEmailNumber,
-        isSecondary,
         unsubscribeUrl,
       });
 

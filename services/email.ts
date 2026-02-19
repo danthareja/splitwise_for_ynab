@@ -368,7 +368,6 @@ export async function sendOnboardingReminderEmail({
   userName,
   step,
   emailNumber,
-  isSecondary,
   unsubscribeUrl,
 }: SendOnboardingReminderEmailParams) {
   const subject = getOnboardingEmailSubject(step, emailNumber);
@@ -381,7 +380,6 @@ export async function sendOnboardingReminderEmail({
       userName,
       step,
       emailNumber,
-      isSecondary,
       unsubscribeUrl,
     }),
     text: await render(
@@ -389,7 +387,6 @@ export async function sendOnboardingReminderEmail({
         userName,
         step,
         emailNumber,
-        isSecondary,
         unsubscribeUrl,
       }),
       { plainText: true },
