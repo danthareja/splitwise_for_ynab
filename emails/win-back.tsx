@@ -19,18 +19,18 @@ type WinBackCopy = {
 const winBackCopy: Record<number, WinBackCopy> = {
   1: {
     subject: "Your settings are still saved",
-    heading: "Your settings are still saved",
-    body: "Your Splitwise and YNAB configuration is still here. Re-subscribe and your next sync runs automatically.",
+    heading: "Pick up right where you left off",
+    body: "Your YNAB budget, Splitwise group, and sync settings are all still here. Re-subscribe and your next sync runs automatically — no setup required.",
   },
   2: {
-    subject: "Your expenses aren't syncing",
-    heading: "Your expenses aren't syncing",
-    body: "Since your subscription ended, your expenses haven't been syncing. Pick up where you left off.",
+    subject: "Your expenses aren't syncing anymore",
+    heading: "You're back to manual entry",
+    body: "Since your subscription ended, every Splitwise expense has to be entered into YNAB by hand. Re-subscribe and they'll start syncing again automatically.",
   },
   3: {
-    subject: "We'd love to have you back",
-    heading: "We'd love to have you back",
-    body: "Your settings are saved and ready to go. Re-subscribe anytime to start syncing again.",
+    subject: "Still entering expenses by hand?",
+    heading: "One click and you're back to automatic",
+    body: "Your configuration is exactly how you left it. Re-subscribe and your next sync picks up where you stopped — no re-setup, no lost settings.",
   },
 };
 

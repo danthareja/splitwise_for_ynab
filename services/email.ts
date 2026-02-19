@@ -344,7 +344,7 @@ export async function sendSubscriptionExpiredEmail({
   const { data, error } = await rateLimitedSend({
     from: "Splitwise for YNAB <support@splitwiseforynab.com>",
     to: [to],
-    subject: "Your Splitwise for YNAB subscription has ended",
+    subject: "Your expenses stopped syncing",
     react: SubscriptionExpiredEmail({ userName, expiredAt, isSecondary }),
     text: await render(
       SubscriptionExpiredEmail({ userName, expiredAt, isSecondary }),
@@ -443,7 +443,7 @@ export async function sendFirstSyncSuccessEmail({
   const { data, error } = await rateLimitedSend({
     from: "Splitwise for YNAB <support@splitwiseforynab.com>",
     to: [to],
-    subject: "Your first sync just ran!",
+    subject: `It's working — ${syncedCount} ${syncedCount === 1 ? "expense" : "expenses"} synced automatically`,
     react: FirstSyncSuccessEmail({ userName, syncedCount }),
     text: await render(FirstSyncSuccessEmail({ userName, syncedCount }), {
       plainText: true,

@@ -1,4 +1,4 @@
-import { Button, Heading, Section, Text } from "@react-email/components";
+import { Heading, Section, Text } from "@react-email/components";
 import { EmailLayout, baseUrl } from "./components/email-layout";
 import { emailStyles, colors } from "./components/email-styles";
 import { HelpSection } from "./components/help-section";
@@ -52,26 +52,18 @@ export const TrialEndingEmail = ({
       </Section>
 
       <Text style={emailStyles.text}>
-        If you&apos;re loving the automatic expense syncing (and we hope you
-        are!), you don&apos;t need to do anything — we&apos;ll handle the rest.
+        If you&apos;re loving the automatic expense syncing, you don&apos;t need
+        to do anything — we&apos;ll handle the rest.
       </Text>
 
-      <Section style={manageBox}>
-        <Text style={manageText}>
-          Need to make changes? You can update your plan, payment method, or
-          cancel from your account settings.
-        </Text>
-        <Section
-          style={{ ...emailStyles.buttonSection, textAlign: "center" as const }}
-        >
-          <Button
-            style={emailStyles.button}
-            href={`${baseUrl}/dashboard/settings`}
-          >
-            Manage Subscription
-          </Button>
-        </Section>
-      </Section>
+      <Text style={emailStyles.text}>
+        Need to make changes? You can update your plan, payment method, or
+        cancel anytime from your{" "}
+        <a href={`${baseUrl}/dashboard/settings`} style={emailStyles.link}>
+          account settings
+        </a>
+        .
+      </Text>
 
       <HelpSection />
 
@@ -99,20 +91,6 @@ const highlightText = {
   color: "#92400e", // amber-800
   margin: 0,
   lineHeight: "1.8",
-};
-
-const manageBox = {
-  backgroundColor: "#ffffff",
-  border: `1px solid ${colors.border}`,
-  borderRadius: "12px",
-  padding: "20px",
-  margin: "24px 0",
-  textAlign: "center" as const,
-};
-
-const manageText = {
-  ...emailStyles.text,
-  margin: "0 0 16px 0",
 };
 
 TrialEndingEmail.PreviewProps = {

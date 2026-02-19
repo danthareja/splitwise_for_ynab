@@ -22,86 +22,86 @@ const emailCopy: Record<string, EmailCopy> = {
   // Step 0: Connected Splitwise, hasn't clicked Continue
   "0.1": {
     subject: "You're almost set up",
-    heading: "You're almost set up",
-    body: "You connected Splitwise! Just confirm your profile and continue to finish setup. Takes about 3 minutes.",
+    heading: "3 minutes to automatic expense syncing",
+    body: "You connected Splitwise — just confirm your profile and continue. Once you're done, your expenses sync between YNAB and Splitwise automatically.",
   },
   "0.2": {
     subject: "Your Splitwise account is connected and ready",
-    heading: "Your Splitwise account is connected",
-    body: "Quick reminder that your Splitwise account is connected. Just a few more steps and your expenses will sync automatically.",
+    heading: "Your Splitwise is connected — keep going",
+    body: "A few more steps and every shared expense shows up in YNAB automatically. No more copying amounts between apps.",
   },
   "0.3": {
     subject: "Your setup is waiting for you",
-    heading: "Your setup is waiting for you",
-    body: "You connected Splitwise but haven't finished setting up. Come back and complete setup whenever you're ready. It only takes a few minutes.",
+    heading: "Still want automatic expense syncing?",
+    body: "Totally understand if you got busy. Your Splitwise connection is still active — pick up where you left off whenever you have a few minutes.",
   },
 
   // Step 1: Needs to choose Solo vs Dual
   "1.1": {
     subject: "Quick question: solo or duo?",
-    heading: "Quick question: solo or duo?",
-    body: "One quick choice and you're moving. Do you split expenses solo, or do you both use YNAB?",
+    heading: "One quick choice, then we keep moving",
+    body: "Do you split expenses solo (just you use YNAB), or duo (you both do)? Pick your mode and you're one step closer to automatic syncing.",
   },
   "1.2": {
-    subject: "Solo or duo: here's the difference",
-    heading: "Solo or duo: here's the difference",
-    body: "Solo means you track shared expenses and your partner doesn't use YNAB. Duo means both of you sync. Pick your mode and keep going.",
+    subject: "Solo or duo — here's the difference",
+    heading: "Not sure which to pick? Here's the short version",
+    body: "Solo: you track shared expenses and your partner doesn't use YNAB. Duo: both of you get automatic syncing. Either way, setup takes a couple more minutes.",
   },
   "1.3": {
-    subject: "You're 3 steps away from automated syncing",
-    heading: "You're 3 steps away",
-    body: "Pick your mode and you'll be syncing in minutes.",
+    subject: "You're 3 steps from automatic syncing",
+    heading: "Your free trial clock hasn't started yet",
+    body: "Just a heads up — your trial doesn't start until setup is complete. Pick your mode now and you won't lose any free days.",
   },
 
   // Step 2: Needs YNAB config
   "2.1": {
     subject: "Let's connect your YNAB budget",
-    heading: "Let's connect your YNAB budget",
-    body: "Pick your budget and phantom account. Takes about 2 minutes.",
+    heading: "Tell us where expenses should land",
+    body: "Pick your YNAB budget and the account where Splitwise transactions should appear. Takes about 2 minutes.",
   },
   "2.2": {
-    subject: "Your YNAB setup takes 2 minutes",
-    heading: "Your YNAB setup takes 2 minutes",
-    body: "Just select your budget and the account where Splitwise transactions should appear.",
+    subject: "2 minutes to connect YNAB",
+    heading: "Almost there — just need your YNAB settings",
+    body: "Select your budget and the account for Splitwise transactions. Once this is done, you're one step from syncing.",
   },
   "2.3": {
-    subject: "Almost there: just need your YNAB settings",
-    heading: "Almost there",
-    body: "You're halfway through setup. Connect your YNAB budget and you're nearly done.",
+    subject: "You're halfway through setup",
+    heading: "Your trial hasn't started yet — no days wasted",
+    body: "Your Splitwise is connected and waiting. Finish your YNAB settings and you'll be syncing in minutes.",
   },
 
   // Step 3: Needs Splitwise config
   "3.1": {
     subject: "One more step: pick your Splitwise group",
-    heading: "One more step",
-    body: "Select which group to sync and choose your sync emoji.",
+    heading: "Last settings, then you're syncing",
+    body: "Select which Splitwise group to sync and pick your currency. After this, you can start your free trial.",
   },
   "3.2": {
-    subject: "You're so close to automated syncing",
-    heading: "You're so close",
-    body: "Just pick your Splitwise group and currency, and you're ready to go.",
+    subject: "You're one step from automatic syncing",
+    heading: "So close — just confirm your Splitwise group",
+    body: "Pick your group and currency, and you're done with setup. Your first sync will run automatically.",
   },
   "3.3": {
-    subject: "Last config step, then you're done",
-    heading: "Last config step",
-    body: "You've connected everything. Just confirm your Splitwise group settings and start your free trial.",
+    subject: "Everything's connected, just need one confirmation",
+    heading: "Your trial is waiting on this last step",
+    body: "YNAB and Splitwise are both connected. Confirm your group settings and start your free trial — we'll handle the rest.",
   },
 
   // Step 4: Needs payment (solo/primary only)
   "4.1": {
     subject: "Start your free trial",
-    heading: "Start your free trial",
-    body: `Everything is configured. Start your free trial to begin syncing. No charge for ${TRIAL_DAYS} days.`,
+    heading: "Everything's ready — start syncing",
+    body: `Your YNAB and Splitwise are configured. Start your free trial and your first sync runs automatically. No charge for ${TRIAL_DAYS} days.`,
   },
   "4.2": {
-    subject: "Your setup is complete, just start your trial",
-    heading: "Your setup is complete",
-    body: "All your settings are saved. Activate your free trial and your first sync runs automatically.",
+    subject: "Your first sync is ready to run",
+    heading: "One click and expenses sync automatically",
+    body: `All your settings are saved. Start your ${TRIAL_DAYS}-day free trial and your first sync runs right away.`,
   },
   "4.3": {
-    subject: `${TRIAL_DAYS} days free, cancel anytime`,
-    heading: `${TRIAL_DAYS} days free, cancel anytime`,
-    body: "Start your free trial and cancel anytime. Your YNAB and Splitwise are ready to sync.",
+    subject: `${TRIAL_DAYS} days free — cancel anytime`,
+    heading: "You did all the hard work already",
+    body: "Setup is done. Start your free trial and stop entering Splitwise expenses into YNAB by hand. Cancel anytime.",
   },
 };
 

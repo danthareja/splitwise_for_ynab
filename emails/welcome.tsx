@@ -1,4 +1,4 @@
-import { Button, Heading, Section, Text } from "@react-email/components";
+import { Heading, Section, Text } from "@react-email/components";
 import { EmailLayout, baseUrl } from "./components/email-layout";
 import { emailStyles, colors } from "./components/email-styles";
 import { HelpSection } from "./components/help-section";
@@ -40,14 +40,6 @@ export const WelcomeEmail = ({
           ET. Flag a transaction in YNAB or add an expense in Splitwise—we
           handle the rest.
         </Text>
-      </Section>
-
-      <Section
-        style={{ ...emailStyles.buttonSection, textAlign: "center" as const }}
-      >
-        <Button style={emailStyles.button} href={`${baseUrl}/dashboard`}>
-          Go to Dashboard
-        </Button>
       </Section>
 
       <Section style={tipsSection}>

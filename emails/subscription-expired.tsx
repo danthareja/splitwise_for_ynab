@@ -15,7 +15,7 @@ export const SubscriptionExpiredEmail = ({
   expiredAt,
   isSecondary = false,
 }: SubscriptionExpiredEmailProps) => {
-  const previewText = "Your Splitwise for YNAB subscription has ended";
+  const previewText = "Your expenses stopped syncing";
 
   // Format the date nicely
   const formattedDate = expiredAt
@@ -28,7 +28,7 @@ export const SubscriptionExpiredEmail = ({
 
   return (
     <EmailLayout previewText={previewText}>
-      <Heading style={emailStyles.h1}>Your subscription has ended</Heading>
+      <Heading style={emailStyles.h1}>Your expenses stopped syncing</Heading>
 
       <Text style={emailStyles.text}>Hey {userName},</Text>
 
@@ -62,8 +62,8 @@ export const SubscriptionExpiredEmail = ({
         </Text>
       ) : (
         <Text style={emailStyles.text}>
-          We&apos;d love to have you back! If you want to continue syncing your
-          expenses between YNAB and Splitwise, you can re-subscribe anytime.
+          Whenever you&apos;re ready, re-subscribe and your next sync runs
+          automatically. All your settings are still saved.
         </Text>
       )}
 
