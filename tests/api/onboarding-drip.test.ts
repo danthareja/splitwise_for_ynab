@@ -72,6 +72,21 @@ describe("/api/cron/onboarding-drip", () => {
       expect(data.sent).toBe(0);
     });
 
+    it("skips users with ynab-generated placeholder emails", async () => {
+      await createTestUser({
+        email: "user-abc123@ynab-generated.com",
+        onboardingComplete: false,
+        onboardingStep: 1,
+        onboardingStepReachedAt: daysAgo(2),
+      });
+
+      const response = await GET(makeRequest());
+      const data = await response.json();
+
+      expect(data.processed).toBe(0);
+      expect(data.sent).toBe(0);
+    });
+
     it("skips unsubscribed users", async () => {
       const user = await createTestUser({
         onboardingComplete: false,

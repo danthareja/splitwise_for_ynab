@@ -71,6 +71,7 @@ async function processTrialMidpoint() {
       subscriptionStatus: "trialing",
       trialEndsAt: { not: null },
       email: { not: null },
+      NOT: { email: { endsWith: "@ynab-generated.com" } },
       emailUnsubscribes: {
         none: { category: "trial" },
       },
@@ -146,6 +147,7 @@ async function processWinBack() {
       subscriptionStatus: "canceled",
       stripeCurrentPeriodEnd: { not: null },
       email: { not: null },
+      NOT: { email: { endsWith: "@ynab-generated.com" } },
       primaryUserId: null,
       isGrandfathered: false,
       emailUnsubscribes: {

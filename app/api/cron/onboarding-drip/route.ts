@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
     where: {
       onboardingComplete: false,
       email: { not: null },
+      NOT: { email: { endsWith: "@ynab-generated.com" } },
       emailUnsubscribes: {
         none: { category: CATEGORY },
       },

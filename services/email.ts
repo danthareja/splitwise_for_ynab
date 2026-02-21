@@ -55,6 +55,13 @@ const RATE_LIMIT_DELAY_MS = 600;
 let lastSendTime = 0;
 
 async function rateLimitedSend(...args: Parameters<typeof resend.emails.send>) {
+  const [payload] = args;
+  const recipients = Array.isArray(payload.to) ? payload.to : [payload.to];
+  if (recipients.some((r) => r?.endsWith("@ynab-generated.com"))) {
+    console.warn("Skipping email to placeholder ynab-generated.com address");
+    return { data: null, error: null };
+  }
+
   const now = Date.now();
   const elapsed = now - lastSendTime;
   if (elapsed < RATE_LIMIT_DELAY_MS) {
