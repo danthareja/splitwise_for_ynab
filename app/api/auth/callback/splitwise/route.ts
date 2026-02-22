@@ -65,6 +65,17 @@ export async function GET(request: NextRequest) {
 
   if (!response.ok) {
     const errorText = await response.text();
+
+    // OAuth codes are single-use. If the user hits the callback twice
+    // (e.g., double-tap, refresh), the second request gets invalid_grant.
+    // Redirect gracefully instead of throwing.
+    if (errorText.includes("invalid_grant")) {
+      const redirectPath = inviteToken
+        ? `/invite/${inviteToken}`
+        : "/dashboard/setup";
+      return NextResponse.redirect(new URL(redirectPath, request.url));
+    }
+
     throw new Error(`Token exchange failed: ${errorText}`);
   }
 
@@ -87,38 +98,50 @@ export async function GET(request: NextRequest) {
 
   const userData = await userResponse.json();
 
-  // Check if the user already has a Splitwise account
-  const existingAccount = await prisma.account.findFirst({
+  // Check if this Splitwise account is already connected to a different user.
+  const providerAccountId = userData.user.id.toString();
+  const existingAccount = await prisma.account.findUnique({
     where: {
-      userId: session.user.id,
-      provider: "splitwise",
+      provider_providerAccountId: {
+        provider: "splitwise",
+        providerAccountId,
+      },
     },
   });
 
-  if (existingAccount) {
-    // Update existing account
-    await prisma.account.update({
-      where: { id: existingAccount.id },
-      data: {
-        access_token: tokenData.access_token,
-        token_type: tokenData.token_type || "Bearer",
-        providerAccountId: userData.user.id.toString(),
-      },
-    });
-  } else {
-    // Create new account following Next.js Auth pattern
-    await prisma.account.create({
-      data: {
-        userId: session.user.id,
-        type: "oauth",
-        provider: "splitwise",
-        providerAccountId: userData.user.id.toString(),
-        access_token: tokenData.access_token,
-        token_type: tokenData.token_type || "Bearer",
-        // Note: Splitwise OAuth 2.0 doesn't provide refresh tokens
-      },
-    });
+  if (existingAccount && existingAccount.userId !== session.user.id) {
+    // Another user already connected this Splitwise account — reject.
+    // Always redirect to /dashboard/setup where the error UI is rendered.
+    return NextResponse.redirect(
+      new URL(
+        "/dashboard/setup?auth_error=splitwise_already_linked",
+        request.url,
+      ),
+    );
   }
+
+  // Upsert the account using the unique constraint to handle race conditions
+  // when the callback URL is hit multiple times concurrently (e.g., double-tap).
+  const account = await prisma.account.upsert({
+    where: {
+      provider_providerAccountId: {
+        provider: "splitwise",
+        providerAccountId,
+      },
+    },
+    update: {
+      access_token: tokenData.access_token,
+      token_type: tokenData.token_type || "Bearer",
+    },
+    create: {
+      userId: session.user.id,
+      type: "oauth",
+      provider: "splitwise",
+      providerAccountId,
+      access_token: tokenData.access_token,
+      token_type: tokenData.token_type || "Bearer",
+    },
+  });
 
   // Update user information with Splitwise data
   const user = await prisma.user.update({
@@ -133,8 +156,11 @@ export async function GET(request: NextRequest) {
       image: userData.user.picture?.medium,
       // Store Splitwise user ID for partner detection
       splitwiseUserId: userData.user.id.toString(),
-      // Only set drip timer on first Splitwise connect, not re-auth
-      ...(!existingAccount && { onboardingStepReachedAt: new Date() }),
+      // Only set drip timer on first Splitwise connect, not re-auth.
+      // Detect first connect: upsert created a new row if createdAt ~= updatedAt.
+      ...(account.createdAt.getTime() === account.updatedAt.getTime() && {
+        onboardingStepReachedAt: new Date(),
+      }),
     },
     select: {
       onboardingComplete: true,

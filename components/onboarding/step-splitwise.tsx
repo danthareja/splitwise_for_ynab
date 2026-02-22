@@ -185,6 +185,8 @@ export function StepSplitwise({
     switch (authError) {
       case "cancelled":
         return "Connection cancelled. Click below to try again.";
+      case "splitwise_already_linked":
+        return "This Splitwise account is already connected to another user. Please sign in with a different Splitwise account.";
       case "error":
       case "missing_code":
         return "Something went wrong connecting to Splitwise. Please try again.";
