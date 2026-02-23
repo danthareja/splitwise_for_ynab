@@ -1260,6 +1260,15 @@ export async function joinHousehold(primaryUserId: string, emoji: string) {
       return { success: false, error: "Primary user not found" };
     }
 
+    // Prevent self-linking
+    if (primaryUserId === session.user.id) {
+      return {
+        success: false,
+        error:
+          "You can't join your own household. Please share the invite link with your partner instead.",
+      };
+    }
+
     if (primaryUser.primaryUserId) {
       return { success: false, error: "This user is already a secondary" };
     }
@@ -1718,6 +1727,15 @@ export async function acceptInvite(token: string, emoji: string) {
       };
     }
 
+    // Prevent self-linking
+    if (invite.primaryUserId === session.user.id) {
+      return {
+        success: false,
+        error:
+          "You can't accept your own invite. Please share this link with your partner instead.",
+      };
+    }
+
     // Verify primary still exists, doesn't have a secondary, and has settings
     const primaryUser = await prisma.user.findUnique({
       where: { id: invite.primaryUserId },
@@ -1852,6 +1870,15 @@ export async function linkAsSecondary(token: string) {
         success: false,
         error:
           "This invite has expired. Please reach out to your partner to get a new invite.",
+      };
+    }
+
+    // Prevent self-linking
+    if (invite.primaryUserId === session.user.id) {
+      return {
+        success: false,
+        error:
+          "You can't accept your own invite. Please share this link with your partner instead.",
       };
     }
 
