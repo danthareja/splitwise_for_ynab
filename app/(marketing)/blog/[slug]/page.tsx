@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { MDXRemote } from "next-mdx-remote/rsc";
+import remarkGfm from "remark-gfm";
 import { getAllPostSlugs, getPostBySlug, formatDate } from "@/lib/blog";
 import { mdxComponents } from "@/components/blog";
 import type { Metadata } from "next";
@@ -199,7 +200,11 @@ export default async function BlogPostPage({ params }: Props) {
 
         {/* Content */}
         <div className="prose-custom">
-          <MDXRemote source={post.content} components={mdxComponents} />
+          <MDXRemote
+            source={post.content}
+            components={mdxComponents}
+            options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
+          />
         </div>
 
         {/* Footer CTA */}

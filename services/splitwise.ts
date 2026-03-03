@@ -80,34 +80,40 @@ export class SplitwiseService {
   }
 
   async createExpense(
-    data: Partial<SplitwiseExpense>,
+    data: Partial<SplitwiseExpense> & { isInflow?: boolean },
     customSplitRatio?: string,
   ) {
     const splitRatio = customSplitRatio || this.defaultSplitRatio;
+    const isInflow = !!data.isInflow;
+
+    // Strip isInflow before sending to the API
+    const { isInflow: _, ...apiData } = data;
 
     // Parse split ratio (e.g., "2:1" means user gets 2 shares, partner gets 1 share)
     const [userShares, partnerShares] = this.parseSplitRatio(splitRatio);
     const totalShares = userShares + partnerShares;
 
-    // For equal splits, use the simpler API
-    if (userShares === partnerShares) {
+    // For equal outflow splits, use the simpler API
+    // Inflows must always use the custom split path because
+    // split_equally always assumes the authenticated user paid
+    if (userShares === partnerShares && !isInflow) {
       const res = await this.axios.post(
         "/create_expense",
         {
           currency_code: this.currencyCode,
           group_id: this.groupId,
           split_equally: true,
-          ...data,
+          ...apiData,
         },
         {
-          _operation: `create expense (equal split) for amount ${data.cost}`,
+          _operation: `create expense (equal split) for amount ${apiData.cost}`,
         },
       );
 
       return res.data.expenses[0] as SplitwiseExpense;
     }
 
-    // For custom splits, we need to get group members and specify shares
+    // For custom splits (or any inflow), we need to get group members and specify shares
     const groupMembers = await this.getGroupMembers();
     const currentUser = groupMembers.find(
       (m: SplitwiseMember) => m.id === this.splitwiseUserId,
@@ -122,27 +128,37 @@ export class SplitwiseService {
       );
     }
 
+    // For inflows, invert the ratio so the offset is proportional
+    const effectiveUserShares = isInflow ? partnerShares : userShares;
+    const effectivePartnerShares = isInflow ? userShares : partnerShares;
+
     // Calculate owed shares based on ratio
-    const cost = parseFloat(data.cost || "0");
-    const userOwedShare = ((cost * userShares) / totalShares).toFixed(2);
-    const partnerOwedShare = ((cost * partnerShares) / totalShares).toFixed(2);
+    const cost = parseFloat(apiData.cost || "0");
+    const userOwedShare = ((cost * effectiveUserShares) / totalShares).toFixed(
+      2,
+    );
+    const partnerOwedShare = (
+      (cost * effectivePartnerShares) /
+      totalShares
+    ).toFixed(2);
 
     // Build custom split payload
+    // For inflows, flip who paid: partner paid the full amount instead of user
     const expensePayload = {
       currency_code: this.currencyCode,
       group_id: this.groupId,
       split_equally: false,
       [`users__0__user_id`]: currentUser.id,
-      [`users__0__paid_share`]: data.cost || "0", // User paid the full amount
+      [`users__0__paid_share`]: isInflow ? "0" : apiData.cost || "0",
       [`users__0__owed_share`]: userOwedShare,
       [`users__1__user_id`]: partnerUser.id,
-      [`users__1__paid_share`]: "0", // Partner paid nothing
+      [`users__1__paid_share`]: isInflow ? apiData.cost || "0" : "0",
       [`users__1__owed_share`]: partnerOwedShare,
-      ...data,
+      ...apiData,
     };
 
     const res = await this.axios.post("/create_expense", expensePayload, {
-      _operation: `create expense (custom split) for amount ${data.cost}`,
+      _operation: `create expense (${isInflow ? "inflow" : "custom split"}) for amount ${apiData.cost}`,
     });
 
     return res.data.expenses[0] as SplitwiseExpense;

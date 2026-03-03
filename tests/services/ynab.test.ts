@@ -173,7 +173,7 @@ describe("YNABService", () => {
   });
 
   describe("toSplitwiseExpense", () => {
-    it("should convert YNAB transaction to Splitwise expense format", () => {
+    it("should convert YNAB outflow to Splitwise expense format", () => {
       const transaction: YNABTransaction = {
         id: "txn-1",
         account_id: "account-1",
@@ -190,6 +190,24 @@ describe("YNABService", () => {
       expect(result.description).toBe("Test Payee");
       expect(result.details).toBe("Test memo");
       expect(result.date).toBe("2024-01-15");
+      expect(result.isInflow).toBe(false);
+    });
+
+    it("should mark inflows with isInflow: true", () => {
+      const transaction: YNABTransaction = {
+        id: "txn-1",
+        account_id: "account-1",
+        amount: 25000, // +$25.00 inflow
+        payee_name: "Venmo - Friend",
+        memo: null,
+        date: "2024-01-15",
+        deleted: false,
+      } as YNABTransaction;
+
+      const result = ynabService.toSplitwiseExpense(transaction);
+
+      expect(result.cost).toBe("25");
+      expect(result.isInflow).toBe(true);
     });
 
     it("should handle transaction without memo", () => {
@@ -240,19 +258,20 @@ describe("YNABService", () => {
     });
   });
 
-  describe("outflowToSplitwiseCost", () => {
-    it("should convert negative milliunits to positive cost string", () => {
-      expect(ynabService.outflowToSplitwiseCost(-25500)).toBe("25.5");
-      expect(ynabService.outflowToSplitwiseCost(-10000)).toBe("10");
-      expect(ynabService.outflowToSplitwiseCost(-1)).toBe("0.001");
+  describe("toSplitwiseCost", () => {
+    it("should convert negative milliunits (outflows) to positive cost string", () => {
+      expect(ynabService.toSplitwiseCost(-25500)).toBe("25.5");
+      expect(ynabService.toSplitwiseCost(-10000)).toBe("10");
+      expect(ynabService.toSplitwiseCost(-1)).toBe("0.001");
+    });
+
+    it("should convert positive milliunits (inflows) to positive cost string", () => {
+      expect(ynabService.toSplitwiseCost(25500)).toBe("25.5");
+      expect(ynabService.toSplitwiseCost(25000)).toBe("25");
     });
 
     it("should handle zero", () => {
-      expect(ynabService.outflowToSplitwiseCost(0)).toBe("0");
-    });
-
-    it("should convert positive values correctly (though unusual)", () => {
-      expect(ynabService.outflowToSplitwiseCost(25500)).toBe("-25.5");
+      expect(ynabService.toSplitwiseCost(0)).toBe("0");
     });
   });
 

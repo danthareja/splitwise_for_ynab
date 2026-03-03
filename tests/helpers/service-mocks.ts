@@ -47,7 +47,7 @@ export function createMockYNABService(
     setServerKnowledge: vi.fn(),
     isTransactionUnprocessed: vi.fn(),
     toSplitwiseExpense: vi.fn(),
-    outflowToSplitwiseCost: vi.fn(),
+    toSplitwiseCost: vi.fn(),
     ...overrides,
   } as unknown as YNABService;
 }

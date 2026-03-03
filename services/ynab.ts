@@ -134,14 +134,15 @@ export class YNABService {
 
   toSplitwiseExpense(transaction: YNABTransaction) {
     return {
-      cost: this.outflowToSplitwiseCost(transaction.amount),
+      cost: this.toSplitwiseCost(transaction.amount),
       description: transaction.payee_name || "Unknown expense",
       details: transaction.memo || undefined,
       date: transaction.date.split("T")[0],
+      isInflow: transaction.amount > 0,
     };
   }
 
-  outflowToSplitwiseCost(amount: number) {
-    return `${(amount * -1) / 1000}`;
+  toSplitwiseCost(amount: number) {
+    return `${Math.abs(amount) / 1000}`;
   }
 }

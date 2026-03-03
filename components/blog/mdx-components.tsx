@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { MDXComponents } from "mdx/types";
+import { AccountDemo } from "./account-demo";
 
 export const mdxComponents: MDXComponents = {
   // Headings
@@ -144,4 +145,7 @@ export const mdxComponents: MDXComponents = {
       {children}
     </td>
   ),
+
+  // Custom components
+  AccountDemo,
 };

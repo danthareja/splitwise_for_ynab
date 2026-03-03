@@ -336,6 +336,46 @@ describe("services/glue", () => {
       );
     });
 
+    it("should pass isInflow to createExpense for inflow transactions", async () => {
+      const mockTransactions: YNABTransaction[] = [
+        {
+          id: "txn-inflow",
+          amount: 25000, // +$25.00 inflow
+          payee_name: "Venmo - Friend",
+          date: "2024-01-15",
+        } as YNABTransaction,
+      ];
+
+      const ynabService = createMockYNABService();
+      const splitwiseService = createMockSplitwiseService();
+
+      vi.mocked(ynabService.getServerKnowledge).mockResolvedValue(100);
+      vi.mocked(ynabService.getUnprocessedTransactions).mockResolvedValue({
+        transactions: mockTransactions,
+        serverKnowledge: 150,
+      });
+      vi.mocked(ynabService.toSplitwiseExpense).mockImplementation(
+        (transaction) =>
+          ({
+            cost: "25",
+            description: transaction.payee_name,
+            date: transaction.date,
+            isInflow: true,
+          }) as Partial<SplitwiseExpense> & { isInflow: boolean },
+      );
+      vi.mocked(splitwiseService.createExpense).mockResolvedValue({
+        id: 1,
+      } as SplitwiseExpense);
+      vi.mocked(ynabService.markTransactionProcessed).mockResolvedValue({});
+      vi.mocked(ynabService.setServerKnowledge).mockResolvedValue();
+
+      await processLatestTransactions(ynabService, splitwiseService);
+
+      expect(splitwiseService.createExpense).toHaveBeenCalledWith(
+        expect.objectContaining({ isInflow: true }),
+      );
+    });
+
     it("should update server knowledge after processing", async () => {
       const ynabService = createMockYNABService();
       const splitwiseService = createMockSplitwiseService();

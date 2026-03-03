@@ -414,6 +414,98 @@ describe("SplitwiseService", () => {
         "2:1",
       );
     });
+
+    it("should flip payer for inflows with equal split (1:1)", async () => {
+      server.use(
+        http.get(`${SPLITWISE_BASE_URL}/get_group/${groupId}`, () => {
+          return HttpResponse.json({
+            group: {
+              id: groupId,
+              members: [
+                { id: splitwiseUserId, first_name: "User", last_name: "One" },
+                { id: 222, first_name: "User", last_name: "Two" },
+              ],
+            },
+          });
+        }),
+        http.post(
+          `${SPLITWISE_BASE_URL}/create_expense`,
+          async ({ request }) => {
+            const body = await request.json();
+            expect(body).toMatchObject({
+              currency_code: "USD",
+              group_id: groupId,
+              split_equally: false, // Inflows always use custom split
+              cost: "25.00",
+              users__0__user_id: splitwiseUserId,
+              users__0__paid_share: "0", // User did NOT pay (it's an inflow)
+              users__0__owed_share: "12.50",
+              users__1__user_id: 222,
+              users__1__paid_share: "25.00", // Partner "paid"
+              users__1__owed_share: "12.50",
+            });
+            // isInflow should be stripped from the payload
+            expect(body).not.toHaveProperty("isInflow");
+            return HttpResponse.json({
+              expenses: [{ id: 1, cost: "25.00" }],
+            });
+          },
+        ),
+      );
+
+      await splitwiseService.createExpense({
+        cost: "25.00",
+        description: "Venmo - Friend",
+        date: "2024-01-15",
+        isInflow: true,
+      });
+    });
+
+    it("should flip payer and invert ratio for inflows with custom split (2:1)", async () => {
+      server.use(
+        http.get(`${SPLITWISE_BASE_URL}/get_group/${groupId}`, () => {
+          return HttpResponse.json({
+            group: {
+              id: groupId,
+              members: [
+                { id: splitwiseUserId, first_name: "User", last_name: "One" },
+                { id: 222, first_name: "User", last_name: "Two" },
+              ],
+            },
+          });
+        }),
+        http.post(
+          `${SPLITWISE_BASE_URL}/create_expense`,
+          async ({ request }) => {
+            const body = await request.json();
+            // With 2:1 ratio inverted for inflow: user owes 1/3, partner owes 2/3
+            expect(body).toMatchObject({
+              split_equally: false,
+              cost: "30.00",
+              users__0__user_id: splitwiseUserId,
+              users__0__paid_share: "0",
+              users__0__owed_share: "10.00", // 1/3 of 30 (inverted from 2/3)
+              users__1__user_id: 222,
+              users__1__paid_share: "30.00",
+              users__1__owed_share: "20.00", // 2/3 of 30 (inverted from 1/3)
+            });
+            return HttpResponse.json({
+              expenses: [{ id: 1, cost: "30.00" }],
+            });
+          },
+        ),
+      );
+
+      await splitwiseService.createExpense(
+        {
+          cost: "30.00",
+          description: "Venmo - Friend",
+          date: "2024-01-15",
+          isInflow: true,
+        },
+        "2:1",
+      );
+    });
   });
 
   describe("getUnprocessedExpenses", () => {

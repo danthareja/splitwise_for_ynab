@@ -637,13 +637,15 @@ export default async function HelpPage() {
                     What happens if I flag an inflow in YNAB?
                   </AccordionTrigger>
                   <AccordionContent>
-                    Splitwise only supports expenses (outflows), so inflows
-                    cannot sync. Flagged inflows will fail with an error.
+                    Flagged inflows (like Venmo reimbursements from friends) are
+                    synced to Splitwise as an offset, reducing what your partner
+                    owes. This is useful when you cover a group expense and
+                    friends pay you back separately.
                     <div className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-                      <strong>Tip:</strong> For shared income you receive, split
-                      the inflow inside YNAB manually. Allocate your share to
-                      your normal category and your partner&apos;s share to a
-                      reimbursements category.
+                      <strong>Example:</strong> You pay $100 for dinner for
+                      four. Two friends Venmo you $25 each. Flag the $100 charge
+                      and each Venmo inflow. Your partner&apos;s Splitwise
+                      balance will reflect only their share ($25).
                     </div>
                   </AccordionContent>
                 </AccordionItem>
