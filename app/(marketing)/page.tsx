@@ -188,7 +188,8 @@ export default async function LandingPage() {
           </div>
 
           <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
-            As an IOU ledger, not a real bank account.
+            As an IOU ledger, not a real bank account. When you settle up later,
+            it&apos;s just a transfer—no new dollars to budget.
           </p>
 
           {/* Splitwise info */}

@@ -318,7 +318,9 @@ export default async function HelpPage() {
                           it as a transfer in YNAB from Splitwise → Checking.
                           Your Splitwise account goes to zero. Because it&apos;s
                           a transfer, your category totals don&apos;t
-                          change—they still reflect your actual share.
+                          change—they still reflect your actual share. No new
+                          money to budget—just like a refund going back to its
+                          original category.
                         </p>
                       </div>
                       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -446,7 +448,9 @@ export default async function HelpPage() {
                           record it as a transfer: Splitwise → Checking. Both
                           Splitwise accounts go to zero. Because it&apos;s a
                           transfer, category totals stay the same—reflecting
-                          each person&apos;s actual share.
+                          each person&apos;s actual share. No new money to
+                          budget—just like a refund going back to its original
+                          category.
                         </p>
                       </div>
                       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -627,8 +631,16 @@ export default async function HelpPage() {
                     account in YNAB. Categorize it as a transfer to/from your
                     bank, depending whether you paid or received money.
                     <div className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-                      <strong>Note:</strong> This does not add or remove any
-                      money from your plan.
+                      <strong>Why is there no new money to budget?</strong>{" "}
+                      Think of it like a reimbursement. If you spent $100 on
+                      clothing and returned $50, that refund goes back to your
+                      Clothing category—it&apos;s not new income. Settle-ups
+                      work the same way. Each time an expense synced throughout
+                      the month, your partner&apos;s share was already
+                      categorized as an inflow right then and there. By the time
+                      you settle up, those dollars already have jobs. The
+                      settle-up is just moving money between accounts, like a
+                      transfer from savings to checking.
                     </div>
                   </AccordionContent>
                 </AccordionItem>

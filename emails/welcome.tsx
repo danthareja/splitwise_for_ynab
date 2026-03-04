@@ -56,7 +56,9 @@ export const WelcomeEmail = ({
         </Text>
         <Text style={emailStyles.text}>
           • <strong>Settling up:</strong> When you settle in Splitwise, transfer
-          funds between your accounts in YNAB.
+          funds between your accounts in YNAB. No new money to budget—your
+          categories already reflect your share from each sync, like a
+          reimbursement.
         </Text>
       </Section>
 
