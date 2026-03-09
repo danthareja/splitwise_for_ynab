@@ -18,6 +18,35 @@ import {
 } from "./email";
 import { getUserFirstName } from "@/lib/utils";
 
+const SYNC_BUDGET_MS = 270_000; // 270s total budget (leaves 30s buffer within 300s max)
+const PER_OPERATION_TIMEOUT_MS = 30_000; // 30s max for any single user/group sync
+
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  label: string,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`Timeout after ${ms / 1000}s: ${label}`));
+    }, ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+function remainingBudget(startTime: number): number {
+  return Math.max(0, SYNC_BUDGET_MS - (Date.now() - startTime));
+}
+
 // Helper type for effective Splitwise settings
 interface EffectiveSplitwiseSettings {
   groupId: string;
@@ -112,6 +141,22 @@ export async function syncAllUsers(): Promise<{
   errorCount: number;
   results: Record<string, SyncResult>;
 }> {
+  // Clean up any stale "pending" sync history records from previous timed-out runs
+  const staleCount = await prisma.syncHistory.updateMany({
+    where: {
+      status: "pending",
+      startedAt: { lt: new Date(Date.now() - 5 * 60 * 1000) }, // older than 5 minutes
+    },
+    data: {
+      status: "error",
+      errorMessage: "Sync timed out",
+      completedAt: new Date(),
+    },
+  });
+  if (staleCount.count > 0) {
+    console.log(`🧹 Cleaned up ${staleCount.count} stale pending sync records`);
+  }
+
   // Find all fully configured, enabled users with active subscriptions
   // Includes both:
   // - Primary users with their own SplitwiseSettings AND active subscription
@@ -225,14 +270,32 @@ export async function syncAllUsers(): Promise<{
   const results: Record<string, SyncResult> = {};
   let successCount = 0;
   let errorCount = 0;
+  const syncStartTime = Date.now();
 
   // Sync paired groups first (two-phase sync)
   for (const group of pairedGroups) {
+    const budget = remainingBudget(syncStartTime);
+    if (budget <= 0) {
+      console.log(`⏱️ Budget exhausted, skipping remaining paired groups`);
+      for (const user of group.users) {
+        results[user.id] = {
+          success: false,
+          error: "Sync budget exhausted, will retry next run",
+        };
+        errorCount++;
+      }
+      continue;
+    }
+
     try {
       console.log(
         `Syncing paired group ${group.groupId} with ${group.users.length} users...`,
       );
-      const groupResult = await syncPairedGroup(group);
+      const groupResult = await withTimeout(
+        syncPairedGroup(group),
+        Math.min(PER_OPERATION_TIMEOUT_MS, budget),
+        `paired group ${group.groupId}`,
+      );
 
       // Merge group results
       for (const [userId, result] of Object.entries(groupResult.results)) {
@@ -260,9 +323,24 @@ export async function syncAllUsers(): Promise<{
 
   // Sync single users (original logic)
   for (const user of singleUsers) {
+    const budget = remainingBudget(syncStartTime);
+    if (budget <= 0) {
+      console.log(`⏱️ Budget exhausted, skipping remaining single users`);
+      results[user.id] = {
+        success: false,
+        error: "Sync budget exhausted, will retry next run",
+      };
+      errorCount++;
+      continue;
+    }
+
     try {
       console.log(`Syncing single user ${user.email || user.id}...`);
-      const result = await syncSingleUser(user.id);
+      const result = await withTimeout(
+        syncSingleUser(user.id),
+        Math.min(PER_OPERATION_TIMEOUT_MS, budget),
+        `user ${user.email || user.id}`,
+      );
       results[user.id] = result;
 
       if (result.success) {

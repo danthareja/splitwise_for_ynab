@@ -6,6 +6,8 @@ import { getRateLimitOptions } from "@/lib/rate-limit";
 import { isUserFullyConfigured } from "@/app/actions/db";
 import { getSubscriptionStatus } from "@/services/stripe";
 
+export const maxDuration = 300; // 5 minutes (Hobby plan max with fluid compute)
+
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
 
