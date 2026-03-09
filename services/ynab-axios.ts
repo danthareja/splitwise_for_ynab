@@ -25,6 +25,7 @@ export function createYNABAxios({
   const axiosInstance = axios.create({
     baseURL,
     headers: { Authorization: `Bearer ${accessToken}` },
+    timeout: 60_000, // 60s per-request timeout to catch hung connections
   });
 
   axiosRetry(axiosInstance, {

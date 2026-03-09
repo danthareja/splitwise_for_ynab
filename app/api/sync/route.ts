@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/db";
 import { syncAllUsers, syncUserData } from "@/services/sync";
 import { enforcePerUserRateLimit } from "@/services/rate-limit";
@@ -7,6 +8,13 @@ import { isUserFullyConfigured } from "@/app/actions/db";
 import { getSubscriptionStatus } from "@/services/stripe";
 
 export const maxDuration = 300; // 5 minutes (Hobby plan max with fluid compute)
+
+const DAILY_SYNC_MONITOR_CONFIG = {
+  schedule: { type: "crontab" as const, value: "0 17 * * *" },
+  checkinMargin: 60, // Vercel Hobby can invoke crons anywhere within the hour
+  maxRuntime: 5, // 5 minutes matches our maxDuration
+  timezone: "UTC",
+};
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -23,8 +31,33 @@ export async function GET(request: NextRequest) {
   const token = authHeader.slice("Bearer ".length).trim();
 
   if (token === process.env.CRON_SECRET) {
-    const result = await syncAllUsers();
-    return Response.json(result);
+    const checkInId = Sentry.captureCheckIn(
+      { monitorSlug: "daily-sync", status: "in_progress" },
+      DAILY_SYNC_MONITOR_CONFIG,
+    );
+
+    try {
+      const result = await syncAllUsers();
+
+      Sentry.captureCheckIn({
+        checkInId,
+        monitorSlug: "daily-sync",
+        status: result.errorCount > 0 ? "error" : "ok",
+      });
+
+      return Response.json(result);
+    } catch (error) {
+      Sentry.captureCheckIn({
+        checkInId,
+        monitorSlug: "daily-sync",
+        status: "error",
+      });
+      Sentry.captureException(error);
+      return Response.json(
+        { success: false, error: "Internal server error" },
+        { status: 500 },
+      );
+    }
   }
 
   const user = await prisma.user.findFirst({
