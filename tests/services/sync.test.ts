@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { syncUserData, syncAllUsers } from "@/services/sync";
+import {
+  syncUserData,
+  getConfiguredUserGroups,
+  cleanupStalePendingSyncs,
+} from "@/services/sync";
 import { prisma } from "../setup";
 import {
   createFullyConfiguredUser,
@@ -144,9 +148,8 @@ describe("services/sync", () => {
     });
   });
 
-  describe("syncAllUsers", () => {
-    it("should sync all fully configured users", async () => {
-      // Create multiple users
+  describe("getConfiguredUserGroups", () => {
+    it("should find all fully configured users", async () => {
       const user1 = await createFullyConfiguredUser({
         user: { id: "all-user-1", email: "user1@test.com" },
         splitwiseSettings: { groupId: "all-group-1" },
@@ -157,12 +160,15 @@ describe("services/sync", () => {
         splitwiseSettings: { groupId: "all-group-2" },
       });
 
-      const result = await syncAllUsers();
+      const result = await getConfiguredUserGroups();
 
       expect(result.totalUsers).toBeGreaterThanOrEqual(2);
-      expect(result.successCount).toBeGreaterThan(0);
-      expect(result.results[user1.user.id]).toBeDefined();
-      expect(result.results[user2.user.id]).toBeDefined();
+      const allUserIds = [
+        ...result.singleUsers.map((u) => u.id),
+        ...result.pairedGroups.flatMap((g) => g.users.map((u) => u.id)),
+      ];
+      expect(allUserIds).toContain(user1.user.id);
+      expect(allUserIds).toContain(user2.user.id);
     });
 
     it("should skip disabled users", async () => {
@@ -170,102 +176,103 @@ describe("services/sync", () => {
         user: { id: "disabled-user", email: "disabled@test.com" },
       });
 
-      // Disable the user
       await prisma.user.update({
         where: { id: userData.user.id },
         data: { disabled: true },
       });
 
-      const result = await syncAllUsers();
+      const result = await getConfiguredUserGroups();
 
-      // Disabled user should not be included in results
-      expect(result.results[userData.user.id]).toBeUndefined();
+      const allUserIds = [
+        ...result.singleUsers.map((u) => u.id),
+        ...result.pairedGroups.flatMap((g) => g.users.map((u) => u.id)),
+      ];
+      expect(allUserIds).not.toContain(userData.user.id);
     });
 
     it("should handle paired groups correctly", async () => {
       const { user1, user2, groupId } = await createPairedGroupUsers();
 
-      const result = await syncAllUsers();
+      const result = await getConfiguredUserGroups();
 
-      // Both users in the paired group should be synced
-      expect(result.results[user1.user.id]).toBeDefined();
-      expect(result.results[user2.user.id]).toBeDefined();
+      const pairedGroup = result.pairedGroups.find(
+        (g) => g.groupId === groupId,
+      );
+      expect(pairedGroup).toBeDefined();
+      expect(pairedGroup!.users.map((u) => u.id)).toContain(user1.user.id);
+      expect(pairedGroup!.users.map((u) => u.id)).toContain(user2.user.id);
     });
 
     it("should separate paired groups from single users", async () => {
-      // Create a paired group
       const pairedGroup = await createPairedGroupUsers();
 
-      // Create a single user
       const singleUser = await createFullyConfiguredUser({
         user: { id: "single-user", email: "single@test.com" },
         splitwiseSettings: { groupId: "unique-single-group" },
       });
 
-      const result = await syncAllUsers();
+      const result = await getConfiguredUserGroups();
 
       expect(result.totalUsers).toBeGreaterThanOrEqual(3);
-      expect(result.results[pairedGroup.user1.user.id]).toBeDefined();
-      expect(result.results[pairedGroup.user2.user.id]).toBeDefined();
-      expect(result.results[singleUser.user.id]).toBeDefined();
+      expect(result.singleUsers.map((u) => u.id)).toContain(singleUser.user.id);
+      const paired = result.pairedGroups.find(
+        (g) => g.groupId === pairedGroup.groupId,
+      );
+      expect(paired).toBeDefined();
+    });
+  });
+
+  describe("cleanupStalePendingSyncs", () => {
+    it("should mark stale pending syncs as error", async () => {
+      const userData = await createFullyConfiguredUser({
+        user: { id: "stale-user", email: "stale@test.com" },
+      });
+
+      // Create a stale pending sync history
+      const staleSync = await prisma.syncHistory.create({
+        data: {
+          userId: userData.user.id,
+          status: "pending",
+          startedAt: new Date(Date.now() - 10 * 60 * 1000), // 10 minutes ago
+        },
+      });
+
+      const count = await cleanupStalePendingSyncs();
+      expect(count).toBeGreaterThanOrEqual(1);
+
+      const updated = await prisma.syncHistory.findUnique({
+        where: { id: staleSync.id },
+      });
+      expect(updated!.status).toBe("error");
+      expect(updated!.errorMessage).toBe("Sync timed out");
     });
 
-    it("should track success and error counts", async () => {
-      await createFullyConfiguredUser({
-        user: { id: "sync-user-1", email: "sync1@test.com" },
+    it("should NOT clean up recent pending syncs (less than 5 min old)", async () => {
+      const userData = await createFullyConfiguredUser({
+        user: { id: "recent-user", email: "recent@test.com" },
       });
 
-      await createFullyConfiguredUser({
-        user: { id: "sync-user-2", email: "sync2@test.com" },
+      // Create a recent pending sync history (1 minute ago)
+      const recentSync = await prisma.syncHistory.create({
+        data: {
+          userId: userData.user.id,
+          status: "pending",
+          startedAt: new Date(Date.now() - 1 * 60 * 1000),
+        },
       });
 
-      const result = await syncAllUsers();
+      const count = await cleanupStalePendingSyncs();
+      expect(count).toBe(0);
 
-      expect(result.totalUsers).toBeGreaterThanOrEqual(2);
-      expect(result.successCount + result.errorCount).toBe(result.totalUsers);
+      const unchanged = await prisma.syncHistory.findUnique({
+        where: { id: recentSync.id },
+      });
+      expect(unchanged!.status).toBe("pending");
     });
 
-    it("should continue syncing other users if one fails", async () => {
-      const user1 = await createFullyConfiguredUser({
-        user: { id: "success-user", email: "success@test.com" },
-      });
-
-      // Create a user with incomplete configuration
-      const user2 = await prisma.user.create({
-        data: {
-          id: "fail-user",
-          email: "fail@test.com",
-          apiKey: "test-api-key",
-        },
-      });
-
-      // Give it partial config to be included but fail
-      await prisma.splitwiseSettings.create({
-        data: {
-          userId: user2.id,
-          groupId: null, // This will cause sync to fail
-          groupName: "Test",
-          currencyCode: null,
-          emoji: "✅",
-        },
-      });
-
-      await prisma.ynabSettings.create({
-        data: {
-          userId: user2.id,
-          budgetId: "budget",
-          budgetName: "Budget",
-          splitwiseAccountId: null, // This will cause sync to fail
-          splitwiseAccountName: "Account",
-          manualFlagColor: "blue",
-          syncedFlagColor: "green",
-        },
-      });
-
-      const result = await syncAllUsers();
-
-      // Should have results for multiple users
-      expect(Object.keys(result.results).length).toBeGreaterThanOrEqual(1);
+    it("should return 0 when nothing is stale", async () => {
+      const count = await cleanupStalePendingSyncs();
+      expect(count).toBe(0);
     });
   });
 

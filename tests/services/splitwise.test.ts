@@ -192,6 +192,121 @@ describe("SplitwiseService", () => {
       expect(result.payee_name).toBe("Splitwise for YNAB");
       expect(result.memo).toBe("Transfer : Checking: Test");
     });
+
+    it("should include import_id for YNAB deduplication", () => {
+      const expense: SplitwiseExpense = {
+        id: 42,
+        description: "Groceries",
+        cost: "50.00",
+        date: "2024-01-15",
+        currency_code: "USD",
+        repayments: [{ from: splitwiseUserId, to: 222, amount: "25.00" }],
+      } as SplitwiseExpense;
+
+      const result = splitwiseService.toYNABTransaction(expense);
+
+      expect(result.import_id).toBeDefined();
+      expect(result.import_id).toMatch(/^sw:42:[a-f0-9]{8}$/);
+    });
+
+    it("should produce same import_id for identical expense (deduplication)", () => {
+      const expense: SplitwiseExpense = {
+        id: 42,
+        description: "Groceries",
+        cost: "50.00",
+        date: "2024-01-15",
+        currency_code: "USD",
+        repayments: [{ from: splitwiseUserId, to: 222, amount: "25.00" }],
+      } as SplitwiseExpense;
+
+      const result1 = splitwiseService.toYNABTransaction(expense);
+      const result2 = splitwiseService.toYNABTransaction(expense);
+
+      expect(result1.import_id).toBe(result2.import_id);
+    });
+
+    it("should produce different import_id when description changes", () => {
+      const expense1: SplitwiseExpense = {
+        id: 42,
+        description: "Groceries",
+        cost: "50.00",
+        date: "2024-01-15",
+        currency_code: "USD",
+        repayments: [{ from: splitwiseUserId, to: 222, amount: "25.00" }],
+      } as SplitwiseExpense;
+
+      const expense2: SplitwiseExpense = {
+        ...expense1,
+        description: "Updated Groceries",
+      };
+
+      const result1 = splitwiseService.toYNABTransaction(expense1);
+      const result2 = splitwiseService.toYNABTransaction(expense2);
+
+      expect(result1.import_id).not.toBe(result2.import_id);
+    });
+
+    it("should produce different import_id when amount changes", () => {
+      const expense1: SplitwiseExpense = {
+        id: 42,
+        description: "Groceries",
+        cost: "50.00",
+        date: "2024-01-15",
+        currency_code: "USD",
+        repayments: [{ from: splitwiseUserId, to: 222, amount: "25.00" }],
+      } as SplitwiseExpense;
+
+      const expense2: SplitwiseExpense = {
+        ...expense1,
+        repayments: [{ from: splitwiseUserId, to: 222, amount: "30.00" }],
+      };
+
+      const result1 = splitwiseService.toYNABTransaction(expense1);
+      const result2 = splitwiseService.toYNABTransaction(expense2);
+
+      expect(result1.import_id).not.toBe(result2.import_id);
+    });
+
+    it("should include import_id for custom payee transactions", () => {
+      const customService = new SplitwiseService({
+        userId,
+        knownEmoji: "✅",
+        splitwiseUserId,
+        groupId,
+        currencyCode: "USD",
+        apiKey: "test-api-key",
+        syncState: mockSyncState,
+        useDescriptionAsPayee: false,
+        customPayeeName: "My Custom Payee",
+      });
+
+      const expense: SplitwiseExpense = {
+        id: 99,
+        description: "Groceries",
+        cost: "50.00",
+        date: "2024-01-15",
+        currency_code: "USD",
+        repayments: [{ from: splitwiseUserId, to: 222, amount: "25.00" }],
+      } as SplitwiseExpense;
+
+      const result = customService.toYNABTransaction(expense);
+      expect(result.import_id).toMatch(/^sw:99:[a-f0-9]{8}$/);
+    });
+
+    it("should include import_id for invalid payee transactions", () => {
+      const expense: SplitwiseExpense = {
+        id: 77,
+        description: "Transfer : Checking",
+        details: "Test",
+        cost: "100.00",
+        date: "2024-01-15",
+        currency_code: "USD",
+        repayments: [{ from: splitwiseUserId, to: 222, amount: "50.00" }],
+      } as SplitwiseExpense;
+
+      const result = splitwiseService.toYNABTransaction(expense);
+      expect(result.import_id).toMatch(/^sw:77:[a-f0-9]{8}$/);
+    });
   });
 
   describe("toYNABAmount", () => {
@@ -571,6 +686,82 @@ describe("SplitwiseService", () => {
       );
 
       await splitwiseService.markExpenseProcessed(expense);
+    });
+
+    it("should strip stacked emojis before prepending (✅✅✅ → ✅)", async () => {
+      const expense: SplitwiseExpense = {
+        id: 456,
+        description: "✅✅✅Google Play",
+      } as SplitwiseExpense;
+
+      server.use(
+        http.post(
+          `${SPLITWISE_BASE_URL}/update_expense/456`,
+          async ({ request }) => {
+            const body = await request.json();
+            expect(body).toEqual({
+              description: "✅Google Play",
+            });
+            return HttpResponse.json({ expense: { id: 456 } });
+          },
+        ),
+      );
+
+      await splitwiseService.markExpenseProcessed(expense);
+    });
+
+    it("should handle single existing emoji without duplication", async () => {
+      const expense: SplitwiseExpense = {
+        id: 789,
+        description: "✅Already Processed",
+      } as SplitwiseExpense;
+
+      server.use(
+        http.post(
+          `${SPLITWISE_BASE_URL}/update_expense/789`,
+          async ({ request }) => {
+            const body = await request.json();
+            expect(body).toEqual({
+              description: "✅Already Processed",
+            });
+            return HttpResponse.json({ expense: { id: 789 } });
+          },
+        ),
+      );
+
+      await splitwiseService.markExpenseProcessed(expense);
+    });
+
+    it("should work with custom emoji", async () => {
+      const customService = new SplitwiseService({
+        userId,
+        knownEmoji: "🔄",
+        splitwiseUserId,
+        groupId,
+        currencyCode: "USD",
+        apiKey: "test-api-key",
+        syncState: mockSyncState,
+      });
+
+      const expense: SplitwiseExpense = {
+        id: 101,
+        description: "🔄🔄🔄Rent",
+      } as SplitwiseExpense;
+
+      server.use(
+        http.post(
+          `${SPLITWISE_BASE_URL}/update_expense/101`,
+          async ({ request }) => {
+            const body = await request.json();
+            expect(body).toEqual({
+              description: "🔄Rent",
+            });
+            return HttpResponse.json({ expense: { id: 101 } });
+          },
+        ),
+      );
+
+      await customService.markExpenseProcessed(expense);
     });
   });
 

@@ -1,4 +1,5 @@
 import { type AxiosInstance } from "axios";
+import { createHash } from "crypto";
 import * as Sentry from "@sentry/nextjs";
 import type { SyncState } from "./sync-state";
 import type { SplitwiseExpense, SplitwiseMember } from "@/types/splitwise";
@@ -197,15 +198,24 @@ export class SplitwiseService {
   }
 
   async markExpenseProcessed(expense: SplitwiseExpense) {
+    // Strip any existing known emojis to prevent stacking (e.g. ✅✅✅ → ✅)
+    const cleanDescription = expense.description.replace(
+      new RegExp(`^(${this.escapeRegex(this.knownEmoji)})+`, "u"),
+      "",
+    );
     await this.axios.post(
       `/update_expense/${expense.id}`,
       {
-        description: `${this.knownEmoji}${expense.description}`,
+        description: `${this.knownEmoji}${cleanDescription}`,
       },
       {
         _operation: "mark expense as processed",
       },
     );
+  }
+
+  private escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
   /**
@@ -293,6 +303,7 @@ export class SplitwiseService {
       payee_name: this.stripEmojis(expense.description),
       memo: expense.details,
       date: this.stripTimestamp(expense.date),
+      import_id: this.generateImportId(expense),
     };
   }
 
@@ -308,6 +319,7 @@ export class SplitwiseService {
       payee_name: this.customPayeeName,
       memo,
       date: this.stripTimestamp(expense.date),
+      import_id: this.generateImportId(expense),
     };
   }
 
@@ -323,6 +335,7 @@ export class SplitwiseService {
       payee_name: this.customPayeeName,
       memo,
       date: this.stripTimestamp(expense.date),
+      import_id: this.generateImportId(expense),
     };
   }
 
@@ -355,5 +368,13 @@ export class SplitwiseService {
 
   stripTimestamp(string: string) {
     return string.split("T")[0];
+  }
+
+  private generateImportId(expense: SplitwiseExpense): string {
+    const hash = createHash("md5")
+      .update(expense.description + this.toYNABAmount(expense))
+      .digest("hex")
+      .slice(0, 8);
+    return `sw:${expense.id}:${hash}`;
   }
 }

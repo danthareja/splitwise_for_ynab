@@ -18,35 +18,6 @@ import {
 } from "./email";
 import { getUserFirstName } from "@/lib/utils";
 
-const SYNC_BUDGET_MS = 270_000; // 270s total budget (leaves 30s buffer within 300s max)
-const PER_OPERATION_TIMEOUT_MS = 30_000; // 30s max for any single user/group sync
-
-function withTimeout<T>(
-  promise: Promise<T>,
-  ms: number,
-  label: string,
-): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => {
-      reject(new Error(`Timeout after ${ms / 1000}s: ${label}`));
-    }, ms);
-    promise.then(
-      (value) => {
-        clearTimeout(timer);
-        resolve(value);
-      },
-      (error) => {
-        clearTimeout(timer);
-        reject(error);
-      },
-    );
-  });
-}
-
-function remainingBudget(startTime: number): number {
-  return Math.max(0, SYNC_BUDGET_MS - (Date.now() - startTime));
-}
-
 // Helper type for effective Splitwise settings
 interface EffectiveSplitwiseSettings {
   groupId: string;
@@ -119,7 +90,7 @@ async function getEffectiveSplitwiseSettings(
   return null;
 }
 
-interface SyncResult {
+export interface SyncResult {
   success: boolean;
   syncHistoryId?: string;
   error?: string;
@@ -127,7 +98,7 @@ interface SyncResult {
   syncedExpenses?: SyncedItem[];
 }
 
-interface PairedGroup {
+export interface PairedGroup {
   groupId: string;
   users: Array<{
     id: string;
@@ -135,13 +106,7 @@ interface PairedGroup {
   }>;
 }
 
-export async function syncAllUsers(): Promise<{
-  totalUsers: number;
-  successCount: number;
-  errorCount: number;
-  results: Record<string, SyncResult>;
-}> {
-  // Clean up any stale "pending" sync history records from previous timed-out runs
+export async function cleanupStalePendingSyncs() {
   const staleCount = await prisma.syncHistory.updateMany({
     where: {
       status: "pending",
@@ -156,7 +121,14 @@ export async function syncAllUsers(): Promise<{
   if (staleCount.count > 0) {
     console.log(`🧹 Cleaned up ${staleCount.count} stale pending sync records`);
   }
+  return staleCount.count;
+}
 
+export async function getConfiguredUserGroups(): Promise<{
+  pairedGroups: PairedGroup[];
+  singleUsers: Array<{ id: string; email: string | null }>;
+  totalUsers: number;
+}> {
   // Find all fully configured, enabled users with active subscriptions
   // Includes both:
   // - Primary users with their own SplitwiseSettings AND active subscription
@@ -267,103 +239,158 @@ export async function syncAllUsers(): Promise<{
     `Found ${pairedGroups.length} paired groups and ${singleUsers.length} single users`,
   );
 
-  const results: Record<string, SyncResult> = {};
+  return { pairedGroups, singleUsers, totalUsers: configuredUsers.length };
+}
+
+export async function dispatchFanOutSync() {
+  // 1. Clean up stale pending records
+  await cleanupStalePendingSyncs();
+
+  // 2. Get all configured users grouped by Splitwise group
+  const { pairedGroups, singleUsers, totalUsers } =
+    await getConfiguredUserGroups();
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const headers = {
+    Authorization: `Bearer ${process.env.CRON_SECRET}`,
+    "Content-Type": "application/json",
+  };
+
+  // 3. Dispatch all syncs in parallel via HTTP to child endpoints
+  // Each child becomes its own Vercel function invocation with its own 300s budget
+  const dispatches: Promise<{
+    type: "user" | "group";
+    id: string;
+    userIds: string[];
+    result: { success: boolean; errorCount?: number; error?: string };
+  }>[] = [];
+
+  for (const group of pairedGroups) {
+    dispatches.push(
+      fetch(`${baseUrl}/api/sync/group/${group.groupId}`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          userIds: group.users.map((u) => u.id),
+        }),
+      })
+        .then(async (res) => {
+          const data = await res.json();
+          const errorCount = data.results
+            ? Object.values(
+                data.results as Record<string, { success: boolean }>,
+              ).filter((r) => !r.success).length
+            : data.success
+              ? 0
+              : group.users.length;
+          return {
+            type: "group" as const,
+            id: group.groupId,
+            userIds: group.users.map((u) => u.id),
+            result: { success: data.success, errorCount },
+          };
+        })
+        .catch((error) => {
+          Sentry.captureException(error, {
+            extra: { groupId: group.groupId, context: "fan-out dispatch" },
+          });
+          return {
+            type: "group" as const,
+            id: group.groupId,
+            userIds: group.users.map((u) => u.id),
+            result: {
+              success: false,
+              errorCount: group.users.length,
+              error: error instanceof Error ? error.message : "Dispatch failed",
+            },
+          };
+        }),
+    );
+  }
+
+  for (const user of singleUsers) {
+    dispatches.push(
+      fetch(`${baseUrl}/api/sync/user/${user.id}`, {
+        method: "GET",
+        headers,
+      })
+        .then(async (res) => {
+          const data = await res.json();
+          return {
+            type: "user" as const,
+            id: user.id,
+            userIds: [user.id],
+            result: {
+              success: data.success,
+              errorCount: data.success ? 0 : 1,
+            },
+          };
+        })
+        .catch((error) => {
+          Sentry.captureException(error, {
+            extra: { userId: user.id, context: "fan-out dispatch" },
+          });
+          return {
+            type: "user" as const,
+            id: user.id,
+            userIds: [user.id],
+            result: {
+              success: false,
+              errorCount: 1,
+              error: error instanceof Error ? error.message : "Dispatch failed",
+            },
+          };
+        }),
+    );
+  }
+
+  // 4. Wait for all children to finish
+  const settled = await Promise.allSettled(dispatches);
+
+  // 5. Aggregate results
   let successCount = 0;
   let errorCount = 0;
-  const syncStartTime = Date.now();
+  const results: Record<string, { success: boolean; error?: string }> = {};
 
-  // Sync paired groups first (two-phase sync)
-  for (const group of pairedGroups) {
-    const budget = remainingBudget(syncStartTime);
-    if (budget <= 0) {
-      console.log(`⏱️ Budget exhausted, skipping remaining paired groups`);
-      for (const user of group.users) {
-        results[user.id] = {
-          success: false,
-          error: "Sync budget exhausted, will retry next run",
-        };
-        errorCount++;
-      }
-      continue;
+  for (const outcome of settled) {
+    const dispatch =
+      outcome.status === "fulfilled"
+        ? outcome.value
+        : {
+            type: "unknown" as const,
+            id: "unknown",
+            userIds: [] as string[],
+            result: {
+              success: false,
+              errorCount: 1,
+              error: "Dispatch promise rejected unexpectedly",
+            },
+          };
+
+    if (dispatch.result.success) {
+      successCount += dispatch.userIds.length;
+    } else {
+      errorCount += dispatch.result.errorCount || 1;
+      successCount +=
+        dispatch.userIds.length - (dispatch.result.errorCount || 1);
     }
 
-    try {
-      console.log(
-        `Syncing paired group ${group.groupId} with ${group.users.length} users...`,
-      );
-      const groupResult = await withTimeout(
-        syncPairedGroup(group),
-        Math.min(PER_OPERATION_TIMEOUT_MS, budget),
-        `paired group ${group.groupId}`,
-      );
-
-      // Merge group results
-      for (const [userId, result] of Object.entries(groupResult.results)) {
-        results[userId] = result;
-        if (result.success) {
-          successCount++;
-        } else {
-          errorCount++;
-        }
-      }
-    } catch (error) {
-      console.error(`Error syncing paired group ${group.groupId}:`, error);
-      Sentry.captureException(error);
-
-      // Mark all users in the group as failed
-      for (const user of group.users) {
-        results[user.id] = {
-          success: false,
-          error: error instanceof Error ? error.message : "Unknown error",
-        };
-        errorCount++;
-      }
+    for (const userId of dispatch.userIds) {
+      results[userId] = {
+        success: dispatch.result.success,
+        error: dispatch.result.error,
+      };
     }
   }
 
-  // Sync single users (original logic)
-  for (const user of singleUsers) {
-    const budget = remainingBudget(syncStartTime);
-    if (budget <= 0) {
-      console.log(`⏱️ Budget exhausted, skipping remaining single users`);
-      results[user.id] = {
-        success: false,
-        error: "Sync budget exhausted, will retry next run",
-      };
-      errorCount++;
-      continue;
-    }
+  successCount = Math.max(0, successCount);
 
-    try {
-      console.log(`Syncing single user ${user.email || user.id}...`);
-      const result = await withTimeout(
-        syncSingleUser(user.id),
-        Math.min(PER_OPERATION_TIMEOUT_MS, budget),
-        `user ${user.email || user.id}`,
-      );
-      results[user.id] = result;
-
-      if (result.success) {
-        successCount++;
-      } else {
-        errorCount++;
-      }
-    } catch (error) {
-      console.error(
-        `Error syncing single user ${user.email || user.id}:`,
-        error,
-      );
-      Sentry.captureException(error);
-      results[user.id] = {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-      errorCount++;
-    }
-  }
+  console.log(
+    `Fan-out sync complete: ${totalUsers} users, ${successCount} success, ${errorCount} errors`,
+  );
 
   return {
-    totalUsers: configuredUsers.length,
+    totalUsers,
     successCount,
     errorCount,
     results,
@@ -450,7 +477,14 @@ export async function syncUserData(userId: string): Promise<SyncResult> {
   return await syncSingleUser(userId);
 }
 
-async function syncSingleUser(userId: string): Promise<SyncResult> {
+export async function syncSingleUser(userId: string): Promise<SyncResult> {
+  return Sentry.startSpan(
+    { name: "sync.single-user", attributes: { userId } },
+    () => _syncSingleUser(userId),
+  );
+}
+
+async function _syncSingleUser(userId: string): Promise<SyncResult> {
   console.log(`🔄 Starting single user sync for user: ${userId}`);
 
   // Create a sync history record
@@ -755,7 +789,7 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
       }
     } else {
       console.error("Sync error:", error);
-      Sentry.captureException(error);
+      Sentry.captureException(error, { extra: { userId } });
 
       const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -786,7 +820,17 @@ async function syncSingleUser(userId: string): Promise<SyncResult> {
   }
 }
 
-async function syncPairedGroup(group: PairedGroup): Promise<{
+export async function syncPairedGroup(group: PairedGroup): Promise<{
+  success: boolean;
+  results: Record<string, SyncResult>;
+}> {
+  return Sentry.startSpan(
+    { name: "sync.paired-group", attributes: { groupId: group.groupId } },
+    () => _syncPairedGroup(group),
+  );
+}
+
+async function _syncPairedGroup(group: PairedGroup): Promise<{
   success: boolean;
   results: Record<string, SyncResult>;
 }> {
@@ -932,7 +976,7 @@ async function syncPairedGroup(group: PairedGroup): Promise<{
     };
   } catch (error) {
     console.error(`Error syncing paired group ${group.groupId}:`, error);
-    Sentry.captureException(error);
+    Sentry.captureException(error, { extra: { groupId: group.groupId } });
 
     // Mark all users as failed if we haven't processed them yet
     for (const user of group.users) {
@@ -952,6 +996,17 @@ async function syncPairedGroup(group: PairedGroup): Promise<{
 }
 
 async function syncUserPhase(
+  userId: string,
+  phase: "ynab_to_splitwise" | "splitwise_to_ynab",
+  existingSyncHistoryId?: string,
+): Promise<SyncResult> {
+  return Sentry.startSpan(
+    { name: `sync.phase.${phase}`, attributes: { userId, phase } },
+    () => _syncUserPhase(userId, phase, existingSyncHistoryId),
+  );
+}
+
+async function _syncUserPhase(
   userId: string,
   phase: "ynab_to_splitwise" | "splitwise_to_ynab",
   existingSyncHistoryId?: string,
@@ -1312,7 +1367,7 @@ async function syncUserPhase(
       }
     } else {
       console.error(`Sync error for user ${userId}, phase ${phase}:`, error);
-      Sentry.captureException(error);
+      Sentry.captureException(error, { extra: { userId, phase } });
 
       await sendSyncErrorEmail({
         to: errorUser?.email || "support@splitwiseforynab.com",

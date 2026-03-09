@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/db";
-import { syncAllUsers, syncUserData } from "@/services/sync";
+import { dispatchFanOutSync, syncUserData } from "@/services/sync";
 import { enforcePerUserRateLimit } from "@/services/rate-limit";
 import { getRateLimitOptions } from "@/lib/rate-limit";
 import { isUserFullyConfigured } from "@/app/actions/db";
@@ -31,27 +31,38 @@ export async function GET(request: NextRequest) {
   const token = authHeader.slice("Bearer ".length).trim();
 
   if (token === process.env.CRON_SECRET) {
-    const checkInId = Sentry.captureCheckIn(
-      { monitorSlug: "daily-sync", status: "in_progress" },
-      DAILY_SYNC_MONITOR_CONFIG,
-    );
+    // Only fire Sentry cron check-ins for actual Vercel cron invocations
+    const isVercelCron = request.headers
+      .get("user-agent")
+      ?.includes("vercel-cron");
+
+    const checkInId = isVercelCron
+      ? Sentry.captureCheckIn(
+          { monitorSlug: "daily-sync", status: "in_progress" },
+          DAILY_SYNC_MONITOR_CONFIG,
+        )
+      : undefined;
 
     try {
-      const result = await syncAllUsers();
+      const result = await dispatchFanOutSync();
 
-      Sentry.captureCheckIn({
-        checkInId,
-        monitorSlug: "daily-sync",
-        status: result.errorCount > 0 ? "error" : "ok",
-      });
+      if (isVercelCron && checkInId) {
+        Sentry.captureCheckIn({
+          checkInId,
+          monitorSlug: "daily-sync",
+          status: result.errorCount > 0 ? "error" : "ok",
+        });
+      }
 
       return Response.json(result);
     } catch (error) {
-      Sentry.captureCheckIn({
-        checkInId,
-        monitorSlug: "daily-sync",
-        status: "error",
-      });
+      if (isVercelCron && checkInId) {
+        Sentry.captureCheckIn({
+          checkInId,
+          monitorSlug: "daily-sync",
+          status: "error",
+        });
+      }
       Sentry.captureException(error);
       return Response.json(
         { success: false, error: "Internal server error" },

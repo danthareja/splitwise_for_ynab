@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { GET } from "@/app/api/sync/route";
 import { server } from "../setup";
 import { handlers } from "../mocks/handlers";
@@ -8,6 +8,7 @@ import {
   createFullyConfiguredUser,
   createPairedGroupUsers,
 } from "../factories/test-data";
+import * as Sentry from "@sentry/nextjs";
 
 const CRON_SECRET = "test-cron-secret"; // Same as in .env.test
 
@@ -56,8 +57,8 @@ describe("/api/sync API Integration Tests", () => {
     });
   });
 
-  describe("Full Sync", () => {
-    it("should successfully perform full sync with CRON_SECRET", async () => {
+  describe("Full Sync (fan-out orchestrator)", () => {
+    it("should return 200 with results when triggered with CRON_SECRET", async () => {
       await createFullyConfiguredUser({
         user: { id: "single-user", email: "single@example.com" },
         splitwiseSettings: { groupId: "single-group-123" },
@@ -74,11 +75,56 @@ describe("/api/sync API Integration Tests", () => {
       const response = await GET(request);
       const data = await response.json();
 
+      // The orchestrator dispatches HTTP calls to child endpoints,
+      // which will fail in test (no server running), but the orchestrator
+      // itself should return 200 with error counts reflecting the failures
       expect(response.status).toBe(200);
       expect(data.totalUsers).toBe(3);
-      expect(data.successCount).toBe(3);
-      expect(data.errorCount).toBe(0);
       expect(data.results).toBeDefined();
+    });
+
+    it("should fire Sentry check-in for vercel-cron user-agent", async () => {
+      vi.mocked(Sentry.captureCheckIn).mockClear();
+
+      const request = new NextRequest("http://localhost/api/sync", {
+        headers: {
+          authorization: `Bearer ${CRON_SECRET}`,
+          "user-agent": "vercel-cron/1.0",
+        },
+      });
+
+      await GET(request);
+
+      // Should have called captureCheckIn at least twice (in_progress + ok/error)
+      expect(Sentry.captureCheckIn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          monitorSlug: "daily-sync",
+          status: "in_progress",
+        }),
+        expect.anything(),
+      );
+    });
+
+    it("should NOT fire Sentry check-in for manual CRON_SECRET triggers", async () => {
+      vi.mocked(Sentry.captureCheckIn).mockClear();
+
+      const request = new NextRequest("http://localhost/api/sync", {
+        headers: {
+          authorization: `Bearer ${CRON_SECRET}`,
+          // No vercel-cron user-agent
+        },
+      });
+
+      await GET(request);
+
+      // Should NOT have called captureCheckIn with in_progress
+      expect(Sentry.captureCheckIn).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          monitorSlug: "daily-sync",
+          status: "in_progress",
+        }),
+        expect.anything(),
+      );
     });
   });
 

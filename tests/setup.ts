@@ -10,6 +10,9 @@ export const prisma = new PrismaClient({ adapter });
 
 vi.mock("@sentry/nextjs", () => ({
   captureException: vi.fn(),
+  captureMessage: vi.fn(),
+  captureCheckIn: vi.fn().mockReturnValue("mock-check-in-id"),
+  startSpan: vi.fn((_opts: unknown, callback: () => unknown) => callback()),
 }));
 
 vi.mock("next-auth", () => ({
