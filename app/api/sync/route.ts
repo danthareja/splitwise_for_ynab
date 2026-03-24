@@ -12,7 +12,7 @@ export const maxDuration = 300; // 5 minutes (Hobby plan max with fluid compute)
 const DAILY_SYNC_MONITOR_CONFIG = {
   schedule: { type: "crontab" as const, value: "0 17 * * *" },
   checkinMargin: 60, // Vercel Hobby can invoke crons anywhere within the hour
-  maxRuntime: 5, // 5 minutes matches our maxDuration
+  maxRuntime: 10, // Buffer beyond Vercel's 5-min maxDuration for check-in delivery
   timezone: "UTC",
 };
 
