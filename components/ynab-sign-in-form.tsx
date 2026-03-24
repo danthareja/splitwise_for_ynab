@@ -1,38 +1,35 @@
 "use client";
 
 import { useState } from "react";
+import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
 interface YnabSignInFormProps {
-  signInAction: () => Promise<void>;
+  callbackUrl: string;
 }
 
-export function YnabSignInForm({ signInAction }: YnabSignInFormProps) {
+export function YnabSignInForm({ callbackUrl }: YnabSignInFormProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   return (
-    <form
-      action={async () => {
+    <Button
+      className="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium cursor-pointer rounded-full"
+      size="lg"
+      disabled={isLoading}
+      onClick={async () => {
         setIsLoading(true);
-        await signInAction();
+        await signIn("ynab", { callbackUrl });
       }}
     >
-      <Button
-        className="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium cursor-pointer rounded-full"
-        size="lg"
-        type="submit"
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Connecting to YNAB...
-          </>
-        ) : (
-          "Sign in with YNAB"
-        )}
-      </Button>
-    </form>
+      {isLoading ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Connecting to YNAB...
+        </>
+      ) : (
+        "Sign in with YNAB"
+      )}
+    </Button>
   );
 }

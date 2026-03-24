@@ -11,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { signIn } from "@/auth";
 import { auth } from "@/auth";
 import { YnabSignInForm } from "@/components/ynab-sign-in-form";
 import type { Metadata } from "next";
@@ -66,12 +65,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <YnabSignInForm
-              signInAction={async () => {
-                "use server";
-                await signIn("ynab", { redirectTo: callbackUrl });
-              }}
-            />
+            <YnabSignInForm callbackUrl={callbackUrl} />
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-gray-200 dark:border-gray-800" />

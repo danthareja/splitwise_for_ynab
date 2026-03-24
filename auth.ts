@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@/services/auth-prisma-adapter";
 import { prisma } from "@/db";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  debug: process.env.NODE_ENV === "development",
   adapter: PrismaAdapter(prisma),
   logger: {
     error(error) {
@@ -14,6 +15,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   pages: {
     signIn: "/auth/signin",
+    error: "/auth/error",
+  },
+  callbacks: {
+    async signIn({ account, profile }) {
+      const p = profile as Record<string, unknown> | undefined;
+      const error = p?.error as { name?: string; detail?: string } | undefined;
+      if (account?.provider === "ynab" && error) {
+        const name = error.name ?? "unknown";
+        const detail = error.detail ?? "";
+        return `/auth/error?error=YnabApiError&name=${encodeURIComponent(name)}&detail=${encodeURIComponent(detail)}`;
+      }
+      return true;
+    },
   },
   providers: [
     {
@@ -30,6 +44,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         url: "https://api.ynab.com/v1/user",
       },
       profile(profile) {
+        if (profile.error) {
+          return { id: "ynab-error", email: "" };
+        }
         return {
           id: profile.data.user.id,
           email: `user-${profile.data.user.id}@ynab-generated.com`,
