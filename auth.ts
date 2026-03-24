@@ -1,9 +1,17 @@
 import NextAuth from "next-auth";
+import * as Sentry from "@sentry/nextjs";
 import { PrismaAdapter } from "@/services/auth-prisma-adapter";
 import { prisma } from "@/db";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  logger: {
+    error(error) {
+      Sentry.captureException(error, {
+        tags: { component: "auth" },
+      });
+    },
+  },
   pages: {
     signIn: "/auth/signin",
   },
@@ -12,6 +20,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       id: "ynab",
       name: "YNAB",
       type: "oauth",
+      checks: ["state"],
       authorization: {
         url: "https://app.ynab.com/oauth/authorize",
         params: { scope: "" },
@@ -31,6 +40,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       id: "splitwise",
       name: "Splitwise",
       type: "oauth",
+      checks: ["state"],
       authorization: {
         url: "https://secure.splitwise.com/oauth/authorize",
         params: { scope: "" },
