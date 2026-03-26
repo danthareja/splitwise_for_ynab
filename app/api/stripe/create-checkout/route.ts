@@ -40,9 +40,9 @@ export async function POST(request: NextRequest) {
   });
 
   // Skip trial for returning users (they've had a subscription/trial before)
-  const hadPreviousSubscription = !!(
-    user?.stripeCustomerId || user?.trialEndsAt
-  );
+  // Note: only check trialEndsAt, not stripeCustomerId — a customer ID gets
+  // created at first checkout attempt even if the user abandons before paying
+  const hadPreviousSubscription = !!user?.trialEndsAt;
 
   const checkoutSession = await createCheckoutSession({
     userId: session.user.id,
