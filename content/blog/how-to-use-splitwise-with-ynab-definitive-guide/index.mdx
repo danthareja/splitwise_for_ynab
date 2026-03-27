@@ -1,0 +1,254 @@
+---
+title: "How to Use Splitwise with YNAB: The Definitive Guide"
+description: "Everything you need to know about using Splitwise and YNAB together. Manual workflows, automation options, and the phantom account strategy."
+date: "2026-02-04"
+author:
+  name: "Dan Thareja"
+  image: "/images/authors/dan.png"
+  title: "Founder"
+coverImage: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=630&fit=crop"
+published: true
+---
+
+Splitwise and YNAB are two of the best personal finance tools out there. But they don't talk to each other.
+
+If you use both, you've felt the friction. Expenses tracked in Splitwise that aren't reflected in your budget. Categories that show double what you actually spent. Settle-ups that you have no idea how to categorize. Every YNAB user who splits expenses with a partner, roommate, or friend hits this wall eventually.
+
+I've spent the last four years solving this problem. First for myself, then by building a product that automates it. This guide covers every method I've found for bridging the gap between Splitwise and YNAB, from the simplest to the most comprehensive.
+
+## Why Use Both?
+
+YNAB is the best budgeting tool I've ever used. It tracks every dollar, gives every dollar a job, and shows you exactly where your money goes. For personal finances, nothing else comes close.
+
+Splitwise is the best expense-splitting tool I've ever used. It tracks who owes what between people, handles uneven splits gracefully, and keeps a running balance so you don't have to settle up after every dinner.
+
+The problem is what happens in the space between them.
+
+When you pay $150 for groceries and split it 50/50 in Splitwise, YNAB still shows $150 in your Groceries category. When your partner pays $100 for utilities and adds it to Splitwise, YNAB doesn't know about it at all. And when you eventually settle up with a $200 Venmo transfer, YNAB has no idea which categories that money represents.
+
+You end up with two separate systems that each tell half the story. Your budget is inflated. Your spending reports are fiction. And every month, you lose a little more motivation to keep both apps up to date.
+
+You need a way to connect them. There are five approaches, ranging from dead simple to fully automated.
+
+## The Problem: Splitwise Settle-Ups Are Budget Black Holes
+
+Before we get into solutions, let's name the core issue. It's not just that YNAB and Splitwise don't sync. It's that the most obvious way to connect them (recording settle-ups) doesn't actually work.
+
+Think about a typical month. You and your partner split groceries, dining out, utilities, subscriptions, household supplies, and the occasional Target run. By the end of the month, there might be 30 or 40 individual expenses in Splitwise across a dozen different categories.
+
+Then you settle up. Your partner Venmos you $247.50.
+
+Where do you categorize that in YNAB? "Splitwise" isn't a real category. It doesn't tell you anything about what you actually spent. That $247.50 represents $75 in groceries, $40 in dining out, $32 in utilities, $50 in subscriptions, and a bunch of other small expenses. But YNAB just sees one lump sum.
+
+If you put it in "Reimbursements" or "Splitwise Settle-Up," you've created a budget black hole. Money goes in. Money comes out. You have no visibility into what happened in between.
+
+The real solution isn't to record settle-ups better. It's to not rely on settle-ups at all. Instead, you track each shared expense individually in YNAB as it happens, adjusting the category to reflect only your share. That way, your Groceries category always shows what you actually spent on groceries, and the settle-up is just a simple transfer between accounts.
+
+Every method below is some version of this idea. They differ in how much work they ask of you.
+
+## Method 1: Manual Entry (No Integration)
+
+The simplest approach. No tools, no automation, no setup.
+
+Every time you add an expense to Splitwise, you also create a corresponding transaction in YNAB. If you paid $150 for groceries split 50/50, you'd record the full $150 outflow in YNAB (or let it import from your bank), then create a separate $75 inflow categorized back to Groceries to offset your partner's share.
+
+When your partner pays for something, you check Splitwise and manually enter your share as an outflow in YNAB.
+
+**Pros:**
+
+- Free
+- No technical setup
+- You understand exactly what every transaction represents
+
+**Cons:**
+
+- Double entry for every single shared expense
+- Easy to fall behind, especially during busy weeks
+- Miss one transaction and your accounts won't reconcile
+- Your partner's expenses require you to check Splitwise and manually enter each one
+
+**Good for:** People who share two or three expenses per month. At that volume, the overhead is small enough to stay manageable.
+
+At higher volumes, it breaks down fast. I tried this approach when my partner and I first moved in together. We shared maybe 10 to 12 expenses per week. I lasted about three weeks before the backlog became unbearable.
+
+## Method 2: Zapier / Make Automations
+
+Zapier and Make (formerly Integromat) both offer Splitwise triggers and YNAB actions. You can build a workflow that automatically creates a YNAB transaction whenever a new expense appears in Splitwise.
+
+This sounds perfect on paper. In practice, it solves half the problem.
+
+The basic integration creates a transaction in YNAB for your share of each Splitwise expense. That part works. But it doesn't handle the category adjustment math that makes your budget accurate. If you paid for a $150 grocery bill and split it 50/50, Zapier can create a $75 transaction, but it doesn't know to offset the original $150 that already imported from your bank. You end up with duplicate data or incorrect category totals.
+
+You can build more sophisticated Zaps with filters and multi-step workflows, but you're essentially programming your own sync engine in a visual tool that wasn't designed for this level of complexity. And you're paying Zapier prices for the privilege.
+
+**Pros:**
+
+- Eliminates some manual data entry
+- Runs automatically in the background
+
+**Cons:**
+
+- Doesn't handle the phantom account math (adjusting categories with matching inflows and outflows)
+- Duplicate transactions if your bank also imports the expense
+- Requires ongoing maintenance as either API changes
+- Zapier's paid plans start at $19.99/month for multi-step workflows
+
+**Good for:** Technical users who want partial automation and are comfortable building custom workflows. Be prepared to iterate on it.
+
+## Method 3: Open Source GitHub Tools
+
+Several open source projects on GitHub attempt to bridge Splitwise and YNAB. They typically run as scripts that pull expenses from the Splitwise API and push transactions into YNAB via its API.
+
+Some of these are genuinely well-built. The best ones understand the phantom account concept and create proper adjustment transactions. The trade-off is that they require developer skills to set up and maintain.
+
+You'll need to generate API keys for both Splitwise and YNAB, configure the script with your account IDs and group details, and run it on a schedule (usually via a cron job on your own server or a scheduled GitHub Action).
+
+**Pros:**
+
+- Free
+- Fully customizable if you can read the code
+- Some implementations handle the phantom account math correctly
+
+**Cons:**
+
+- Requires technical setup: API keys, environment variables, a server or scheduled task
+- No customer support. If something breaks, you debug it yourself.
+- May fall behind when Splitwise or YNAB change their APIs
+- Most are maintained by a single developer and may be abandoned
+
+**Good for:** Developers who want full control and are comfortable maintaining a personal automation pipeline. If you enjoy tinkering with code on the weekends, this can work well. If the words "cron job" make you uncomfortable, skip to the next method.
+
+## Method 4: The Phantom Account (Manual)
+
+This is the conceptual breakthrough that makes everything else possible. If you only read one section of this guide, make it this one.
+
+The idea: Create a cash account in YNAB called "Splitwise." It's not a real bank account. It's an IOU ledger that mirrors your Splitwise balance. When your Splitwise balance says you're owed $75, your YNAB Splitwise account should also show $75. When you settle up, both go to zero.
+
+Here's the key insight. Every shared expense generates two transactions in YNAB: the real one (money leaving your bank account or appearing in your partner's Splitwise) and an adjustment transaction in the phantom account that corrects the category.
+
+**When you pay for something shared:**
+
+You buy $150 of groceries. You split it 50/50 in Splitwise. In YNAB, the $150 outflow already hit your checking account. Now create a $75 inflow in your Splitwise phantom account, categorized to Groceries.
+
+Result: Groceries shows -$75 (the $150 outflow plus the $75 inflow). Your Splitwise account shows +$75 (what you're owed).
+
+**When your partner pays for something shared:**
+
+Your partner pays $100 for electricity, split 50/50 in Splitwise. In YNAB, create a $50 outflow from your Splitwise phantom account, categorized to Utilities.
+
+Result: Utilities shows -$50 (your share). Your Splitwise account shows -$50 (what you owe).
+
+**When you settle up:**
+
+Record it as a transfer between your checking account and your Splitwise phantom account. No categories involved. The categories were already handled by each individual adjustment throughout the month.
+
+I wrote a [full walkthrough of this strategy](/blog/the-phantom-account-how-to-actually-use-splitwise-with-ynab) with detailed examples if you want the deep dive.
+
+**Pros:**
+
+- Your categories are always accurate, reflecting only your share of every expense
+- Settle-ups are simple transfers, no complicated split transactions
+- Your Splitwise account in YNAB always matches the real Splitwise app
+- Works with any split ratio, not just 50/50
+
+**Cons:**
+
+- Requires manual entry of every adjustment transaction
+- You need to track your partner's Splitwise expenses and enter them in YNAB yourself
+- One missed transaction and the whole thing falls out of sync
+- Realistically takes 15 to 20 minutes per week for an active household
+
+**Good for:** Detail-oriented budgeters with moderate shared expense volume who want perfect accuracy and don't mind the discipline. If you enjoy the ritual of maintaining your budget, this can be satisfying work.
+
+If you're not sure you'd keep up with it, be honest with yourself. The phantom account strategy only works if you do it consistently. A phantom account that's three weeks behind is worse than no phantom account at all, because now you have a third source of truth that disagrees with the other two.
+
+## Method 5: The Phantom Account, Automated
+
+Same concept as Method 4. Zero manual entry.
+
+[Splitwise for YNAB](/) automates the entire phantom account workflow. You do one thing: flag a transaction in YNAB with a color. The app handles everything else.
+
+Here's what happens on the next sync after you flag a $150 grocery transaction with your blue flag (which you've configured as your 50/50 split):
+
+1. The app creates a $150 expense in Splitwise, split evenly with your partner
+2. The app creates a $75 inflow in your YNAB phantom Splitwise account, categorized to Groceries
+3. Your partner gets notified in the Splitwise app
+
+Your Groceries category now shows $75, not $150. Your Splitwise account balance matches the real app. Done. Syncs run daily and you can trigger one manually anytime.
+
+And it works in both directions. When your partner adds an expense to Splitwise, the app picks it up and creates the corresponding outflow in your YNAB phantom account automatically. You don't need to check Splitwise or enter anything manually.
+
+If both you and your partner use YNAB, both budgets update from a single flag. One subscription covers both partners.
+
+I wrote a [detailed comparison of manual vs. automated phantom accounts](/blog/splitwise-for-ynab-vs-manual-phantom-accounts) if you want to see the side-by-side breakdown.
+
+**Pros:**
+
+- Categories are always accurate, reflecting only your share
+- Your partner's expenses appear in your budget automatically
+- No reconciliation needed. The app keeps both systems in sync.
+- Works with 50/50 splits, custom ratios, and uneven splits
+- One subscription covers both partners
+
+**Cons:**
+
+- Costs $3.99/month (or $29/year, which is $2.42/month)
+- You're trusting a third-party app with your YNAB and Splitwise API access
+
+**Good for:** Couples and roommates with regular shared expenses who want accurate budgets without the ongoing work. If you value your time at basically any nonzero hourly rate, and you share more than a handful of expenses per month, the math works out.
+
+## Which Method Should You Choose?
+
+Here's a quick decision tree.
+
+**Do you share fewer than 5 expenses per month?** Manual entry (Method 1) is probably fine. The overhead is minimal, and you don't need any tools beyond the two apps you already use.
+
+**Are you a developer who wants free and customizable?** Check out the open source tools on GitHub (Method 3). You'll spend an afternoon setting things up, but after that it mostly runs itself. Mostly.
+
+**Do you want accurate categories without thinking about it?** You want the phantom account strategy (Methods 4 or 5). The concept is what matters. Manual or automated is a question of how much time you want to spend on it.
+
+**Do you share 10 or more expenses per month and value your sanity?** The automated approach (Method 5) pays for itself in time saved. At 15 to 20 minutes per week saved, $3.99/month works out to roughly $0.05 per minute of your time. That's generous.
+
+**Still not sure?** Start with Method 4 (manual phantom account) for a month. You'll quickly learn two things: whether the phantom account concept clicks for you, and whether you have the discipline to maintain it by hand. If the concept clicks but the discipline doesn't, you know what to do.
+
+## Common Questions
+
+**"What happens when I settle up in Splitwise?"**
+
+The settle-up is just a transfer between your checking account and your phantom Splitwise account. No categories needed. Every expense was already categorized throughout the month. I wrote a [complete guide to handling settle-ups](/blog/how-to-handle-settle-ups-ynab-splitwise) if you want the full walkthrough.
+
+**"What about uneven splits?"**
+
+The phantom account handles any split ratio. If you split rent 60/40 instead of 50/50, the adjustment transaction reflects that. Splitwise for YNAB supports this too. You can configure different flag colors for different split ratios. I covered this in detail in the [uneven splits guide](/blog/handling-uneven-splits-in-ynab).
+
+**"What if only one of us uses YNAB?"**
+
+Totally fine. That's actually the more common setup. Your partner just needs a free Splitwise account. You get accurate categories in your budget. They get expense notifications in Splitwise. Everyone's happy.
+
+**"What if friends reimburse us for a group expense?"**
+
+Say you pay $200 for dinner with two other couples and everyone Venmos you their share. The incoming Venmo payments are inflows that need to be categorized back to Dining Out (or wherever the original expense lives). The [splitting inflows guide](/blog/splitting-inflows-venmo-reimbursements-friends) covers this scenario and a few others like it.
+
+**"Can I use this with roommates, not just a partner?"**
+
+The manual phantom account strategy works regardless of how many people you're splitting with. The math is the same. If four roommates split a $200 utility bill evenly, your share is $50, and that's what your YNAB category should show. The automated version (Splitwise for YNAB) currently supports two-person Splitwise groups. Roommate group support is on the roadmap.
+
+**"I already have months of untracked Splitwise expenses. Can I catch up?"**
+
+You can, but I'd recommend starting fresh. Pick a date, reconcile your Splitwise balance on that date, set your YNAB phantom account to match, and track everything going forward. Trying to retroactively enter months of adjustment transactions is a recipe for frustration.
+
+## The Bottom Line
+
+YNAB and Splitwise are better together. The core issue, that shared expenses inflate your YNAB categories, has a clean solution in the phantom account strategy. Whether you implement it by hand or automate it, the result is the same: a budget that reflects what you actually spend.
+
+If your YNAB reports have felt off, if you've ever looked at your Groceries category and thought "there's no way I spent that much," this is why. And now you have five different ways to fix it.
+
+The phantom account concept is free. The discipline to maintain it manually is where it gets expensive, in time if not in money.
+
+If you want to try the automated version, [Splitwise for YNAB](/) has a 34-day free trial. Connect your accounts, flag a transaction, and your categories update on the next sync. You'll know within a day whether it's worth it.
+
+---
+
+I built this because I needed it. My budget was lying to me for years before I figured out the phantom account strategy, and I nearly burned out maintaining it by hand before I automated it. If any of this resonated, I'd love to hear from you.
+
+Questions, feedback, or just want to talk about YNAB and Splitwise? I'm at [dan@splitwiseforynab.com](mailto:dan@splitwiseforynab.com).

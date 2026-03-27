@@ -1,0 +1,120 @@
+---
+title: "YNAB Flag Colors: How to Use Them for Expense Automation"
+description: "Most YNAB users ignore flag colors. Here's how to turn them into a powerful trigger for automating shared expenses."
+date: "2025-12-31"
+author:
+  name: "Dan Thareja"
+  image: "/images/authors/dan.png"
+  title: "Founder"
+coverImage: "https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=1200&h=630&fit=crop"
+published: true
+---
+
+YNAB gives you six flag colors for your transactions: red, orange, yellow, green, blue, and purple. You can name each one, so "blue" becomes "Split with partner" or "red" becomes "Needs receipt." Most people set up a naming scheme and use them as visual reminders.
+
+That's a fine use case. But it barely scratches the surface of what flags can do.
+
+I was one of those people. Then I turned a flag color into the only interaction I need to split an expense.
+
+## What YNAB Flags Actually Are
+
+Flags are a per-transaction property in YNAB. You can apply one flag color to any transaction and give each color a custom name. Most people use them to mark transactions they want to come back to, or to visually group certain types of spending.
+
+That's useful. But it still puts the work on you. Flag a transaction, then go do whatever the flag reminds you to do.
+
+What if the flag _did_ the thing for you?
+
+## Flags as Triggers, Not Labels
+
+Here's the core idea behind [Splitwise for YNAB](/): a flag color isn't a reminder. It's a trigger.
+
+You assign a meaning to a color. Blue means "split this 50/50 with my partner." Then you flag a transaction blue. That's your only action.
+
+On the next sync, the app detects the flag and does everything else:
+
+1. Creates the expense in Splitwise with the correct split
+2. Adds an adjustment transaction to your YNAB budget in the same category
+3. Updates your phantom Splitwise account balance
+
+No switching to Splitwise. No manually entering amounts. No split transactions in YNAB. One flag, and you're done.
+
+If you're not familiar with the phantom account strategy, I wrote a [full explanation of how it works behind the scenes](/blog/the-phantom-account-how-to-actually-use-splitwise-with-ynab). The short version: it's a fake cash account in YNAB that mirrors your Splitwise balance, so your categories always reflect your true share of spending.
+
+## A Practical Setup
+
+Here's what I recommend for most couples splitting expenses 50/50:
+
+**Blue flag = split this expense evenly with my partner.**
+
+That's it. One color, one meaning. You could set up different colors for different split ratios if your situation calls for it. Maybe green means "split this 70/30" for expenses where one partner covers more. But most people just need one.
+
+### A Concrete Example
+
+You and your partner go out to dinner. The bill is $120. You pay with your card.
+
+In YNAB, you see the $120 transaction in your checking account, categorized to Dining Out. You flag it blue.
+
+After the next sync:
+
+- Splitwise now has a $120 dinner expense, split 50/50 with your partner
+- A $60 inflow appears in your YNAB Splitwise account, categorized to Dining Out
+- Your Dining Out category shows $60, not $120
+
+That's your real spend. $60. Your partner's half is tracked in Splitwise, your categories are accurate, and you didn't open a single other app.
+
+Compare that to the manual version: open Splitwise, create the expense, enter $120, select your partner, confirm the split, go back to YNAB, create a new transaction in your Splitwise account, enter $60, set the category to Dining Out, set it as an inflow, save. Every single time you buy something shared.
+
+I did that manually for months. The flag takes about two seconds.
+
+## What You Don't Have to Do
+
+This is the part that took me the longest to appreciate. The value isn't just in what the flag does. It's in everything you no longer think about.
+
+You don't open Splitwise when you buy groceries. You don't create adjustment transactions. You don't reconcile your Splitwise account manually. You don't build multi-line split transactions at settle-up time. You don't keep a mental list of expenses you need to log later.
+
+You flag and move on with your life.
+
+When your partner pays for something shared and logs it in Splitwise, the app picks that up on the next sync too. A $50 outflow appears in your Splitwise account, categorized correctly. You don't even need to flag anything for those. They just show up.
+
+## Other Ways People Use YNAB Flags
+
+Flags are flexible precisely because they have no built-in meaning. Beyond expense splitting, I've seen YNAB users get creative:
+
+**Tracking reimbursable work expenses.** Red flag means "my company owes me for this." At the end of the month, filter by red to build your expense report.
+
+**Marking transactions to review later.** Orange means "I need to double-check this amount" or "I'm not sure which category this belongs in." A weekly review of orange-flagged transactions keeps things clean.
+
+**Color-coding by payment method.** If you carry multiple cards and want a visual way to see which card was used, you can assign a color to each one. Useful during the transition period when you're shifting spending between cards.
+
+**Flagging subscriptions for annual review.** Purple means "I should evaluate whether I still need this." Once a year, filter by purple and cancel what you don't use.
+
+These are all valid systems. But they share a limitation. They're reminders that require you to act later. The flag tells you something, but you still have to do the work.
+
+That's why turning a flag into an automated trigger feels different. It collapses the gap between "I want this to happen" and "it happened."
+
+## Why Flags Work Better Than You'd Expect
+
+I considered other trigger mechanisms when building Splitwise for YNAB. Memo keywords, specific payees, category rules. Flags won for a few reasons.
+
+**They're intentional.** You have to deliberately flag a transaction. That means you never accidentally split an expense. A grocery run that's just for you stays unflagged. A grocery run that's shared gets a blue flag. You're always in control.
+
+**They're visible.** A blue dot next to a transaction tells you at a glance that it's been handled. No need to cross-reference with Splitwise. The flag is both the trigger and the confirmation.
+
+**They're already there.** No extra setup, no workarounds, no third-party tools required. Every YNAB user already has six flags available on every transaction. We just gave one of them a job.
+
+## Getting Started
+
+If you split expenses with a partner and use YNAB, here's how to set this up:
+
+1. **Sign up** at [splitwiseforynab.com](/) with a free 34-day trial
+2. **Connect** your YNAB and Splitwise accounts
+3. **Pick a flag color** for your split ratio during setup
+4. **Flag a transaction** and watch your categories update
+
+The whole process takes about 5 minutes. If you want to understand the broader landscape of how YNAB users handle shared expenses, I wrote a [comparison of all five methods](/blog/5-ways-to-handle-shared-expenses-in-ynab) from manual workarounds to full automation.
+
+---
+
+I built this because I spent years ignoring those little colored dots in YNAB. Turns out they were the simplest possible interface for solving my biggest budgeting headache.
+
+Questions about flag setup, split ratios, or anything else? I'm at [dan@splitwiseforynab.com](mailto:dan@splitwiseforynab.com).

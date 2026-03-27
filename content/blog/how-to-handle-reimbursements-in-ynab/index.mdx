@@ -1,0 +1,115 @@
+---
+title: "How to Handle Reimbursements in YNAB (Partner, Friends, and Work)"
+description: "Reimbursements aren't income. Here's how to handle partner splits, friend paybacks, and work expenses without breaking your budget."
+date: "2026-01-28"
+author:
+  name: "Dan Thareja"
+  image: "/images/authors/dan.png"
+  title: "Founder"
+coverImage: "https://images.unsplash.com/photo-1554224155-3a58922a22c3?w=1200&h=630&fit=crop"
+published: true
+---
+
+There's one rule in YNAB that will save you hours of confusion: **reimbursements are not income.**
+
+A reimbursement is money that was already budgeted, already spent, and is now coming back to you. It doesn't go to Ready to Assign. It goes back to the category it came from. That's it. That's the whole principle.
+
+The tricky part is applying it. Because reimbursements come from different places, and each type has its own quirks.
+
+## The Three Types of Reimbursements
+
+Not all reimbursements are created equal. I've found that they fall into three buckets:
+
+1. **Partner reimbursements**: You split groceries, your partner pays you back their half.
+2. **Friend reimbursements**: You covered dinner, friends Venmo you back.
+3. **Work reimbursements**: You expensed a flight, your company pays you back.
+
+Each one works a little differently in YNAB. Let's walk through them.
+
+## Partner Reimbursements (The Common Case)
+
+This is the one that trips people up the most, because it happens constantly. You're not splitting one dinner. You're splitting rent, groceries, utilities, subscriptions, and takeout, over and over, every single month.
+
+YNAB's official approach is straightforward: when your partner pays you back, categorize the inflow to the original category. Here's an example.
+
+You pay $150 for groceries. Your partner Venmos you $75 for their half. In YNAB, you categorize that $75 inflow to your Groceries category. Now Groceries shows a net spend of $75, which is your actual share. Clean.
+
+This works great for expenses **you** paid. But what about expenses your partner paid?
+
+Say your partner pays the $100 electric bill. You owe them $50. In your YNAB budget, your Utilities category shows $0. But you actually spent $50 on utilities. Your budget doesn't reflect reality.
+
+This is the fundamental gap. YNAB only knows about transactions in your accounts. When your partner pays for something and you owe them half, YNAB has no idea it happened. Your spending categories are lying to you.
+
+The fix is what I call the "phantom account" strategy. You create a cash account in YNAB (a budget account, not a tracking account) that represents your Splitwise balance. When your partner pays for something you owe half of, that $50 shows up as a transaction from the phantom account, categorized to Utilities. Now your categories tell the truth in both directions.
+
+I wrote a [full explanation of the phantom account strategy](/blog/the-phantom-account-how-to-actually-use-splitwise-with-ynab) if you want the step-by-step. It's the approach that finally made my budget accurate after years of guessing.
+
+## Friend Reimbursements
+
+Friend reimbursements are simpler because they're usually one-off events rather than recurring splits.
+
+Here's the classic scenario. You go out to dinner with three friends. The bill is $100. You put your card down because nobody wants to do the awkward split at the table. Each friend owes you $25.
+
+In YNAB, that $100 hits your Dining Out category. Over the next few days, your friends pay you back:
+
+- Jake Venmos you $25. Categorize the inflow to Dining Out.
+- Sarah Venmos you $25. Categorize the inflow to Dining Out.
+- Mike Venmos you $25. Categorize the inflow to Dining Out.
+
+After all three pay, Dining Out shows $25 net. That's your actual share of the $100 dinner. Perfect.
+
+But what if you also split expenses with your partner? Say the dinner was with two friends and your partner. You paid $100, each friend owes $25, and the remaining $50 is between you and your partner. That's a more complicated situation that I covered in detail in [Dinner for Four: How to Handle Venmo Reimbursements from Friends](/blog/splitting-inflows-venmo-reimbursements-friends).
+
+The one thing to watch out for with friend reimbursements is timing. Friends don't always pay back quickly. Your Dining Out category might look $75 overspent for days or even weeks until everyone settles up. This is normal. Don't panic and move money around to cover it. Just wait.
+
+If you're the kind of person who checks your budget daily (I am), this can be mildly annoying. But the numbers will be right once everyone pays.
+
+## Work Reimbursements
+
+Work reimbursements are the most predictable type, because your company has a policy and a process. YNAB actually has a [great official guide](https://support.ynab.com/reimbursements-in-ynab-H1W7ilhC5) for this that's worth reading. Here's the short version.
+
+**Approach 1: Budget for it upfront (safer).** Before you spend, move money into a "Work Reimbursable" category. When you book the $400 flight, the category absorbs it. When the reimbursement arrives, categorize the inflow back to Work Reimbursable. The category returns to zero.
+
+This is the safer option because your budget stays clean the entire time. The downside is that you need $400 of your own money sitting in that category until the reimbursement arrives.
+
+**Approach 2: Let it go negative (simpler).** Create a "Work Reimbursable" category and budget $0 to it. When you book the $400 flight, the category goes to -$400. When the reimbursement arrives, it goes back to $0.
+
+This is simpler because you don't have to move money around. But your budget will show a negative category until the check comes in. If your company takes three weeks to process expenses, that's three weeks of looking at red in your budget.
+
+**My recommendation**: if you expense things frequently, create a dedicated "Work Reimbursable" category either way. It keeps these transactions separate from your personal spending and makes it obvious at a glance how much your company owes you.
+
+## Common Mistakes
+
+After years of handling reimbursements in YNAB (and building a tool that automates the partner side), here are the mistakes I see most often.
+
+### Treating reimbursements as income
+
+This is the big one. When your partner Venmos you $75 for groceries, it's tempting to let it flow into Ready to Assign. Free money, right?
+
+No. That $75 was already budgeted to Groceries. If you put it in Ready to Assign and spend it somewhere else, you've effectively double-counted it. Your Groceries category still shows the full $150, and you've spent the $75 "reimbursement" on something else entirely. Your budget is now overstated by $75.
+
+Always categorize reimbursements back to the original category.
+
+### Forgetting which category the expense was in
+
+You get a Venmo payment from a friend with the memo "for last week." Great. Last week you covered lunch, bought concert tickets, and split an Uber. Which one is this for?
+
+The fix is simple: check your transaction history. Search for the date, the amount, or the payee. YNAB makes this easy with the search bar. If you use Splitwise, you can check the expense details there too.
+
+### Not handling partial reimbursements
+
+Your friend owes you $25 from dinner. They send you $20 and say "sorry, that's all I have right now." Don't stress about it. Categorize the $20 to Dining Out. Your category will show $5 more than your true share. If they never pay the remaining $5, that's just your cost now.
+
+Partial reimbursements are still reimbursements. Handle them the same way, just with a smaller amount.
+
+## Reimbursements Are Just Money Coming Home
+
+That's the mental model. A reimbursement is money that left a category and is now coming back. Send it home. Don't redirect it. Don't overthink it.
+
+For friend and work reimbursements, YNAB handles this well out of the box. Categorize the inflow to the original category and move on.
+
+For partner reimbursements, the built-in approach works for one-off splits but breaks down when you're splitting dozens of expenses every month. That's where the [phantom account strategy](/blog/the-phantom-account-how-to-actually-use-splitwise-with-ynab) comes in, and it's what [Splitwise for YNAB](/) automates for you.
+
+If you want to explore more approaches, I wrote a comparison of [5 ways to handle shared expenses in YNAB](/blog/5-ways-to-handle-shared-expenses-in-ynab) that covers the full spectrum from simple to fully automated.
+
+Got questions about your specific setup? I've probably seen it before. Reach out at [dan@splitwiseforynab.com](mailto:dan@splitwiseforynab.com).

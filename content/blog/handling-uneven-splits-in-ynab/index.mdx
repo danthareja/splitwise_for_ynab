@@ -1,0 +1,119 @@
+---
+title: "Handling Uneven Splits in YNAB: Rent, Utilities, and Custom Ratios"
+description: "Not everything is 50/50. Here's how to handle 60/40 rent, income-based splits, and custom ratios in YNAB with or without automation."
+date: "2026-02-18"
+author:
+  name: "Dan Thareja"
+  image: "/images/authors/dan.png"
+  title: "Founder"
+coverImage: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1200&h=630&fit=crop"
+published: true
+---
+
+Most guides about splitting expenses in YNAB assume everything is 50/50. Divide by two, move on.
+
+Real life isn't that clean.
+
+Maybe one partner earns more, so you split rent 60/40. Maybe you split groceries evenly but one person covers all the streaming subscriptions. Maybe you have a complex per-category arrangement that took three conversations and a spreadsheet to agree on. Whatever the setup, YNAB doesn't have a built-in way to handle it.
+
+Here's how to make it work.
+
+## Why Uneven Splits Complicate Things
+
+With a 50/50 split, the math is always the same. You spent $120 on dinner, your share is $60. Every time. No thinking required.
+
+With uneven splits, you need to know what _your_ share is for each expense. And that share might differ by category. Rent is 60/40, groceries are 50/50, car insurance is 100/0. Suddenly "what do I owe?" requires a lookup table instead of a division.
+
+Splitwise handles this well. You can set custom split percentages per expense or even set a default ratio for your entire group. It does the math and tells you the dollar amounts.
+
+YNAB doesn't care about percentages at all. It just needs the right dollar amount in the right category. That's actually a good thing, because it means the phantom account strategy works identically whether you split 50/50 or 73/27.
+
+If you're not familiar with the phantom account approach, start with [the full guide](/blog/the-phantom-account-how-to-actually-use-splitwise-with-ynab). The short version: it's a fake cash account in YNAB that mirrors your Splitwise balance, so your categories always show your true share of spending.
+
+## Common Uneven Split Arrangements
+
+Before getting into the mechanics, it helps to know which pattern you're working with. Most couples I've talked to fall into one of three camps.
+
+### Income-Proportional
+
+You make 60% of the household income, so you cover 60% of shared expenses. One ratio, applied to everything. This is the simplest uneven setup because you only have one number to remember: your percentage.
+
+If your combined household income is $10,000/month and you earn $6,000 of that, you cover 60% of every shared expense. A $200 grocery run costs you $120. A $2,000 rent payment costs you $1,200.
+
+### Per-Category
+
+50/50 on groceries and dining out. 60/40 on rent. Each person covers their own car insurance entirely. This approach is more complex but feels fairer to some couples, especially when one expense category is dramatically larger than the others.
+
+The tradeoff is mental overhead. You need to remember which ratio applies to which category, and you need to apply the right one every time.
+
+### Fixed vs. Variable
+
+One person pays all fixed costs: rent, utilities, insurance. The other covers variable costs: groceries, dining out, household supplies. You try to make it roughly even across the year.
+
+This is the simplest arrangement in practice because there's no splitting at all. Each person just pays their assigned categories. But it can drift out of balance over time, and it doesn't play as nicely with Splitwise since there's nothing to split.
+
+## How It Works with the Phantom Account
+
+The good news: the phantom account works exactly the same way for uneven splits. The only thing that changes is the dollar amount of the adjustment.
+
+### Example: Rent at 60/40
+
+Rent is $2,000. You split it 60/40. You pay the landlord.
+
+Your share: $1,200. Your partner's share: $800.
+
+In YNAB, the $2,000 outflow hits your Rent category from your checking account. Then you add an $800 inflow to your Splitwise phantom account, categorized to Rent. Now your Rent category shows a net of $1,200, which is your actual share. Your Splitwise account balance goes up by $800, reflecting what your partner owes you.
+
+### Example: Groceries at 50/50
+
+Groceries are $150. You split evenly. You pay.
+
+Same as always: $75 inflow to your Splitwise account, categorized to Groceries. Groceries now shows $75. Nothing new here.
+
+### The Key Insight
+
+The phantom account doesn't care about percentages. It only cares about dollar amounts. Whether the adjustment is $75 (half of $150) or $800 (40% of $2,000), the mechanics are identical. Create an inflow in the Splitwise account for your partner's share, assign the right category, done.
+
+This means you don't need a different YNAB setup for each ratio. You just need the right dollar amount each time.
+
+## Setting This Up in Splitwise
+
+Splitwise makes uneven splits straightforward.
+
+In your group settings, you can set a default split ratio. If most of your expenses are 60/40, set that as the default. Every new expense in that group will automatically calculate the 60/40 amounts.
+
+For individual expenses that use a different ratio, you can override the default. Set groceries to 50/50 when you add them, even if the group default is 60/40. Splitwise remembers the override and calculates the correct amounts.
+
+The important part: Splitwise gives you the dollar amounts for each person. You don't have to do the percentage math yourself. You just need to reflect those amounts in YNAB.
+
+## Setting This Up in Splitwise for YNAB
+
+If you're using [Splitwise for YNAB](/), you can automate the phantom account math. You configure a default split ratio during setup (like 50/50 or 60/40), and every flagged transaction uses that ratio.
+
+So if your default is 50/50 and you flag a $150 grocery transaction, the app creates a 50/50 split in Splitwise and adds a $75 adjustment to your phantom account.
+
+For expenses that use a different ratio than your default, you can adjust them in Splitwise after the sync. Flag the transaction, let the app create the expense with your default ratio, then open Splitwise and change the split on that specific expense. The app will pick up the corrected amounts on the next sync.
+
+It's not as seamless as having per-flag ratios (that's on the roadmap), but it still saves you from creating the Splitwise expense and YNAB adjustment transaction manually.
+
+## Tips for Making Uneven Splits Work
+
+The mechanics are simple. The hard part is the conversation. A few things I've learned.
+
+**Decide once, write it down.** Sit down together, agree on your ratios, and document them somewhere you can both reference. A note in your phone works fine. This eliminates the "wait, what did we agree on for utilities?" conversations.
+
+**Revisit annually.** Income changes. One partner gets a raise, someone switches to part-time, a new baby shifts priorities. Check in once a year and adjust if the current arrangement no longer feels right.
+
+**Don't over-optimize.** If your income split is technically 57/43, just round to 60/40. The mental simplicity of round numbers is worth more than the $12/month difference. Splitting things 53/47 based on exact income ratios creates complexity that nobody enjoys.
+
+**Consider simplifying per-category setups.** If you currently have different ratios for five different expense categories, ask yourself whether one ratio across the board would be close enough. The mental overhead of remembering which ratio applies to which category adds up over months. Sometimes "60/40 on everything" is better than a perfectly optimized spreadsheet.
+
+## The Bottom Line
+
+Uneven splits add exactly one layer of complexity to shared expense tracking: knowing your share instead of always dividing by two. Once you know the dollar amount, the [phantom account](/blog/the-phantom-account-how-to-actually-use-splitwise-with-ynab) handles the rest. Your YNAB categories stay accurate, your Splitwise balance stays current, and you don't need a math degree to budget with your partner.
+
+If you're figuring out the bigger picture of managing money as a couple, I wrote a [complete guide to using YNAB with separate finances](/blog/ynab-for-couples-separate-finances-complete-guide) that covers everything from account structure to settle-up workflows.
+
+---
+
+Questions about uneven splits, ratio setup, or anything else? I'm at [dan@splitwiseforynab.com](mailto:dan@splitwiseforynab.com).

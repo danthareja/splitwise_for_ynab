@@ -1,0 +1,131 @@
+---
+title: "5 Ways to Handle Shared Expenses in YNAB (and Which Actually Works)"
+description: "Your YNAB categories are wrong if you split expenses. Here are 5 ways to fix it, from quick hacks to full automation."
+date: "2025-12-17"
+author:
+  name: "Dan Thareja"
+  image: "/images/authors/dan.png"
+  title: "Founder"
+coverImage: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1200&h=630&fit=crop"
+published: true
+---
+
+If you split expenses with a partner and use YNAB, your budget is lying to you.
+
+Not about everything. Just about every category that involves a shared expense. Groceries, dining out, utilities, subscriptions. Anything you pay for and split later shows up at full price in your budget. If you spent $150 on groceries and your partner owes you half, YNAB says you spent $150. You spent $75.
+
+This isn't a bug. YNAB tracks money flowing out of your accounts, which is exactly what it should do. But when you share expenses, the money flowing out of your account and the money _you actually spent_ are two different numbers.
+
+I've been dealing with this problem for years. I've tried every approach. Here's what works, what doesn't, and why.
+
+## Method 1: The "Reimbursement" Category
+
+**How it works**: Create a category called "Shared Expenses" or "Splitwise." When you pay for something shared, split the transaction in YNAB: your half goes to the real category (Groceries), your partner's half goes to the Shared Expenses category. When your partner pays you back, the reimbursement goes into that same category.
+
+**Example**: You pay $150 for groceries. In YNAB, you split it: $75 to Groceries, $75 to Shared Expenses. When your partner Venmos you $75, it goes back into Shared Expenses, zeroing it out.
+
+**What's good**: It's simple. You can set it up in 30 seconds. Your Groceries category shows $75, which is correct.
+
+**What's bad**: It only works when _you_ pay. When your partner pays for something shared, you have no way to reflect your half in YNAB. Your partner covers a $100 electric bill? Your Utilities category shows $0. But you owe $50 for that. Your categories are only half-right: accurate for things you paid, blind to things your partner paid.
+
+And if you don't settle up regularly, the Shared Expenses category just accumulates a running balance that doesn't tell you anything useful.
+
+**Verdict**: A decent starting point if you pay for most shared things. Falls apart if you both pay for stuff, which is how most couples actually work.
+
+## Method 2: The Multi-Line Settle Up
+
+This is [YNAB's official "detailed" approach](https://support.ynab.com/en_us/splitwise-and-ynab-a-guide-H1GwOyuCq).
+
+**How it works**: Track all shared expenses in Splitwise normally. When you settle up, create a single split transaction in YNAB that reconstructs every expense your partner made on your behalf, assigned to the correct categories.
+
+**Example**: Over the past two weeks, your partner paid for $80 in groceries, $60 for dinner, and $40 for an electricity bill. You settle up for $90 (your half of $180). In YNAB, you create a split transaction: $40 outflow to Groceries, $30 outflow to Dining Out, $20 outflow to Utilities.
+
+**What's good**: Your categories end up correct after settle-up. Every dollar lands in the right place.
+
+**What's bad**: You have to manually reconstruct every expense from Splitwise into a multi-line YNAB transaction. If you settle up monthly, that's potentially dozens of line items. Miss one and your budget won't reconcile. YNAB themselves acknowledge this. Their guide says "if your split transaction is getting pretty long, that's a sign that you need to settle up more frequently."
+
+And between settle-ups? Your categories are wrong. Groceries might show $0 all month, then suddenly jump to $200 on settle-up day. You have no real-time view of your spending.
+
+**Verdict**: Correct in theory. Painful in practice. The more expenses you share, the worse it gets.
+
+## Method 3: Just Ignore It
+
+**How it works**: Budget for the full amount of shared expenses, accept that your categories are inflated, and treat the occasional reimbursement as a bonus.
+
+**Example**: You budget $600 for groceries knowing you'll spend ~$300 and front ~$300 for your partner. When they pay you back, you put it toward next month's groceries or into Ready to Assign.
+
+**What's good**: Zero effort. No split transactions, no reconciliation, no Splitwise gymnastics.
+
+**What's bad**: Your budget is fiction. Your spending reports are useless. You can't answer "how much do I actually spend on groceries?" because the number includes money that isn't yours. Year-end reports, spending trends, category targets, all inflated by your partner's share.
+
+If you're the kind of person who uses YNAB, you're the kind of person who cares about this.
+
+**Verdict**: This is what most people end up doing when the other methods get too tedious. It works until you look at your reports and realize they mean nothing.
+
+## Method 4: The Phantom Account (Manual)
+
+I wrote a [deep dive on the phantom account strategy](/blog/the-phantom-account-how-to-actually-use-splitwise-with-ynab) if you want the full explanation. Here's the short version.
+
+**How it works**: Create a cash account in YNAB called "Splitwise." It's not a real bank account. It's an IOU ledger. When you pay for something shared, add an inflow to the Splitwise account in the same category as the expense, for your partner's share. When your partner pays for something shared, add an outflow from the Splitwise account for your share. The balance of the Splitwise account mirrors what you owe or are owed in the real Splitwise app.
+
+**Example**: You pay $150 for groceries. In YNAB, the $150 outflow hits your checking account as usual. Then you add a $75 inflow to your Splitwise account, categorized to Groceries. Now Groceries shows -$75 net (the $150 out plus the $75 adjustment back). Your Splitwise account shows +$75, meaning your partner owes you.
+
+Your partner pays $100 for electricity. You add a $50 outflow from your Splitwise account, categorized to Utilities. Now Utilities shows -$50 (your share) and your Splitwise account shows +$25 ($75 minus $50).
+
+**What's good**: This is the correct approach. Every category reflects your actual spending in real time. Both your expenses and your partner's expenses show up. The Splitwise account balance always matches the real app. Settle-ups are just transfers. No multi-line transactions needed.
+
+**What's bad**: For _every single shared expense_, you need to:
+
+1. Enter it in Splitwise
+2. Enter the adjustment transaction in YNAB
+3. Match the amounts and categories
+4. Do this for your partner's expenses too
+
+Miss one transaction and your Splitwise account won't reconcile. Forget to enter your partner's grocery run and your categories are off.
+
+I tried this for months. It took 15-20 minutes per week and I still fell behind. I started dreading opening YNAB because there was always a backlog of Splitwise transactions to reconcile.
+
+**Verdict**: The right answer conceptually. Too much work to sustain.
+
+## Method 5: The Phantom Account (Automated)
+
+This is why I built [Splitwise for YNAB](/).
+
+**How it works**: Same phantom account strategy as Method 4, fully automated. You flag a transaction in YNAB with a color. The app creates the Splitwise expense, adds the adjustment transaction to YNAB, and keeps everything in sync.
+
+**Example**: You pay $150 for groceries and flag the transaction blue. On the next sync: the Splitwise expense is created, a $75 inflow appears in your YNAB Splitwise account (categorized to Groceries), and your Groceries category shows $75, your actual share. Your partner pays $100 for electricity and logs it in Splitwise. On the next sync, a $50 outflow appears in your YNAB Splitwise account (categorized to Utilities).
+
+**What's good**: Every category is accurate after each sync. You don't enter anything in Splitwise. You don't create adjustment transactions. You just flag and go. If your partner also uses YNAB, both budgets update automatically.
+
+**What's bad**: It costs [$3.99/month](/#pricing) (one subscription covers both partners). There's a 34-day free trial if you want to see if it works for you before paying.
+
+**Verdict**: All the accuracy of the manual phantom account, none of the work.
+
+## Side-by-Side Comparison
+
+|                                    | Reimbursement Category | Multi-Line Settle Up   | Ignore It | Phantom (Manual)      | Phantom (Automated)  |
+| ---------------------------------- | ---------------------- | ---------------------- | --------- | --------------------- | -------------------- |
+| **Categories accurate?**           | Only for your expenses | Only after settle-up   | No        | Yes, real-time        | Yes, after each sync |
+| **Partner's expenses visible?**    | No                     | Only after settle-up   | No        | Yes                   | Yes                  |
+| **Time per week**                  | ~5 min                 | 15-30 min at settle-up | 0 min     | 15-20 min             | ~1 min (flagging)    |
+| **Error-prone?**                   | Low                    | High (manual rebuild)  | None      | Medium (manual entry) | Low                  |
+| **Works if you rarely settle up?** | Poorly                 | No                     | Yes       | Yes                   | Yes                  |
+| **Cost**                           | Free                   | Free                   | Free      | Free                  | $3.99/mo             |
+
+## Which Should You Use?
+
+**If you just started splitting expenses** and want to see if YNAB can handle it: start with Method 1 (Reimbursement Category). It's easy and gives you a feel for the problem.
+
+**If you're meticulous and settle up weekly**: Method 2 (Multi-Line Settle Up) will work, but you'll be spending time on it.
+
+**If you've given up**: You're probably on Method 3 right now. No shame. Most people end up here.
+
+**If you want accurate reports but don't want a subscription**: Method 4 (Manual Phantom Account) is the right approach. Read the [full guide](/blog/the-phantom-account-how-to-actually-use-splitwise-with-ynab) and see if you can sustain it.
+
+**If you want it to just work**: [Try Method 5](/) for 34 days free. Flag your transactions, check your categories, and see if it's worth $3.99/month to never think about Splitwise reconciliation again.
+
+---
+
+I built Splitwise for YNAB because I tried methods 1 through 4 and couldn't sustain any of them. The phantom account concept was right. I just needed a computer to do the boring parts.
+
+If you have questions about any of these approaches, I'm at [dan@splitwiseforynab.com](mailto:dan@splitwiseforynab.com).

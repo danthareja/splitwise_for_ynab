@@ -1,7 +1,7 @@
 ---
 title: "Dinner for Four: How to Handle Venmo Reimbursements from Friends"
 description: "You paid for dinner, your friends Venmo you back, and you split the rest with your partner. Now you can flag the inflows too."
-date: "2026-03-03"
+date: "2025-12-10"
 author:
   name: "Dan Thareja"
   image: "/images/authors/dan.png"
@@ -16,9 +16,9 @@ But real life isn't always that simple.
 
 ## The Dinner Problem
 
-Here's a scenario that comes up all the time: you go out to dinner with your partner and two friends — let's call them Jake and Sarah. The bill is $100. You put your card down because nobody wants to do the awkward four-way split at the table.
+Here's a scenario that comes up all the time: you go out to dinner with your partner and two friends. Let's call them Jake and Sarah. The bill is $100. You put your card down because nobody wants to do the awkward four-way split at the table.
 
-Jake Venmos you $25 the next morning. Sarah says she'll "get you later." The remaining $50 is between you and your partner — that's the part that belongs in Splitwise.
+Jake Venmos you $25 the next morning. Sarah says she'll "get you later." The remaining $50 is between you and your partner. That's the part that belongs in Splitwise.
 
 Before this update, you had two options:
 
@@ -29,7 +29,7 @@ Neither was great. The whole point of flagging a transaction is that you shouldn
 
 ## What's New: Flag Your Inflows
 
-You can now flag inflows — like Venmo payments from friends — the same way you flag expenses. Each flagged inflow creates a separate entry in Splitwise that offsets the balance.
+You can now flag inflows (like Venmo payments from friends) the same way you flag expenses. Each flagged inflow creates a separate entry in Splitwise that offsets the balance.
 
 Here's how the dinner example plays out:
 
@@ -43,29 +43,29 @@ You pay, you flag it. The app creates a $100 expense in Splitwise, split with yo
   note="Your partner owes you $50.00. But once your friends pay you back, this will come down."
 />
 
-### Step 2: Jake Venmos you $25 — flag it
+### Step 2: Jake Venmos you $25, flag it
 
 Jake pays you back the next morning like a good friend. You flag the inflow. The app creates a $25 offset in Splitwise, split with your partner.
 
 <AccountDemo
-  you='{"checking":[{"name":"Restaurant","amount":-100},{"name":"Venmo — Jake","amount":25,"isNew":true}],"splitwise":[{"name":"Restaurant","amount":50},{"name":"Venmo — Jake","amount":-12.5,"isNew":true}],"balance":37.5}'
-  partner='{"checking":[],"splitwise":[{"name":"Restaurant","amount":-50},{"name":"Venmo — Jake","amount":12.5,"isNew":true}],"balance":-37.5}'
+  you='{"checking":[{"name":"Restaurant","amount":-100},{"name":"Venmo - Jake","amount":25,"isNew":true}],"splitwise":[{"name":"Restaurant","amount":50},{"name":"Venmo - Jake","amount":-12.5,"isNew":true}],"balance":37.5}'
+  partner='{"checking":[],"splitwise":[{"name":"Restaurant","amount":-50},{"name":"Venmo - Jake","amount":12.5,"isNew":true}],"balance":-37.5}'
   note="Your partner now owes you $37.50. Getting closer."
 />
 
-### Step 3: Sarah eventually Venmos you $25 — flag it
+### Step 3: Sarah eventually Venmos you $25, flag it
 
 Sarah finally pays you back two weeks later. Every friend group has a Sarah. You flag the inflow.
 
 <AccountDemo
-  you='{"checking":[{"name":"Restaurant","amount":-100},{"name":"Venmo — Jake","amount":25},{"name":"Venmo — Sarah","amount":25,"isNew":true}],"splitwise":[{"name":"Restaurant","amount":50},{"name":"Venmo — Jake","amount":-12.5},{"name":"Venmo — Sarah","amount":-12.5,"isNew":true}],"balance":25}'
-  partner='{"checking":[],"splitwise":[{"name":"Restaurant","amount":-50},{"name":"Venmo — Jake","amount":12.5},{"name":"Venmo — Sarah","amount":12.5,"isNew":true}],"balance":-25}'
-  note="Your partner now owes you $25.00 — the correct per-person share ($100 ÷ 4)."
+  you='{"checking":[{"name":"Restaurant","amount":-100},{"name":"Venmo - Jake","amount":25},{"name":"Venmo - Sarah","amount":25,"isNew":true}],"splitwise":[{"name":"Restaurant","amount":50},{"name":"Venmo - Jake","amount":-12.5},{"name":"Venmo - Sarah","amount":-12.5,"isNew":true}],"balance":25}'
+  partner='{"checking":[],"splitwise":[{"name":"Restaurant","amount":-50},{"name":"Venmo - Jake","amount":12.5},{"name":"Venmo - Sarah","amount":12.5,"isNew":true}],"balance":-25}'
+  note="Your partner now owes you $25.00, the correct per-person share ($100 ÷ 4)."
 />
 
 ### Final result
 
-Your partner owes you $25 — exactly the correct per-person share of a $100 dinner split four ways.
+Your partner owes you $25. Exactly the correct per-person share of a $100 dinner split four ways.
 
 Your checking account is down $50 net ($100 out, $50 back from friends), and after your partner settles the $25, you're at $25 out of pocket. Exactly right.
 
@@ -80,14 +80,14 @@ No need to wait for everyone to pay you back before flagging the original expens
 This works for any scenario where you receive money that should offset a shared expense:
 
 - **Group trips**: You booked the Airbnb for six people, friends pay you back their shares, you split the rest with your partner
-- **Shared purchases with refunds**: You returned something you'd already split — flag the refund
+- **Shared purchases with refunds**: You returned something you'd already split, so flag the refund
 - **Any reimbursement**: If money comes in and it's related to something you share with your partner, flag it
 
 ## What About Settling Up?
 
-You might wonder: when my partner finally settles up, where does that money go in my budget? The answer is: nowhere new. It works just like a clothing refund — if you spent $100 and returned $50, that refund goes back to the Clothing category, not to "Ready to Assign."
+You might wonder: when my partner finally settles up, where does that money go in my budget? The answer is: nowhere new. It works just like a clothing refund. If you spent $100 and returned $50, that refund goes back to the Clothing category, not to "Ready to Assign."
 
-Each time an expense synced throughout the month, your partner's share was already categorized as an inflow right then and there. By the time you settle up, those dollars already have jobs. The settle-up is just a transfer between your Splitwise account and your bank account — no new money to budget.
+Each time an expense synced throughout the month, your partner's share was already categorized as an inflow right then and there. By the time you settle up, those dollars already have jobs. The settle-up is just a transfer between your Splitwise account and your bank account. No new money to budget.
 
 ## How to Use It
 
@@ -101,4 +101,4 @@ No new settings, no configuration changes. If you're already using the app, infl
 
 ---
 
-This was a feature request from a user who was handling these scenarios manually. If there's something you wish the app did differently, I'd love to hear about it — [dan@splitwiseforynab.com](mailto:dan@splitwiseforynab.com).
+This was a feature request from a user who was handling these scenarios manually. If there's something you wish the app did differently, I'd love to hear about it: [dan@splitwiseforynab.com](mailto:dan@splitwiseforynab.com).
