@@ -1,13 +1,7 @@
 import { auth } from "@/auth";
-import {
-  getUserWithAccounts,
-  getUserOnboardingData,
-  getPartnershipStatus,
-} from "@/app/actions/db";
+import { getDashboardData } from "@/app/actions/db";
 import { AppHeader } from "@/components/header";
 import { Footer } from "@/components/footer";
-import { getSplitwiseSettings } from "@/app/actions/splitwise";
-import { getYNABSettings } from "@/app/actions/ynab";
 import { getSyncHistory, getSyncRateLimitStatus } from "@/app/actions/sync";
 import { getSubscriptionInfo } from "@/app/actions/subscription";
 import { SyncHistory } from "@/components/sync-history";
@@ -41,38 +35,34 @@ export default async function DashboardPage() {
     redirect("/");
   }
 
-  // Get onboarding state
-  const onboardingData = await getUserOnboardingData();
+  // Single consolidated query for user, settings, and partnership status
+  const dashboardData = await getDashboardData();
 
-  // Redirect to setup if onboarding is not complete
-  if (!onboardingData?.onboardingComplete) {
-    redirect("/dashboard/setup");
-  }
-
-  // Get user data
-  const user = await getUserWithAccounts();
-
-  if (!user) {
+  if (!dashboardData) {
     return <p>Error loading user data.</p>;
   }
 
-  const splitwiseSettings = await getSplitwiseSettings();
-  const ynabSettings = await getYNABSettings();
+  const { user, partnershipStatus } = dashboardData;
 
-  // Get partnership status
-  const partnershipStatus = await getPartnershipStatus();
+  // Redirect to setup if onboarding is not complete
+  if (!user.onboardingComplete) {
+    redirect("/dashboard/setup");
+  }
 
-  // Get sync history
-  const syncHistoryResult = await getSyncHistory(MAX_SYNC_HISTORY_ITEMS);
+  const splitwiseSettings = user.splitwiseSettings;
+  const ynabSettings = user.ynabSettings;
+
+  // Run remaining independent queries in parallel
+  const [syncHistoryResult, rateLimitStatus, subscriptionInfo] =
+    await Promise.all([
+      getSyncHistory(MAX_SYNC_HISTORY_ITEMS),
+      getSyncRateLimitStatus(),
+      getSubscriptionInfo(),
+    ]);
+
   const syncHistory = syncHistoryResult.success
     ? syncHistoryResult.syncHistory || []
     : [];
-
-  // Get rate limit status
-  const rateLimitStatus = await getSyncRateLimitStatus();
-
-  // Get subscription status
-  const subscriptionInfo = await getSubscriptionInfo();
 
   // Determine SyncHeroCard state
   let syncHeroState: SyncHeroState = "ready";

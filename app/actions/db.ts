@@ -325,3 +325,79 @@ export async function getPartnershipStatus(): Promise<PartnershipStatus | null> 
     return null;
   }
 }
+
+/**
+ * Single consolidated query for the dashboard page.
+ * Replaces 5 separate server action calls (getUserOnboardingData,
+ * getUserWithAccounts, getSplitwiseSettings, getYNABSettings,
+ * getPartnershipStatus) with one DB round-trip.
+ */
+export async function getDashboardData() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: {
+        accounts: true,
+        splitwiseSettings: true,
+        ynabSettings: true,
+        primaryUser: {
+          select: {
+            id: true,
+            name: true,
+            firstName: true,
+            email: true,
+            splitwiseSettings: {
+              select: { emoji: true },
+            },
+          },
+        },
+        secondaryUser: {
+          select: {
+            id: true,
+            name: true,
+            firstName: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!user) return null;
+
+    // Derive partnership status from the already-fetched relations
+    let partnershipStatus: PartnershipStatus;
+    if (user.primaryUserId) {
+      if (user.primaryUser) {
+        partnershipStatus = {
+          type: "secondary",
+          primaryName: user.primaryUser.firstName || user.primaryUser.name,
+          primaryEmail: user.primaryUser.email,
+          primaryEmoji: user.primaryUser.splitwiseSettings?.emoji || null,
+        };
+      } else {
+        partnershipStatus = { type: "orphaned" };
+      }
+    } else if (user.secondaryUser) {
+      partnershipStatus = {
+        type: "primary",
+        secondaryName: user.secondaryUser.firstName || user.secondaryUser.name,
+        secondaryEmail: user.secondaryUser.email,
+      };
+    } else if (user.persona === "dual") {
+      partnershipStatus = { type: "primary_waiting" };
+    } else {
+      partnershipStatus = { type: "solo" };
+    }
+
+    return { user, partnershipStatus };
+  } catch (error) {
+    console.error("Failed to fetch dashboard data:", error);
+    Sentry.captureException(error);
+    return null;
+  }
+}

@@ -29,28 +29,30 @@ interface EffectiveSplitwiseSettings {
   customPayeeName: string | null;
 }
 
-// Get effective Splitwise settings for a user (checks for primary/secondary relationship)
-// Shared settings (groupId, groupName, currencyCode) come from primary
-// User-specific settings (emoji, useDescriptionAsPayee, customPayeeName, defaultSplitRatio) come from user's own settings
+// Derive effective Splitwise settings from an already-fetched user object.
+// Shared settings (groupId, groupName, currencyCode) come from primary.
+// User-specific settings (emoji, useDescriptionAsPayee, customPayeeName, defaultSplitRatio) come from user's own settings.
 // Note: defaultSplitRatio is user-specific because it's REVERSED for secondary users
 // (e.g., if primary has 7:3, secondary has 3:7 stored in their own settings)
-async function getEffectiveSplitwiseSettings(
-  userId: string,
-): Promise<EffectiveSplitwiseSettings | null> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: {
-      splitwiseSettings: true,
-      primaryUser: {
-        include: {
-          splitwiseSettings: true,
-        },
-      },
-    },
-  });
-
-  if (!user) return null;
-
+function getEffectiveSplitwiseSettings(user: {
+  primaryUserId: string | null;
+  splitwiseSettings: {
+    groupId: string | null;
+    groupName: string | null;
+    currencyCode: string | null;
+    defaultSplitRatio: string | null;
+    emoji: string | null;
+    useDescriptionAsPayee: boolean | null;
+    customPayeeName: string | null;
+  } | null;
+  primaryUser: {
+    splitwiseSettings: {
+      groupId: string | null;
+      groupName: string | null;
+      currencyCode: string | null;
+    } | null;
+  } | null;
+}): EffectiveSplitwiseSettings | null {
   // If user is a secondary, merge primary's shared settings with user's own settings
   if (user.primaryUserId && user.primaryUser?.splitwiseSettings) {
     const primarySettings = user.primaryUser.splitwiseSettings;
@@ -505,7 +507,7 @@ async function _syncSingleUser(userId: string): Promise<SyncResult> {
         ynabSettings: true,
         splitwiseSettings: true,
         accounts: true,
-        primaryUser: true, // For secondary users, check primary's status
+        primaryUser: { include: { splitwiseSettings: true } },
       },
     });
 
@@ -528,9 +530,8 @@ async function _syncSingleUser(userId: string): Promise<SyncResult> {
       throw new Error("Splitwise account not configured in YNAB settings");
     }
 
-    // Get effective Splitwise settings (from primary if secondary user)
-    const effectiveSplitwiseSettings =
-      await getEffectiveSplitwiseSettings(userId);
+    // Derive effective Splitwise settings from already-fetched user
+    const effectiveSplitwiseSettings = getEffectiveSplitwiseSettings(user);
 
     if (!effectiveSplitwiseSettings) {
       // Check if this is a secondary with an orphaned primary
@@ -1037,7 +1038,7 @@ async function _syncUserPhase(
         ynabSettings: true,
         splitwiseSettings: true,
         accounts: true,
-        primaryUser: true, // For secondary users
+        primaryUser: { include: { splitwiseSettings: true } },
       },
     });
 
@@ -1060,9 +1061,8 @@ async function _syncUserPhase(
       throw new Error("Splitwise account not configured in YNAB settings");
     }
 
-    // Get effective Splitwise settings (from primary if secondary user)
-    const effectiveSplitwiseSettings =
-      await getEffectiveSplitwiseSettings(userId);
+    // Derive effective Splitwise settings from already-fetched user
+    const effectiveSplitwiseSettings = getEffectiveSplitwiseSettings(user);
 
     if (!effectiveSplitwiseSettings) {
       if (user.primaryUserId && !user.primaryUser) {
