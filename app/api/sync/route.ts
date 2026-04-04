@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
           monitorSlug: "daily-sync",
           status: result.errorCount > 0 ? "error" : "ok",
         });
+        await Sentry.flush(5000);
       }
 
       return Response.json(result);
@@ -64,6 +65,7 @@ export async function GET(request: NextRequest) {
         });
       }
       Sentry.captureException(error);
+      await Sentry.flush(5000);
       return Response.json(
         { success: false, error: "Internal server error" },
         { status: 500 },
