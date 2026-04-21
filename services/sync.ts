@@ -108,6 +108,51 @@ export interface PairedGroup {
   }>;
 }
 
+// Build a deterministic signature of failed items so we can detect when a
+// partial sync is reporting the same failures as the previous one.
+export function buildPartialFailureSignature(
+  items: Array<Pick<SyncedItem, "externalId" | "errorMessage">>,
+): string {
+  return items
+    .map((i) => `${i.externalId}:${i.errorMessage ?? ""}`)
+    .sort()
+    .join("|");
+}
+
+// Returns true if the previous SyncHistory for this user reported the same
+// failure as the one we're about to email about. Used to suppress duplicate
+// "your sync failed" emails when nothing has changed.
+export async function isDuplicateSyncFailure(params: {
+  userId: string;
+  currentSyncHistoryId: string;
+  currentStatus: "error" | "partial";
+  currentErrorMessage?: string | null;
+  currentPartialSignature?: string;
+}): Promise<boolean> {
+  const previousSync = await prisma.syncHistory.findFirst({
+    where: {
+      userId: params.userId,
+      id: { not: params.currentSyncHistoryId },
+    },
+    orderBy: { startedAt: "desc" },
+  });
+
+  if (!previousSync) return false;
+  if (previousSync.status !== params.currentStatus) return false;
+
+  if (params.currentStatus === "error") {
+    return previousSync.errorMessage === (params.currentErrorMessage ?? null);
+  }
+
+  // partial: compare the set of failed items
+  const previousFailedItems = await prisma.syncedItem.findMany({
+    where: { syncHistoryId: previousSync.id, status: "error" },
+    select: { externalId: true, errorMessage: true },
+  });
+  const previousSignature = buildPartialFailureSignature(previousFailedItems);
+  return previousSignature === (params.currentPartialSignature ?? "");
+}
+
 export async function cleanupStalePendingSyncs() {
   const staleCount = await prisma.syncHistory.updateMany({
     where: {
@@ -693,13 +738,29 @@ async function _syncSingleUser(userId: string): Promise<SyncResult> {
     });
 
     if (syncStatus === "partial") {
-      await sendSyncPartialEmail({
-        to: user.email || "support@splitwiseforynab.com",
-        userName: getUserFirstName(user),
-        failedExpenses: createdFailedExpenseItems,
-        failedTransactions: createdFailedTransactionItems,
-        currencyCode: effectiveSplitwiseSettings.currencyCode,
+      const signature = buildPartialFailureSignature([
+        ...createdFailedExpenseItems,
+        ...createdFailedTransactionItems,
+      ]);
+      const duplicate = await isDuplicateSyncFailure({
+        userId,
+        currentSyncHistoryId: syncHistory.id,
+        currentStatus: "partial",
+        currentPartialSignature: signature,
       });
+      if (!duplicate) {
+        await sendSyncPartialEmail({
+          to: user.email || "support@splitwiseforynab.com",
+          userName: getUserFirstName(user),
+          failedExpenses: createdFailedExpenseItems,
+          failedTransactions: createdFailedTransactionItems,
+          currencyCode: effectiveSplitwiseSettings.currencyCode,
+        });
+      } else {
+        console.log(
+          `⏭️ Skipping sync-partial email for ${user.email || userId} - same failure signature as previous sync`,
+        );
+      }
     }
 
     // Check if this is the user's first successful sync
@@ -796,11 +857,25 @@ async function _syncSingleUser(userId: string): Promise<SyncResult> {
         where: { id: userId },
       });
 
-      await sendSyncErrorEmail({
-        to: user?.email || "support@splitwiseforynab.com",
-        userName: getUserFirstName(user),
-        errorMessage: error instanceof Error ? error.message : "Unknown error",
+      const currentErrorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      const duplicate = await isDuplicateSyncFailure({
+        userId,
+        currentSyncHistoryId: syncHistory.id,
+        currentStatus: "error",
+        currentErrorMessage,
       });
+      if (!duplicate) {
+        await sendSyncErrorEmail({
+          to: user?.email || "support@splitwiseforynab.com",
+          userName: getUserFirstName(user),
+          errorMessage: currentErrorMessage,
+        });
+      } else {
+        console.log(
+          `⏭️ Skipping sync-error email for ${user?.email || userId} - same error message as previous sync`,
+        );
+      }
     }
 
     // Update sync history with error
@@ -1269,13 +1344,29 @@ async function _syncUserPhase(
       });
 
       if (syncStatus === "partial") {
-        await sendSyncPartialEmail({
-          to: user.email || "support@splitwiseforynab.com",
-          userName: getUserFirstName(user),
-          failedExpenses: createdFailedExpenseItems,
-          failedTransactions: createdFailedTransactionItems,
-          currencyCode: effectiveSplitwiseSettings.currencyCode,
+        const signature = buildPartialFailureSignature([
+          ...createdFailedExpenseItems,
+          ...createdFailedTransactionItems,
+        ]);
+        const duplicate = await isDuplicateSyncFailure({
+          userId,
+          currentSyncHistoryId: syncHistory.id,
+          currentStatus: "partial",
+          currentPartialSignature: signature,
         });
+        if (!duplicate) {
+          await sendSyncPartialEmail({
+            to: user.email || "support@splitwiseforynab.com",
+            userName: getUserFirstName(user),
+            failedExpenses: createdFailedExpenseItems,
+            failedTransactions: createdFailedTransactionItems,
+            currencyCode: effectiveSplitwiseSettings.currencyCode,
+          });
+        } else {
+          console.log(
+            `⏭️ Skipping sync-partial email for ${user.email || userId} - same failure signature as previous sync`,
+          );
+        }
       }
 
       // Check if this is the user's first successful sync
@@ -1369,11 +1460,25 @@ async function _syncUserPhase(
       console.error(`Sync error for user ${userId}, phase ${phase}:`, error);
       Sentry.captureException(error, { extra: { userId, phase } });
 
-      await sendSyncErrorEmail({
-        to: errorUser?.email || "support@splitwiseforynab.com",
-        userName: getUserFirstName(errorUser),
-        errorMessage: error instanceof Error ? error.message : "Unknown error",
+      const currentErrorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      const duplicate = await isDuplicateSyncFailure({
+        userId,
+        currentSyncHistoryId: syncHistory.id,
+        currentStatus: "error",
+        currentErrorMessage,
       });
+      if (!duplicate) {
+        await sendSyncErrorEmail({
+          to: errorUser?.email || "support@splitwiseforynab.com",
+          userName: getUserFirstName(errorUser),
+          errorMessage: currentErrorMessage,
+        });
+      } else {
+        console.log(
+          `⏭️ Skipping sync-error email for ${errorUser?.email || userId} - same error message as previous sync`,
+        );
+      }
     }
 
     // Update sync history with error

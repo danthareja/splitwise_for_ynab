@@ -2,7 +2,7 @@ import { YNABService } from "@/services/ynab";
 import { SplitwiseService } from "@/services/splitwise";
 import type { YNABTransaction } from "@/types/ynab";
 import type { SplitwiseExpense } from "@/types/splitwise";
-import { YNABBadRequestError } from "./ynab-axios";
+import { YNABBadRequestError, YNABConflictError } from "./ynab-axios";
 import { SplitwiseBadRequestError } from "./splitwise-axios";
 
 export async function processLatestExpenses(
@@ -38,10 +38,24 @@ export async function processLatestExpenses(
 
     try {
       const ynabTransaction = splitwise.toYNABTransaction(expense);
-      await ynab.createTransaction(ynabTransaction);
-      console.log(
-        `✅ [processLatestExpenses] Created YNAB transaction for expense ${expense.id}`,
-      );
+
+      try {
+        await ynab.createTransaction(ynabTransaction);
+        console.log(
+          `✅ [processLatestExpenses] Created YNAB transaction for expense ${expense.id}`,
+        );
+      } catch (error) {
+        if (error instanceof YNABConflictError) {
+          // A transaction with this import_id already exists in YNAB. Treat
+          // as idempotent success and fall through to markExpenseProcessed so
+          // Splitwise eventually gets the emoji marker too.
+          console.log(
+            `⏭️ [processLatestExpenses] YNAB transaction for expense ${expense.id} already exists, skipping create`,
+          );
+        } else {
+          throw error;
+        }
+      }
 
       await splitwise.markExpenseProcessed(expense);
       console.log(
@@ -53,7 +67,13 @@ export async function processLatestExpenses(
         `❌ [processLatestExpenses] Error processing expense ${expense.id}: ${error instanceof Error ? error.message : String(error)}`,
       );
 
-      if (error instanceof YNABBadRequestError) {
+      // Per-item failures we can move past: one bad expense must not abort
+      // the batch, or we'll never advance setLastProcessedDate and will
+      // refetch the same expense forever. Auth/5xx errors still propagate.
+      if (
+        error instanceof YNABBadRequestError ||
+        error instanceof SplitwiseBadRequestError
+      ) {
         failed.push({ expense, error });
       } else {
         throw error;

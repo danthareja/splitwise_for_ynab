@@ -9,7 +9,7 @@ import {
 } from "../helpers/service-mocks";
 import type { YNABTransaction } from "@/types/ynab";
 import type { SplitwiseExpense } from "@/types/splitwise";
-import { YNABBadRequestError } from "@/services/ynab-axios";
+import { YNABBadRequestError, YNABConflictError } from "@/services/ynab-axios";
 import { SplitwiseBadRequestError } from "@/services/splitwise-axios";
 
 describe("services/glue", () => {
@@ -150,6 +150,172 @@ describe("services/glue", () => {
       await expect(
         processLatestExpenses(ynabService, splitwiseService),
       ).rejects.toThrow("Network error");
+    });
+
+    it("should skip a YNAB 409 on create and still mark the expense processed", async () => {
+      // Regression: createTransaction returning 409 (import_id conflict) used
+      // to abort the loop, leaving setLastProcessedDate uncalled and re-pulling
+      // the same expense forever.
+      const mockExpenses: SplitwiseExpense[] = [
+        {
+          id: 1,
+          description: "Already in YNAB",
+          cost: "25.50",
+          date: "2024-01-15",
+        } as SplitwiseExpense,
+        {
+          id: 2,
+          description: "Fresh",
+          cost: "30.00",
+          date: "2024-01-16",
+        } as SplitwiseExpense,
+      ];
+
+      const ynabService = createMockYNABService();
+      const splitwiseService = createMockSplitwiseService();
+
+      vi.mocked(splitwiseService.getLastProcessedDate).mockResolvedValue(
+        "2024-01-01T00:00:00Z",
+      );
+      vi.mocked(splitwiseService.getUnprocessedExpenses).mockResolvedValue(
+        mockExpenses,
+      );
+      vi.mocked(splitwiseService.toYNABTransaction).mockImplementation(
+        (expense) =>
+          ({
+            amount: -12750,
+            payee_name: expense.description,
+            date: expense.date,
+          }) as Partial<YNABTransaction>,
+      );
+
+      // First expense -> 409 conflict; second expense -> fresh create
+      vi.mocked(ynabService.createTransaction)
+        .mockRejectedValueOnce(
+          new YNABConflictError(
+            { response: { status: 409 } } as never,
+            "create transaction",
+          ),
+        )
+        .mockResolvedValueOnce({});
+
+      vi.mocked(splitwiseService.markExpenseProcessed).mockResolvedValue();
+      vi.mocked(splitwiseService.setLastProcessedDate).mockResolvedValue();
+
+      const result = await processLatestExpenses(ynabService, splitwiseService);
+
+      // Both expenses treated as successful (409 is idempotent).
+      expect(result.successful).toHaveLength(2);
+      expect(result.failed).toHaveLength(0);
+      // markExpenseProcessed runs for both (including the 409'd one).
+      expect(splitwiseService.markExpenseProcessed).toHaveBeenCalledTimes(2);
+      // Forward progress happens.
+      expect(splitwiseService.setLastProcessedDate).toHaveBeenCalledTimes(1);
+    });
+
+    it("should treat a Splitwise mark-as-processed failure as a partial error and keep going", async () => {
+      // Regression: a locked Splitwise expense (e.g. a participant left the
+      // group) used to rethrow out of markExpenseProcessed and abort the loop,
+      // blocking every subsequent expense and preventing setLastProcessedDate
+      // from ever advancing.
+      const mockExpenses: SplitwiseExpense[] = [
+        {
+          id: 1,
+          description: "Locked by departed user",
+          cost: "50.00",
+          date: "2024-01-15",
+        } as SplitwiseExpense,
+        {
+          id: 2,
+          description: "Next expense",
+          cost: "20.00",
+          date: "2024-01-16",
+        } as SplitwiseExpense,
+      ];
+
+      const ynabService = createMockYNABService();
+      const splitwiseService = createMockSplitwiseService();
+
+      vi.mocked(splitwiseService.getLastProcessedDate).mockResolvedValue(
+        "2024-01-01T00:00:00Z",
+      );
+      vi.mocked(splitwiseService.getUnprocessedExpenses).mockResolvedValue(
+        mockExpenses,
+      );
+      vi.mocked(splitwiseService.toYNABTransaction).mockImplementation(
+        (expense) =>
+          ({
+            amount: -12750,
+            payee_name: expense.description,
+            date: expense.date,
+          }) as Partial<YNABTransaction>,
+      );
+      vi.mocked(ynabService.createTransaction).mockResolvedValue({});
+
+      // First expense fails on mark; second marks successfully.
+      vi.mocked(splitwiseService.markExpenseProcessed)
+        .mockRejectedValueOnce(
+          new SplitwiseBadRequestError(
+            { response: { status: 400 } } as never,
+            "mark expense as processed",
+          ),
+        )
+        .mockResolvedValueOnce();
+      vi.mocked(splitwiseService.setLastProcessedDate).mockResolvedValue();
+
+      const result = await processLatestExpenses(ynabService, splitwiseService);
+
+      expect(result.successful).toHaveLength(1);
+      expect(result.successful[0]!.id).toBe(2);
+      expect(result.failed).toHaveLength(1);
+      expect(result.failed[0]!.expense.id).toBe(1);
+      expect(result.failed[0]!.error).toBeInstanceOf(SplitwiseBadRequestError);
+      // Both createTransaction calls still happened.
+      expect(ynabService.createTransaction).toHaveBeenCalledTimes(2);
+      // setLastProcessedDate still advances even with a partial failure.
+      expect(splitwiseService.setLastProcessedDate).toHaveBeenCalledTimes(1);
+    });
+
+    it("should still throw on non-bad-request, non-conflict errors", async () => {
+      // Auth/5xx/network errors must still abort so the outer layer can
+      // disable or alert - they're not per-item issues.
+      const mockExpenses: SplitwiseExpense[] = [
+        {
+          id: 1,
+          description: "Test Expense",
+          cost: "25.50",
+          date: "2024-01-15",
+        } as SplitwiseExpense,
+      ];
+
+      const ynabService = createMockYNABService();
+      const splitwiseService = createMockSplitwiseService();
+
+      vi.mocked(splitwiseService.getLastProcessedDate).mockResolvedValue(
+        "2024-01-01T00:00:00Z",
+      );
+      vi.mocked(splitwiseService.getUnprocessedExpenses).mockResolvedValue(
+        mockExpenses,
+      );
+      vi.mocked(splitwiseService.toYNABTransaction).mockImplementation(
+        (expense) =>
+          ({
+            amount: -12750,
+            payee_name: expense.description,
+            date: expense.date,
+          }) as Partial<YNABTransaction>,
+      );
+      vi.mocked(ynabService.createTransaction).mockRejectedValue(
+        new Error("connection reset"),
+      );
+      vi.mocked(splitwiseService.setLastProcessedDate).mockResolvedValue();
+
+      await expect(
+        processLatestExpenses(ynabService, splitwiseService),
+      ).rejects.toThrow("connection reset");
+
+      // Never got far enough to mark progress.
+      expect(splitwiseService.setLastProcessedDate).not.toHaveBeenCalled();
     });
 
     it("should use getLastProcessedDate for filtering", async () => {

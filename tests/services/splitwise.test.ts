@@ -307,6 +307,66 @@ describe("SplitwiseService", () => {
       const result = splitwiseService.toYNABTransaction(expense);
       expect(result.import_id).toMatch(/^sw:77:[a-f0-9]{8}$/);
     });
+
+    it("should produce same import_id before and after the known emoji is prepended", () => {
+      // Regression: generateImportId used to hash the raw description, so
+      // once markExpenseProcessed prepended "✅" the import_id changed and
+      // YNAB would accept a duplicate transaction on re-processing.
+      const base: SplitwiseExpense = {
+        id: 42,
+        description: "Slicer billtong",
+        cost: "187.55",
+        date: "2026-04-13",
+        currency_code: "EUR",
+        repayments: [{ from: splitwiseUserId, to: 222, amount: "93.77" }],
+      } as SplitwiseExpense;
+
+      const withoutEmoji = splitwiseService.toYNABTransaction(base);
+      const withEmoji = splitwiseService.toYNABTransaction({
+        ...base,
+        description: "✅Slicer billtong",
+      });
+
+      expect(withEmoji.import_id).toBe(withoutEmoji.import_id);
+    });
+
+    it("should produce same import_id regardless of other emojis in the description", () => {
+      const base: SplitwiseExpense = {
+        id: 42,
+        description: "🎂 Birthday cake",
+        cost: "50.00",
+        date: "2024-01-15",
+        currency_code: "USD",
+        repayments: [{ from: splitwiseUserId, to: 222, amount: "25.00" }],
+      } as SplitwiseExpense;
+
+      const plain = splitwiseService.toYNABTransaction(base);
+      const marked = splitwiseService.toYNABTransaction({
+        ...base,
+        description: "✅🎂 Birthday cake",
+      });
+
+      expect(marked.import_id).toBe(plain.import_id);
+    });
+
+    it("should produce same import_id ignoring leading/trailing whitespace", () => {
+      const base: SplitwiseExpense = {
+        id: 42,
+        description: "Groceries",
+        cost: "50.00",
+        date: "2024-01-15",
+        currency_code: "USD",
+        repayments: [{ from: splitwiseUserId, to: 222, amount: "25.00" }],
+      } as SplitwiseExpense;
+
+      const tight = splitwiseService.toYNABTransaction(base);
+      const loose = splitwiseService.toYNABTransaction({
+        ...base,
+        description: "  Groceries  ",
+      });
+
+      expect(loose.import_id).toBe(tight.import_id);
+    });
   });
 
   describe("toYNABAmount", () => {

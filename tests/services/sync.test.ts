@@ -3,6 +3,8 @@ import {
   syncUserData,
   getConfiguredUserGroups,
   cleanupStalePendingSyncs,
+  buildPartialFailureSignature,
+  isDuplicateSyncFailure,
 } from "@/services/sync";
 import { prisma } from "../setup";
 import {
@@ -273,6 +275,229 @@ describe("services/sync", () => {
     it("should return 0 when nothing is stale", async () => {
       const count = await cleanupStalePendingSyncs();
       expect(count).toBe(0);
+    });
+  });
+
+  describe("buildPartialFailureSignature", () => {
+    it("is deterministic regardless of item order", () => {
+      const a = buildPartialFailureSignature([
+        { externalId: "123", errorMessage: "boom" },
+        { externalId: "456", errorMessage: "poof" },
+      ]);
+      const b = buildPartialFailureSignature([
+        { externalId: "456", errorMessage: "poof" },
+        { externalId: "123", errorMessage: "boom" },
+      ]);
+      expect(a).toBe(b);
+    });
+
+    it("differs when the error message differs", () => {
+      const a = buildPartialFailureSignature([
+        { externalId: "123", errorMessage: "locked by departed user" },
+      ]);
+      const b = buildPartialFailureSignature([
+        { externalId: "123", errorMessage: "different error" },
+      ]);
+      expect(a).not.toBe(b);
+    });
+
+    it("differs when the failed item set changes", () => {
+      const a = buildPartialFailureSignature([
+        { externalId: "123", errorMessage: "boom" },
+      ]);
+      const b = buildPartialFailureSignature([
+        { externalId: "123", errorMessage: "boom" },
+        { externalId: "456", errorMessage: "poof" },
+      ]);
+      expect(a).not.toBe(b);
+    });
+
+    it("returns empty string for an empty list", () => {
+      expect(buildPartialFailureSignature([])).toBe("");
+    });
+  });
+
+  describe("isDuplicateSyncFailure", () => {
+    it("returns false when the user has no previous sync history", async () => {
+      const userData = await createFullyConfiguredUser({
+        user: { id: "dupe-error-no-prev" },
+      });
+      const current = await prisma.syncHistory.create({
+        data: { userId: userData.user.id, status: "error", errorMessage: "X" },
+      });
+
+      const result = await isDuplicateSyncFailure({
+        userId: userData.user.id,
+        currentSyncHistoryId: current.id,
+        currentStatus: "error",
+        currentErrorMessage: "X",
+      });
+      expect(result).toBe(false);
+    });
+
+    it("returns true when the previous error email had the same message", async () => {
+      const userData = await createFullyConfiguredUser({
+        user: { id: "dupe-error-same" },
+      });
+      // Previous error with matching message.
+      await prisma.syncHistory.create({
+        data: {
+          userId: userData.user.id,
+          status: "error",
+          errorMessage: "YNAB 409",
+          startedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        },
+      });
+      const current = await prisma.syncHistory.create({
+        data: {
+          userId: userData.user.id,
+          status: "error",
+          errorMessage: "YNAB 409",
+        },
+      });
+
+      const result = await isDuplicateSyncFailure({
+        userId: userData.user.id,
+        currentSyncHistoryId: current.id,
+        currentStatus: "error",
+        currentErrorMessage: "YNAB 409",
+      });
+      expect(result).toBe(true);
+    });
+
+    it("returns false when the error message has changed between syncs", async () => {
+      const userData = await createFullyConfiguredUser({
+        user: { id: "dupe-error-diff" },
+      });
+      await prisma.syncHistory.create({
+        data: {
+          userId: userData.user.id,
+          status: "error",
+          errorMessage: "old message",
+          startedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        },
+      });
+      const current = await prisma.syncHistory.create({
+        data: {
+          userId: userData.user.id,
+          status: "error",
+          errorMessage: "new message",
+        },
+      });
+
+      const result = await isDuplicateSyncFailure({
+        userId: userData.user.id,
+        currentSyncHistoryId: current.id,
+        currentStatus: "error",
+        currentErrorMessage: "new message",
+      });
+      expect(result).toBe(false);
+    });
+
+    it("returns false when the previous sync was a different status", async () => {
+      const userData = await createFullyConfiguredUser({
+        user: { id: "dupe-status-diff" },
+      });
+      await prisma.syncHistory.create({
+        data: {
+          userId: userData.user.id,
+          status: "success",
+          startedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        },
+      });
+      const current = await prisma.syncHistory.create({
+        data: {
+          userId: userData.user.id,
+          status: "error",
+          errorMessage: "boom",
+        },
+      });
+
+      const result = await isDuplicateSyncFailure({
+        userId: userData.user.id,
+        currentSyncHistoryId: current.id,
+        currentStatus: "error",
+        currentErrorMessage: "boom",
+      });
+      expect(result).toBe(false);
+    });
+
+    it("returns true when consecutive partial syncs have the same failure signature", async () => {
+      const userData = await createFullyConfiguredUser({
+        user: { id: "dupe-partial-same" },
+      });
+      const previous = await prisma.syncHistory.create({
+        data: {
+          userId: userData.user.id,
+          status: "partial",
+          startedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        },
+      });
+      await prisma.syncedItem.create({
+        data: {
+          syncHistoryId: previous.id,
+          externalId: "sw-expense-42",
+          type: "splitwise_expense",
+          amount: 50,
+          description: "Locked",
+          date: "2026-04-20",
+          direction: "splitwise_to_ynab",
+          status: "error",
+          errorMessage: "departed user",
+        },
+      });
+      const current = await prisma.syncHistory.create({
+        data: { userId: userData.user.id, status: "partial" },
+      });
+
+      const result = await isDuplicateSyncFailure({
+        userId: userData.user.id,
+        currentSyncHistoryId: current.id,
+        currentStatus: "partial",
+        currentPartialSignature: buildPartialFailureSignature([
+          { externalId: "sw-expense-42", errorMessage: "departed user" },
+        ]),
+      });
+      expect(result).toBe(true);
+    });
+
+    it("returns false when partial failure set changes between syncs", async () => {
+      const userData = await createFullyConfiguredUser({
+        user: { id: "dupe-partial-diff" },
+      });
+      const previous = await prisma.syncHistory.create({
+        data: {
+          userId: userData.user.id,
+          status: "partial",
+          startedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        },
+      });
+      await prisma.syncedItem.create({
+        data: {
+          syncHistoryId: previous.id,
+          externalId: "sw-expense-42",
+          type: "splitwise_expense",
+          amount: 50,
+          description: "Locked",
+          date: "2026-04-20",
+          direction: "splitwise_to_ynab",
+          status: "error",
+          errorMessage: "departed user",
+        },
+      });
+      const current = await prisma.syncHistory.create({
+        data: { userId: userData.user.id, status: "partial" },
+      });
+
+      const result = await isDuplicateSyncFailure({
+        userId: userData.user.id,
+        currentSyncHistoryId: current.id,
+        currentStatus: "partial",
+        currentPartialSignature: buildPartialFailureSignature([
+          { externalId: "sw-expense-99", errorMessage: "new problem" },
+        ]),
+      });
+      expect(result).toBe(false);
     });
   });
 

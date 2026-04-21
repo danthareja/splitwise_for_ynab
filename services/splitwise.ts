@@ -371,8 +371,13 @@ export class SplitwiseService {
   }
 
   private generateImportId(expense: SplitwiseExpense): string {
+    // Hash the emoji-free, trimmed description so the import_id is stable
+    // across markExpenseProcessed (which prepends the knownEmoji). Otherwise
+    // a re-processed expense gets a different import_id and YNAB accepts it
+    // as a duplicate.
+    const stableDescription = this.stripEmojis(expense.description).trim();
     const hash = createHash("md5")
-      .update(expense.description + this.toYNABAmount(expense))
+      .update(stableDescription + this.toYNABAmount(expense))
       .digest("hex")
       .slice(0, 8);
     return `sw:${expense.id}:${hash}`;
