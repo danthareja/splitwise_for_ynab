@@ -1,7 +1,12 @@
 import * as Sentry from "@sentry/nextjs";
 import { AxiosError } from "axios";
 import type { SplitwiseGroup, SplitwiseUser } from "../types/splitwise";
-import { createSplitwiseAxios, SplitwiseError } from "./splitwise-axios";
+import {
+  createSplitwiseAxios,
+  SplitwiseError,
+  SplitwiseForbiddenError,
+  SplitwiseNotFoundError,
+} from "./splitwise-axios";
 
 export async function validateSplitwiseApiKey(apiKey: string) {
   try {
@@ -88,7 +93,7 @@ export async function getSplitwiseGroup(accessToken: string, groupId: string) {
     };
   } catch (error) {
     // 403 means user doesn't have access to this group
-    if (error instanceof AxiosError && error.response?.status === 403) {
+    if (error instanceof SplitwiseForbiddenError) {
       return {
         success: false,
         error: "No access to group",
@@ -97,7 +102,7 @@ export async function getSplitwiseGroup(accessToken: string, groupId: string) {
     }
 
     // 404 means group doesn't exist
-    if (error instanceof AxiosError && error.response?.status === 404) {
+    if (error instanceof SplitwiseNotFoundError) {
       return {
         success: false,
         error: "Group not found",
