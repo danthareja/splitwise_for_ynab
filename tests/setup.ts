@@ -12,6 +12,7 @@ vi.mock("@sentry/nextjs", () => ({
   captureException: vi.fn(),
   captureMessage: vi.fn(),
   captureCheckIn: vi.fn().mockReturnValue("mock-check-in-id"),
+  flush: vi.fn().mockResolvedValue(true),
   startSpan: vi.fn((_opts: unknown, callback: () => unknown) => callback()),
 }));
 
