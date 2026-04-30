@@ -1,17 +1,13 @@
 import NextAuth from "next-auth";
-import * as Sentry from "@sentry/nextjs";
 import { PrismaAdapter } from "@/services/auth-prisma-adapter";
 import { prisma } from "@/db";
+import { reportAuthError } from "@/lib/auth-sentry";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   debug: process.env.NODE_ENV === "development",
   adapter: PrismaAdapter(prisma),
   logger: {
-    error(error) {
-      Sentry.captureException(error, {
-        tags: { component: "auth" },
-      });
-    },
+    error: reportAuthError,
   },
   pages: {
     signIn: "/auth/signin",
