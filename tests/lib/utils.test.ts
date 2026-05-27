@@ -5,9 +5,9 @@ import {
   formatCurrency,
   formatDate,
   formatTime,
-  formatDateTime,
   pluralize,
   reverseSplitRatio,
+  getYnabAuthStatus,
 } from "@/lib/utils";
 
 describe("lib/utils", () => {
@@ -163,6 +163,63 @@ describe("lib/utils", () => {
     it("should handle invalid format", () => {
       expect(reverseSplitRatio("invalid")).toBe("1:1");
       expect(reverseSplitRatio("1:2:3")).toBe("1:1");
+    });
+  });
+
+  describe("getYnabAuthStatus", () => {
+    it("identifies disabled YNAB auth failures that still need reconnecting", () => {
+      const disabledAt = new Date("2026-05-20T12:00:00Z");
+
+      expect(
+        getYnabAuthStatus({
+          disabled: true,
+          disabledAt,
+          disabledReason: "YNAB can't refresh access token",
+          suggestedFix:
+            "Your YNAB authorization has expired or is invalid. Please reconnect your YNAB account.",
+          accounts: [
+            {
+              provider: "ynab",
+              updatedAt: new Date("2026-05-20T11:00:00Z"),
+            },
+          ],
+        }),
+      ).toEqual({ isYnabAuthIssue: true, shouldAutoReenable: false });
+    });
+
+    it("detects when YNAB was reconnected after the auth failure", () => {
+      const disabledAt = new Date("2026-05-20T12:00:00Z");
+
+      expect(
+        getYnabAuthStatus({
+          disabled: true,
+          disabledAt,
+          disabledReason: "Unauthorized",
+          suggestedFix: "Reconnect your YNAB account.",
+          accounts: [
+            {
+              provider: "ynab",
+              updatedAt: new Date("2026-05-20T12:05:00Z"),
+            },
+          ],
+        }),
+      ).toEqual({ isYnabAuthIssue: false, shouldAutoReenable: true });
+    });
+
+    it("does not flag active users as YNAB auth issues", () => {
+      expect(
+        getYnabAuthStatus({
+          disabled: false,
+          disabledReason: null,
+          suggestedFix: null,
+          accounts: [
+            {
+              provider: "ynab",
+              updatedAt: new Date("2026-05-20T12:05:00Z"),
+            },
+          ],
+        }),
+      ).toEqual({ isYnabAuthIssue: false, shouldAutoReenable: false });
     });
   });
 });

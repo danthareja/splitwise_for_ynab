@@ -66,6 +66,8 @@ export default async function SettingsPage({
 
   // Check YNAB auth status (needs reconnection or just reconnected)
   const { isYnabAuthIssue } = getYnabAuthStatus(user);
+  const hasYnabConnection =
+    user?.accounts.some((account) => account.provider === "ynab") ?? false;
 
   return (
     <div className="flex min-h-screen flex-col bg-[#FDFBF7] dark:bg-[#0f0f0f]">
@@ -120,6 +122,7 @@ export default async function SettingsPage({
               partnershipStatus={partnershipStatus}
               reconfigure={reconfigure}
               isYnabAuthIssue={isYnabAuthIssue ?? false}
+              hasYnabConnection={hasYnabConnection}
             />
           </section>
 

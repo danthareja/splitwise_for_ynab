@@ -66,6 +66,8 @@ interface SettingsContentProps {
   reconfigure?: boolean;
   /** If true, show "Reconnect YNAB" button due to auth issues */
   isYnabAuthIssue?: boolean;
+  /** If false, show reconnect state even before a sync failure disables the user */
+  hasYnabConnection?: boolean;
 }
 
 interface ConfirmationState {
@@ -83,6 +85,7 @@ export function SettingsContent({
   partnershipStatus,
   reconfigure = false,
   isYnabAuthIssue = false,
+  hasYnabConnection = true,
 }: SettingsContentProps) {
   const router = useRouter();
   // Auto-expand splitwise section if reconfigure mode (e.g., orphan recovery)
@@ -103,6 +106,7 @@ export function SettingsContent({
     targetPersona: null,
   });
   const [budgetCurrency, setBudgetCurrency] = useState<string | null>(null);
+  const needsYnabReconnect = isYnabAuthIssue || !hasYnabConnection;
 
   // Handle YNAB reconnection
   async function handleReconnectYNAB() {
@@ -491,7 +495,7 @@ export function SettingsContent({
         {/* YNAB Settings */}
         <Card
           className={
-            isYnabAuthIssue ? "border-amber-200 dark:border-amber-800" : ""
+            needsYnabReconnect ? "border-amber-200 dark:border-amber-800" : ""
           }
         >
           <CardHeader>
@@ -502,7 +506,7 @@ export function SettingsContent({
                   Your YNAB plan and account settings
                 </CardDescription>
               </div>
-              {isYnabAuthIssue ? (
+              {needsYnabReconnect ? (
                 <Badge variant="warning" className="flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3" />
                   Needs Reconnection
@@ -516,13 +520,14 @@ export function SettingsContent({
             </div>
           </CardHeader>
           <CardContent>
-            {isYnabAuthIssue ? (
+            {needsYnabReconnect ? (
               <div className="space-y-4">
                 <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
                   <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                   <AlertDescription className="text-amber-800 dark:text-amber-200">
-                    Your YNAB authorization has expired. Please reconnect to
-                    continue syncing.
+                    {isYnabAuthIssue
+                      ? "Your YNAB authorization has expired. Please reconnect to continue syncing."
+                      : "Your YNAB account is not connected. Please reconnect to continue syncing."}
                   </AlertDescription>
                 </Alert>
                 <Button
@@ -594,14 +599,35 @@ export function SettingsContent({
                     </div>
                   </div>
                 )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setEditingSection("ynab")}
-                  className="rounded-full"
-                >
-                  Edit YNAB Settings
-                </Button>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditingSection("ynab")}
+                    className="rounded-full"
+                  >
+                    Edit YNAB Settings
+                  </Button>
+                  <Button
+                    onClick={handleReconnectYNAB}
+                    disabled={isReconnectingYnab}
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full"
+                  >
+                    {isReconnectingYnab ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Reconnecting...
+                      </>
+                    ) : (
+                      <>
+                        <LogIn className="mr-2 h-4 w-4" />
+                        Reconnect YNAB
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
