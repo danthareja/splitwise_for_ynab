@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import { PrismaAdapter } from "@/services/auth-prisma-adapter";
 import { prisma } from "@/db";
 import { reportAuthError } from "@/lib/auth-sentry";
+import { persistFreshOAuthTokensForLinkedAccount } from "@/services/oauth-account-tokens";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   debug: process.env.NODE_ENV === "development",
@@ -22,6 +23,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const detail = error.detail ?? "";
         return `/auth/error?error=YnabApiError&name=${encodeURIComponent(name)}&detail=${encodeURIComponent(detail)}`;
       }
+
+      if (account?.provider === "ynab") {
+        await persistFreshOAuthTokensForLinkedAccount(prisma, account);
+      }
+
       return true;
     },
   },

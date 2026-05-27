@@ -108,26 +108,47 @@ export async function saveYNABSettings(formData: FormData) {
   }
 
   try {
-    await prisma.ynabSettings.upsert({
+    const nextManualFlagColor = manualFlagColor || "blue";
+    const nextSyncedFlagColor = syncedFlagColor || "green";
+    const existingSettings = await prisma.ynabSettings.findUnique({
       where: { userId: session.user.id },
-      update: {
-        budgetId,
-        budgetName,
-        splitwiseAccountId,
-        splitwiseAccountName,
-        manualFlagColor: manualFlagColor || "blue",
-        syncedFlagColor: syncedFlagColor || "green",
-      },
-      create: {
-        userId: session.user.id,
-        budgetId,
-        budgetName,
-        splitwiseAccountId,
-        splitwiseAccountName,
-        manualFlagColor: manualFlagColor || "blue",
-        syncedFlagColor: syncedFlagColor || "green",
-      },
     });
+    const shouldResetYNABCursor =
+      !existingSettings ||
+      existingSettings.budgetId !== budgetId ||
+      existingSettings.splitwiseAccountId !== splitwiseAccountId ||
+      existingSettings.manualFlagColor !== nextManualFlagColor;
+
+    await prisma.$transaction([
+      prisma.ynabSettings.upsert({
+        where: { userId: session.user.id },
+        update: {
+          budgetId,
+          budgetName,
+          splitwiseAccountId,
+          splitwiseAccountName,
+          manualFlagColor: nextManualFlagColor,
+          syncedFlagColor: nextSyncedFlagColor,
+        },
+        create: {
+          userId: session.user.id,
+          budgetId,
+          budgetName,
+          splitwiseAccountId,
+          splitwiseAccountName,
+          manualFlagColor: nextManualFlagColor,
+          syncedFlagColor: nextSyncedFlagColor,
+        },
+      }),
+      ...(shouldResetYNABCursor
+        ? [
+            prisma.syncState.updateMany({
+              where: { userId: session.user.id },
+              data: { ynabServerKnowledge: null },
+            }),
+          ]
+        : []),
+    ]);
 
     revalidatePath("/dashboard");
 

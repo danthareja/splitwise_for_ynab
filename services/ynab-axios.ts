@@ -148,7 +148,7 @@ export async function refreshYNABAccessToken(originalAccessToken: string) {
 
     console.log("✅ Successfully received response from YNAB OAuth endpoint");
 
-    const { access_token, refresh_token } = response.data;
+    const { access_token, refresh_token, expires_in } = response.data;
 
     if (!access_token) {
       console.error("❌ Token refresh failed: No access token in response");
@@ -161,6 +161,10 @@ export async function refreshYNABAccessToken(originalAccessToken: string) {
       data: {
         access_token,
         refresh_token: refresh_token || account.refresh_token, // Keep old refresh token if new one not provided
+        expires_at:
+          typeof expires_in === "number"
+            ? Math.floor(Date.now() / 1000) + expires_in
+            : account.expires_at,
       },
     });
 
