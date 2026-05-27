@@ -1,5 +1,15 @@
 {
   "mcpServers": {
+    "stripe": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@stripe/mcp",
+        "--tools=coupons.read,customers.read,products.read,prices.read,invoices.read,balance.read,paymentIntents.read,subscriptions.read,disputes.read,documentation.read",
+        "--api-key=${MCP_STRIPE_API_KEY}"
+      ]
+    },
     "postgres-prod-readonly": {
       "command": "uvx",
       "args": ["postgres-mcp", "--access-mode=restricted"],
