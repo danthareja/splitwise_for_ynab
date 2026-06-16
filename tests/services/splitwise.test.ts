@@ -681,6 +681,54 @@ describe("SplitwiseService", () => {
         "2:1",
       );
     });
+
+    it("makes owed shares sum to the cost for odd-cent inflows (rounding)", async () => {
+      // Regression: 47.43 split 1:1 used to produce "23.71" + "23.71" = 47.42,
+      // which Splitwise rejects with "The total of everyone's owed shares
+      // ($47.42) is different than the total cost ($47.43)", silently dropping
+      // the expense so it never synced to either partner's YNAB.
+      let capturedBody: Record<string, unknown> | undefined;
+      server.use(
+        http.get(`${SPLITWISE_BASE_URL}/get_group/${groupId}`, () => {
+          return HttpResponse.json({
+            group: {
+              id: groupId,
+              members: [
+                { id: splitwiseUserId, first_name: "User", last_name: "One" },
+                { id: 222, first_name: "User", last_name: "Two" },
+              ],
+            },
+          });
+        }),
+        http.post(
+          `${SPLITWISE_BASE_URL}/create_expense`,
+          async ({ request }) => {
+            capturedBody = (await request.json()) as Record<string, unknown>;
+            expect(capturedBody).toMatchObject({
+              split_equally: false,
+              cost: "47.43",
+              users__0__paid_share: "0",
+              users__0__owed_share: "23.72",
+              users__1__paid_share: "47.43",
+              users__1__owed_share: "23.71",
+            });
+            return HttpResponse.json({ expenses: [{ id: 1, cost: "47.43" }] });
+          },
+        ),
+      );
+
+      await splitwiseService.createExpense({
+        cost: "47.43",
+        description: "Venmo - Friend",
+        date: "2024-01-15",
+        isInflow: true,
+      });
+
+      // Owed shares must reconcile to the cost to the penny.
+      const owed0 = parseFloat(capturedBody!.users__0__owed_share as string);
+      const owed1 = parseFloat(capturedBody!.users__1__owed_share as string);
+      expect((owed0 + owed1).toFixed(2)).toBe("47.43");
+    });
   });
 
   describe("getUnprocessedExpenses", () => {

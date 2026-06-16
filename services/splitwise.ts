@@ -131,17 +131,24 @@ export class SplitwiseService {
 
     // For inflows, invert the ratio so the offset is proportional
     const effectiveUserShares = isInflow ? partnerShares : userShares;
-    const effectivePartnerShares = isInflow ? userShares : partnerShares;
 
-    // Calculate owed shares based on ratio
-    const cost = parseFloat(apiData.cost || "0");
-    const userOwedShare = ((cost * effectiveUserShares) / totalShares).toFixed(
-      2,
+    // Calculate owed shares based on ratio.
+    //
+    // Work in integer cents and let the partner absorb the rounding remainder
+    // so the two owed shares ALWAYS sum to exactly the cost. Rounding each share
+    // independently with toFixed(2) can drop a cent on amounts that don't divide
+    // evenly (e.g. 47.43 / 2 => "23.71" + "23.71" = 47.42), which Splitwise
+    // rejects: "The total of everyone's owed shares ($47.42) is different than
+    // the total cost ($47.43)". Since 1:1 outflows take the split_equally path
+    // above, this silently dropped only odd-cent inflow splits (and any
+    // uneven-ratio custom split).
+    const totalCents = Math.round(parseFloat(apiData.cost || "0") * 100);
+    const userOwedCents = Math.round(
+      (totalCents * effectiveUserShares) / totalShares,
     );
-    const partnerOwedShare = (
-      (cost * effectivePartnerShares) /
-      totalShares
-    ).toFixed(2);
+    const partnerOwedCents = totalCents - userOwedCents;
+    const userOwedShare = (userOwedCents / 100).toFixed(2);
+    const partnerOwedShare = (partnerOwedCents / 100).toFixed(2);
 
     // Build custom split payload
     // For inflows, flip who paid: partner paid the full amount instead of user
