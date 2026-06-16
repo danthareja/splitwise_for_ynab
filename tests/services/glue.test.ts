@@ -11,6 +11,7 @@ import type { YNABTransaction } from "@/types/ynab";
 import type { SplitwiseExpense } from "@/types/splitwise";
 import { YNABBadRequestError, YNABConflictError } from "@/services/ynab-axios";
 import { SplitwiseBadRequestError } from "@/services/splitwise-axios";
+import * as Sentry from "@sentry/nextjs";
 
 describe("services/glue", () => {
   describe("processLatestExpenses", () => {
@@ -112,6 +113,17 @@ describe("services/glue", () => {
       expect(result.failed[0]!.error).toBeInstanceOf(YNABBadRequestError);
       // Should still set last processed date even with failures
       expect(splitwiseService.setLastProcessedDate).toHaveBeenCalledTimes(1);
+      // The swallowed per-item 400 must be reported to Sentry so the
+      // cursor-advancing drop is visible instead of silent.
+      expect(Sentry.captureException).toHaveBeenCalledWith(
+        expect.any(YNABBadRequestError),
+        expect.objectContaining({
+          tags: expect.objectContaining({
+            sync_phase: "splitwise_to_ynab",
+            failure_kind: "per_item",
+          }),
+        }),
+      );
     });
 
     it("should throw non-YNABBadRequestError errors", async () => {
@@ -442,6 +454,16 @@ describe("services/glue", () => {
       expect(result.failed[0]!.error).toBeInstanceOf(SplitwiseBadRequestError);
       // Should still set server knowledge even with failures
       expect(ynabService.setServerKnowledge).toHaveBeenCalledWith(150);
+      // The swallowed per-item 400 must be reported to Sentry.
+      expect(Sentry.captureException).toHaveBeenCalledWith(
+        expect.any(SplitwiseBadRequestError),
+        expect.objectContaining({
+          tags: expect.objectContaining({
+            sync_phase: "ynab_to_splitwise",
+            failure_kind: "per_item",
+          }),
+        }),
+      );
     });
 
     it("should throw non-SplitwiseBadRequestError errors", async () => {

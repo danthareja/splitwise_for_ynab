@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { YNABService } from "@/services/ynab";
 import { SplitwiseService } from "@/services/splitwise";
 import type { YNABTransaction } from "@/types/ynab";
@@ -74,6 +75,19 @@ export async function processLatestExpenses(
         error instanceof YNABBadRequestError ||
         error instanceof SplitwiseBadRequestError
       ) {
+        // We're about to swallow this and advance the cursor past it, which
+        // makes the drop permanent. Surface it to Sentry so per-item failures
+        // are visible/alertable instead of silent (this class of bug went
+        // unnoticed for months: see the inflow owed-share rounding fix).
+        Sentry.captureException(error, {
+          level: "warning",
+          tags: { sync_phase: "splitwise_to_ynab", failure_kind: "per_item" },
+          extra: {
+            splitwiseExpenseId: expense.id,
+            description: expense.description,
+            cost: expense.cost,
+          },
+        });
         failed.push({ expense, error });
       } else {
         throw error;
@@ -138,6 +152,18 @@ export async function processLatestTransactions(
 
       if (error instanceof SplitwiseBadRequestError) {
         console.error(error);
+        // Swallowed + cursor advances past it = permanent silent drop. Capture
+        // so these are visible/alertable. This is the direction the inflow
+        // owed-share rounding bug failed in.
+        Sentry.captureException(error, {
+          level: "warning",
+          tags: { sync_phase: "ynab_to_splitwise", failure_kind: "per_item" },
+          extra: {
+            ynabTransactionId: transaction.id,
+            payeeName: transaction.payee_name,
+            amount: transaction.amount,
+          },
+        });
         failed.push({ transaction, error });
       } else {
         throw error;
