@@ -1,10 +1,10 @@
-import NextAuth from "next-auth";
+import NextAuth, { type NextAuthConfig } from "next-auth";
 import { PrismaAdapter } from "@/services/auth-prisma-adapter";
 import { prisma } from "@/db";
 import { reportAuthError } from "@/lib/auth-sentry";
 import { persistFreshOAuthTokensForLinkedAccount } from "@/services/oauth-account-tokens";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const authConfig = {
   debug: process.env.NODE_ENV === "development",
   adapter: PrismaAdapter(prisma),
   logger: {
@@ -85,4 +85,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     },
   ],
-});
+} satisfies NextAuthConfig;
+
+export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);

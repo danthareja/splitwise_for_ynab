@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { YnabSignInForm } from "@/components/ynab-sign-in-form";
 import {
   Card,
   CardContent,
@@ -16,6 +17,11 @@ export const metadata: Metadata = {
 };
 
 const ERROR_MESSAGES: Record<string, { title: string; message: string }> = {
+  OAuthStateExpired: {
+    title: "Please Restart Sign-in",
+    message:
+      "Your sign-in attempt expired or is no longer valid. Start again using the button below, and finish signing in in the same tab.",
+  },
   OAuthProfileParseError: {
     title: "YNAB Account Issue",
     message:
@@ -111,13 +117,20 @@ export default async function AuthErrorPage({ searchParams }: ErrorPageProps) {
             </p>
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
-            <Button
-              asChild
-              className="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-full"
-              size="lg"
-            >
-              <Link href="/auth/signin">Try Again</Link>
-            </Button>
+            {error === "OAuthStateExpired" ? (
+              <YnabSignInForm
+                callbackUrl="/dashboard"
+                label="Restart YNAB sign-in"
+              />
+            ) : (
+              <Button
+                asChild
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-full"
+                size="lg"
+              >
+                <Link href="/auth/signin">Try Again</Link>
+              </Button>
+            )}
             <Button
               asChild
               variant="ghost"

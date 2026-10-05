@@ -7,9 +7,13 @@ import { Loader2 } from "lucide-react";
 
 interface YnabSignInFormProps {
   callbackUrl: string;
+  label?: string;
 }
 
-export function YnabSignInForm({ callbackUrl }: YnabSignInFormProps) {
+export function YnabSignInForm({
+  callbackUrl,
+  label = "Sign in with YNAB",
+}: YnabSignInFormProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   return (
@@ -28,7 +32,7 @@ export function YnabSignInForm({ callbackUrl }: YnabSignInFormProps) {
           Connecting to YNAB...
         </>
       ) : (
-        "Sign in with YNAB"
+        label
       )}
     </Button>
   );
