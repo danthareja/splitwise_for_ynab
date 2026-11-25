@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { YNABService } from "@/services/ynab";
+import { YNABBudgetNotFoundError } from "@/services/ynab-axios";
 import { MockSyncState } from "../helpers/service-mocks";
 import { server } from "../setup";
 import { http, HttpResponse } from "msw";
@@ -147,6 +148,34 @@ describe("YNABService", () => {
 
       expect(result.transactions).toHaveLength(1);
       expect(result.transactions[0]!.id).toBe("txn-2");
+    });
+
+    it("should throw an action-required error when the budget is gone", async () => {
+      server.use(
+        http.get(`${YNAB_BASE_URL}/budgets/${budgetId}/transactions`, () => {
+          return HttpResponse.json(
+            {
+              error: {
+                id: "404.2",
+                name: "resource_not_found",
+                detail: "Resource not found",
+              },
+            },
+            { status: 404 },
+          );
+        }),
+      );
+
+      const error = await ynabService
+        .getUnprocessedTransactions(0)
+        .catch((e) => e);
+
+      expect(error).toBeInstanceOf(YNABBudgetNotFoundError);
+      expect(error.requires_action).toBe(true);
+      expect(error.suggestedFix).toContain("select your budget again");
+      expect(error.message).toBe(
+        "YNAB can't get transactions: Resource not found (404.2)",
+      );
     });
 
     it("should use server knowledge from sync state", async () => {
