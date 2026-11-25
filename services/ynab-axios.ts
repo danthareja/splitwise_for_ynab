@@ -468,6 +468,22 @@ export class YNABResourceNotFoundError extends YNABNotFoundError {
   }
 }
 
+// The configured budget itself is gone (deleted in YNAB, or the connection no
+// longer has access to it). Every sync will fail until the user picks a budget
+// again, so this disables the account instead of failing the cron daily.
+export class YNABBudgetNotFoundError extends YNABResourceNotFoundError {
+  public override readonly requires_action = true;
+
+  constructor(originalError: AxiosError, operation: string) {
+    super(originalError, operation);
+    this.name = "YNABBudgetNotFoundError";
+  }
+
+  override get suggestedFix(): string {
+    return "We can't find the YNAB budget you connected. It may have been deleted, or your YNAB connection may no longer have access to it. Please select your budget again in your settings.";
+  }
+}
+
 export class YNABConflictError extends YNABClientError {
   constructor(originalError: AxiosError, operation: string) {
     super(originalError, operation);

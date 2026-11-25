@@ -1,7 +1,11 @@
 import type { AxiosInstance } from "axios";
 import type { YNABTransaction, YNABTransactionFlagColor } from "@/types/ynab";
 import type { SyncState } from "./sync-state";
-import { createYNABAxios } from "./ynab-axios";
+import {
+  createYNABAxios,
+  YNABBudgetNotFoundError,
+  YNABResourceNotFoundError,
+} from "./ynab-axios";
 
 interface YNABServiceConstructorParams {
   userId: string;
@@ -108,12 +112,24 @@ export class YNABService {
       server_knowledge: number;
     };
   }> {
-    const res = await this.axios.get(`/transactions`, {
-      params,
-      _operation: "get transactions",
-    });
+    try {
+      const res = await this.axios.get(`/transactions`, {
+        params,
+        _operation: "get transactions",
+      });
 
-    return res.data;
+      return res.data;
+    } catch (error) {
+      // A 404.2 on the budget-level transaction list means the budget is gone,
+      // not a single transaction. That needs the user to act.
+      if (error instanceof YNABResourceNotFoundError) {
+        throw new YNABBudgetNotFoundError(
+          error.originalError,
+          "get transactions",
+        );
+      }
+      throw error;
+    }
   }
 
   async getServerKnowledge(): Promise<number | undefined> {
